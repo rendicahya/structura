@@ -11,6 +11,7 @@
 
   let dragging = null;
   let svgEl;
+  let wrapperEl;
 
   let pendingFrom = null;
   let pendingMouse = { x: 0, y: 0 };
@@ -19,29 +20,36 @@
   let contextMenu = null;
   let selectedNodeId = null;
 
-  function getSVGPoint(e) {
+  let inlineEdit = null;
+  let inlineInputEl;
+
+  function getSVGPoint(clientX, clientY) {
     const rect = svgEl.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  function onSVGMousemove(e) {
-    mousePos = getSVGPoint(e);
+  // Global mousemove — handles both node drag and pending connection arrow
+  function onWindowMousemove(e) {
+    mousePos = getSVGPoint(e.clientX, e.clientY);
     if (dragging) {
       const { nodeId, offsetX, offsetY } = dragging;
       updateNode(nodeId, { x: mousePos.x - offsetX, y: mousePos.y - offsetY });
     }
-    if (pendingFrom) pendingMouse = mousePos;
+    if (pendingFrom) {
+      pendingMouse = { ...mousePos };
+    }
   }
 
-  function onSVGMouseup(e) {
+  function onWindowMouseup(e) {
     if (dragging) { pushHistory(); dragging = null; }
-    if (pendingFrom) pendingFrom = null;
+    if (pendingFrom) { pendingFrom = null; }
   }
 
   function onSVGMousedown(e) {
     if (e.target === svgEl || e.target.tagName === 'svg') {
       selectedNodeId = null;
       contextMenu = null;
+      commitInlineEdit();
     }
   }
 
@@ -50,7 +58,7 @@
     e.stopPropagation();
     contextMenu = null;
     selectedNodeId = nodeId;
-    const pt = getSVGPoint(e);
+    const pt = getSVGPoint(e.clientX, e.clientY);
     const node = $nodes.find(n => n.id === nodeId);
     dragging = { nodeId, offsetX: pt.x - node.x, offsetY: pt.y - node.y };
   }
@@ -59,7 +67,7 @@
     const { e, nodeId } = detail;
     e.stopPropagation();
     pendingFrom = nodeId;
-    pendingMouse = getSVGPoint(e);
+    pendingMouse = getSVGPoint(e.clientX, e.clientY);
   }
 
   function onConnectTarget({ detail }) {
@@ -75,8 +83,39 @@
   function onContextMenu({ detail }) {
     const { e, node } = detail;
     e.preventDefault();
+    commitInlineEdit();
     contextMenu = { x: e.clientX, y: e.clientY, node };
     selectedNodeId = node.id;
+  }
+
+  function onNodeDblClick({ detail }) {
+    const { node } = detail;
+    commitInlineEdit();
+    contextMenu = null;
+    selectedNodeId = node.id;
+    const svgRect = svgEl.getBoundingClientRect();
+    inlineEdit = {
+      nodeId: node.id,
+      x: svgRect.left + node.x,
+      y: svgRect.top + node.y + 32,
+      value: node.data,
+    };
+    setTimeout(() => { inlineInputEl?.focus(); inlineInputEl?.select(); }, 10);
+  }
+
+  function commitInlineEdit() {
+    if (!inlineEdit) return;
+    pushHistory();
+    updateNode(inlineEdit.nodeId, { data: inlineEdit.value });
+    pushHistory();
+    inlineEdit = null;
+  }
+
+  function cancelInlineEdit() { inlineEdit = null; }
+
+  function onInlineKeydown(e) {
+    if (e.key === 'Enter')  { e.preventDefault(); commitInlineEdit(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
   }
 
   function onMenuClose() { contextMenu = null; }
@@ -111,7 +150,6 @@
 
   function onMenuSetHead() {
     pushHistory();
-    // toggle: unset if already head
     setHead($headId === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
@@ -152,19 +190,34 @@
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
   }
 
+  // Konfirmasi sebelum close/reload jika ada node
+  function onBeforeUnload(e) {
+    if ($nodes.length > 0) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  }
+
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
-    return () => window.removeEventListener('keydown', onKeydown);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('keydown', onKeydown);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
   });
 </script>
 
+<svelte:window
+  on:mousemove={onWindowMousemove}
+  on:mouseup={onWindowMouseup}
+/>
+
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="canvas-wrapper">
+<div class="canvas-wrapper" bind:this={wrapperEl}>
   <svg
     bind:this={svgEl}
     class="canvas-svg"
-    on:mousemove={onSVGMousemove}
-    on:mouseup={onSVGMouseup}
     on:mousedown={onSVGMousedown}
     on:contextmenu|preventDefault
   >
@@ -200,9 +253,23 @@
         on:portdragstart={onPortDragstart}
         on:connecttarget={onConnectTarget}
         on:contextmenu={onContextMenu}
+        on:dblclick={onNodeDblClick}
       />
     {/each}
   </svg>
+
+  {#if inlineEdit}
+    <input
+      class="inline-edit"
+      bind:this={inlineInputEl}
+      bind:value={inlineEdit.value}
+      style="left: {inlineEdit.x}px; top: {inlineEdit.y}px;"
+      on:keydown={onInlineKeydown}
+      on:blur={commitInlineEdit}
+      placeholder="value"
+      spellcheck="false"
+    />
+  {/if}
 
   {#if $nodes.length === 0}
     <div class="empty-hint">
@@ -244,6 +311,23 @@
     display: block;
     cursor: default;
     user-select: none;
+  }
+  .inline-edit {
+    position: fixed;
+    transform: translateX(-50%);
+    width: 110px;
+    background: var(--surface2);
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
+    text-align: center;
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4);
+    z-index: 500;
   }
   .empty-hint {
     position: absolute;

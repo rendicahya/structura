@@ -37,6 +37,11 @@
     dispatch('connecttarget', { e, nodeId: node.id });
   }
 
+  function onDblClick(e) {
+    e.stopPropagation();
+    dispatch('dblclick', { node });
+  }
+
   $: hasNext = !!node.nextId;
   $: borderColor = selected
     ? 'var(--node-selected)'
@@ -58,6 +63,7 @@
   on:mousedown={onMousedown}
   on:contextmenu={onContextMenu}
   on:mouseup={onNodeMouseup}
+  on:dblclick={onDblClick}
 >
   <!-- Shadow -->
   <rect x="2" y="4" width={W} height={H} rx="10" fill="rgba(0,0,0,0.35)" />
@@ -87,7 +93,7 @@
     <text x={W - 23} y={isHead ? 32.5 : 16.5} text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="#c084fc" font-weight="700" letter-spacing="0.5">TAIL</text>
   {/if}
 
-  <!-- var name label — centered -->
+  <!-- var name label -->
   <text
     x={W / 2} y="22"
     text-anchor="middle"
@@ -100,13 +106,13 @@
   <!-- divider -->
   <line x1="12" y1="28" x2={W - 12} y2="28" stroke="var(--border)" stroke-width="1"/>
 
-  <!-- data value — bright white -->
+  <!-- data value -->
   <text
     x={W / 2} y="50"
     text-anchor="middle"
     font-family="var(--font-mono)"
     font-size="13"
-    fill={node.data ? '#ffffff' : 'var(--text-muted)'}
+    fill={node.data ? '#e8ecf5' : 'var(--text-muted)'}
     font-weight={node.data ? '500' : '400'}
   >{node.data || 'null'}</text>
 
@@ -124,11 +130,7 @@
 
   <!-- Ground symbol -->
   {#if !hasNext}
-    <line
-      x1={W/2} y1={H}
-      x2={W/2} y2={H + groundLen}
-      stroke="var(--text-muted)" stroke-width="1.5"
-    />
+    <line x1={W/2} y1={H} x2={W/2} y2={H + groundLen} stroke="var(--text-muted)" stroke-width="1.5" />
     {#each groundLines as gl, i}
       <line
         x1={W/2 - gl.w/2} y1={H + groundLen + i * 7}
