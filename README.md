@@ -1,43 +1,29 @@
-# Svelte + Vite
+# Structura
 
-This template should help get you started developing with Svelte in Vite.
+Structura is an interactive web application for visualizing and generating code for data structures, particularly linked lists. This application allows users to create data structure diagrams visually and generate corresponding Java or Python code.
 
-## Recommended IDE Setup
+## Key Features
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- **Interactive Canvas**: Drag and drop nodes to create data structures
+- **Edge Connections**: Connect nodes to form linked lists
+- **Code Generation**: Automatically generates Java or Python code from the diagram
+- **Undo/Redo**: History feature to undo or redo changes
+- **Context Menu**: Context menu for quick operations on nodes
+- **Code Panel**: Separate panel to view generated code
+- **Responsive**: Resizable interface with splitter
 
-## Need an official Svelte framework?
+## How to Use the Application
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+1. **Add Node**: Right-click on the canvas and select "Add Node"
+2. **Edit Node**: Double-click on a node to edit its data
+3. **Connect Nodes**: Click on the first node, then click on the second node to create a connection
+4. **Select Language**: Choose Java or Python in the code panel
+5. **Generate Code**: Code will automatically update as you modify the diagram
 
-## Technical considerations
+## Contributing
 
-**Why use this over SvelteKit?**
+Contributions are welcome! Please create an issue or pull request for fixes and new features.
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+## License
 
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+This project uses the MIT license.
