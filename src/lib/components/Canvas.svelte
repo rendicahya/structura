@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
-  import { nodes, edges, updateNode, removeNode, connectNodes, disconnectNode } from '../stores/graph.js';
-  import { pushHistory } from '../stores/history.js';
+  import { nodes, edges, updateNode, removeNode, connectNodes, disconnectNode, headId, tailId, setHead, setTail } from '../stores/graph.js';
+  import { pushHistory, undo, redo } from '../stores/history.js';
   import NodeComponent from './NodeComponent.svelte';
   import EdgeComponent from './EdgeComponent.svelte';
   import ContextMenu from './ContextMenu.svelte';
@@ -9,17 +9,14 @@
   const NODE_W = 130;
   const NODE_H = 64;
 
-  // Drag state
-  let dragging = null;   // { nodeId, offsetX, offsetY }
+  let dragging = null;
   let svgEl;
 
-  // Pending connection
-  let pendingFrom = null;  // nodeId
+  let pendingFrom = null;
   let pendingMouse = { x: 0, y: 0 };
   let mousePos = { x: 0, y: 0 };
 
-  // Context menu
-  let contextMenu = null; // { x, y, node }
+  let contextMenu = null;
   let selectedNodeId = null;
 
   function getSVGPoint(e) {
@@ -33,19 +30,12 @@
       const { nodeId, offsetX, offsetY } = dragging;
       updateNode(nodeId, { x: mousePos.x - offsetX, y: mousePos.y - offsetY });
     }
-    if (pendingFrom) {
-      pendingMouse = mousePos;
-    }
+    if (pendingFrom) pendingMouse = mousePos;
   }
 
   function onSVGMouseup(e) {
-    if (dragging) {
-      pushHistory();
-      dragging = null;
-    }
-    if (pendingFrom) {
-      pendingFrom = null;
-    }
+    if (dragging) { pushHistory(); dragging = null; }
+    if (pendingFrom) pendingFrom = null;
   }
 
   function onSVGMousedown(e) {
@@ -119,10 +109,24 @@
     contextMenu = null;
   }
 
-  // Compute edge screen positions
+  function onMenuSetHead() {
+    pushHistory();
+    // toggle: unset if already head
+    setHead($headId === contextMenu.node.id ? null : contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
+  }
+
+  function onMenuSetTail() {
+    pushHistory();
+    setTail($tailId === contextMenu.node.id ? null : contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
+  }
+
   function edgePos(edge, ns) {
     const from = ns.find(n => n.id === edge.from);
-    const to = ns.find(n => n.id === edge.to);
+    const to   = ns.find(n => n.id === edge.to);
     if (!from || !to) return null;
     return {
       fromX: from.x + NODE_W - 8,
@@ -143,13 +147,10 @@
     };
   }
 
-  // Keyboard shortcuts
   function onKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
   }
-
-  import { undo, redo } from '../stores/history.js';
 
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
@@ -167,7 +168,6 @@
     on:mousedown={onSVGMousedown}
     on:contextmenu|preventDefault
   >
-    <!-- Grid dots -->
     <defs>
       <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
@@ -175,7 +175,6 @@
     </defs>
     <rect width="100%" height="100%" fill="url(#grid)" />
 
-    <!-- Edges -->
     {#each $edges as edge (edge.from + '-' + edge.to)}
       {#if edgePos(edge, $nodes)}
         {@const pos = edgePos(edge, $nodes)}
@@ -183,7 +182,6 @@
       {/if}
     {/each}
 
-    <!-- Pending connection -->
     {#if pendingFrom}
       {@const pos = pendingEdgePos(pendingFrom, $nodes)}
       {#if pos}
@@ -191,12 +189,13 @@
       {/if}
     {/if}
 
-    <!-- Nodes -->
     {#each $nodes as node (node.id)}
       <NodeComponent
         {node}
         selected={selectedNodeId === node.id}
         connecting={pendingFrom === node.id}
+        isHead={$headId === node.id}
+        isTail={$tailId === node.id}
         on:dragstart={onNodeDragstart}
         on:portdragstart={onPortDragstart}
         on:connecttarget={onConnectTarget}
@@ -205,7 +204,6 @@
     {/each}
   </svg>
 
-  <!-- Empty state -->
   {#if $nodes.length === 0}
     <div class="empty-hint">
       <div class="empty-icon">◈</div>
@@ -220,11 +218,15 @@
     x={contextMenu.x}
     y={contextMenu.y}
     node={$nodes.find(n => n.id === contextMenu.node.id)}
+    isHead={$headId === contextMenu.node.id}
+    isTail={$tailId === contextMenu.node.id}
     on:close={onMenuClose}
     on:rename={onMenuRename}
     on:editData={onMenuEditData}
     on:delete={onMenuDelete}
     on:disconnect={onMenuDisconnect}
+    on:setHead={onMenuSetHead}
+    on:setTail={onMenuSetTail}
   />
 {/if}
 
@@ -236,7 +238,6 @@
     overflow: hidden;
     background: var(--bg);
   }
-
   .canvas-svg {
     width: 100%;
     height: 100%;
@@ -244,7 +245,6 @@
     cursor: default;
     user-select: none;
   }
-
   .empty-hint {
     position: absolute;
     top: 50%;
@@ -254,33 +254,12 @@
     pointer-events: none;
     animation: fadeIn 0.4s ease;
   }
-
   @keyframes fadeIn {
     from { opacity: 0; transform: translate(-50%, -48%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
+    to   { opacity: 1; transform: translate(-50%, -50%); }
   }
-
-  .empty-icon {
-    font-size: 40px;
-    color: var(--border-bright);
-    margin-bottom: 12px;
-  }
-
-  .empty-title {
-    font-family: var(--font-ui);
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-  }
-
-  .empty-sub {
-    font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-
-  .empty-sub strong {
-    color: var(--accent);
-  }
+  .empty-icon  { font-size: 40px; color: var(--border-bright); margin-bottom: 12px; }
+  .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+  .empty-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .empty-sub strong { color: var(--accent); }
 </style>

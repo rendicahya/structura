@@ -1,7 +1,7 @@
 <script>
-  import { nodes, edges } from '../stores/graph.js';
+  import { nodes, edges, headId, tailId } from '../stores/graph.js';
 
-  function generateCode(ns, es) {
+  function generateCode(ns, es, hId, tId) {
     if (ns.length === 0) return '// Add nodes to generate code';
 
     let lines = [];
@@ -23,34 +23,33 @@
       lines.push(`Node ${n.varName} = new Node(${dataVal});`);
     }
 
-    const linked = es.length > 0;
-    if (linked) {
+    if (es.length > 0) {
       lines.push('');
       lines.push('// ─── Links ─────────────────────────────────');
       for (const e of es) {
         const fromNode = ns.find(n => n.id === e.from);
-        const toNode = ns.find(n => n.id === e.to);
+        const toNode   = ns.find(n => n.id === e.to);
         if (fromNode && toNode) {
           lines.push(`${fromNode.varName}.next = ${toNode.varName};`);
         }
       }
     }
 
-    // Detect head (not pointed to by anyone)
-    const targets = new Set(es.map(e => e.to));
-    const heads = ns.filter(n => !targets.has(n.id));
-    if (heads.length > 0 && linked) {
+    const headNode = ns.find(n => n.id === hId);
+    const tailNode = ns.find(n => n.id === tId);
+
+    if (headNode || tailNode) {
       lines.push('');
-      lines.push('// ─── Head pointer ──────────────────────────');
-      lines.push(`Node head = ${heads[0].varName};`);
+      lines.push('// ─── Pointers ──────────────────────────────');
+      if (headNode) lines.push(`Node head = ${headNode.varName};`);
+      if (tailNode) lines.push(`Node tail = ${tailNode.varName};`);
     }
 
     return lines.join('\n');
   }
 
-  $: code = generateCode($nodes, $edges);
+  $: code = generateCode($nodes, $edges, $headId, $tailId);
 
-  // Syntax highlight
   function highlight(code) {
     return code
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -58,7 +57,7 @@
       .replace(/\b(class|new|int|void|null|this|Node)\b/g, '<span class="kw">$1</span>')
       .replace(/\b(\d+)\b/g, '<span class="num">$1</span>')
       .replace(/"([^"]*)"/g, '<span class="str">"$1"</span>')
-      .replace(/\b([a-z][a-zA-Z0-9]*)\s*(?==)/g, '<span class="var">$1</span>')
+      .replace(/\b([a-z][a-zA-Z0-9]*)\s*(?==)/g, '<span class="var">$1</span>');
   }
 
   $: highlighted = highlight(code);
@@ -91,7 +90,6 @@
     background: var(--code-bg);
     overflow: hidden;
   }
-
   .code-header {
     display: flex;
     align-items: center;
@@ -100,7 +98,6 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-
   .lang-badge {
     display: flex;
     align-items: center;
@@ -110,13 +107,7 @@
     color: var(--text-dim);
     font-weight: 500;
   }
-
-  .lang-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--warning);
-  }
-
+  .lang-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); }
   .copy-btn {
     display: flex;
     align-items: center;
@@ -132,13 +123,7 @@
     transition: all 0.15s;
   }
   .copy-btn:hover { background: var(--border); color: var(--text); }
-
-  .code-body {
-    flex: 1;
-    overflow: auto;
-    padding: 16px;
-  }
-
+  .code-body { flex: 1; overflow: auto; padding: 16px; }
   pre {
     margin: 0;
     font-family: var(--font-mono);
@@ -147,8 +132,7 @@
     color: var(--text-dim);
     white-space: pre;
   }
-
-  :global(.kw) { color: #c792ea; font-weight: 500; }
+  :global(.kw)  { color: #c792ea; font-weight: 500; }
   :global(.num) { color: #f78c6c; }
   :global(.str) { color: #c3e88d; }
   :global(.c)   { color: #546e7a; font-style: italic; }

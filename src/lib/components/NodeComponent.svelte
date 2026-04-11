@@ -3,16 +3,15 @@
 
   export let node;
   export let selected = false;
-  export let connecting = false; // this node is the source of a pending connection
+  export let connecting = false;
+  export let isHead = false;
+  export let isTail = false;
 
   const dispatch = createEventDispatcher();
 
   const W = 130;
   const H = 64;
 
-  // Ground symbol dimensions
-  const gx = node.x + W / 2;
-  const gy = node.y + H;
   const groundLen = 22;
   const groundLines = [
     { y: 0, w: 14 },
@@ -38,9 +37,16 @@
     dispatch('connecttarget', { e, nodeId: node.id });
   }
 
-  $: gx2 = node.x + W / 2;
-  $: gy2 = node.y + H;
   $: hasNext = !!node.nextId;
+  $: borderColor = selected
+    ? 'var(--node-selected)'
+    : connecting
+    ? 'var(--warning)'
+    : isHead
+    ? 'var(--success)'
+    : isTail
+    ? '#c084fc'
+    : 'var(--node-border)';
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -60,20 +66,31 @@
   <rect
     x="0" y="0" width={W} height={H} rx="10"
     fill="var(--node-bg)"
-    stroke={selected ? 'var(--node-selected)' : connecting ? 'var(--warning)' : 'var(--node-border)'}
-    stroke-width={selected || connecting ? 1.8 : 1}
+    stroke={borderColor}
+    stroke-width={selected || connecting || isHead || isTail ? 1.8 : 1}
   />
 
   <!-- Top accent bar -->
   <rect
     x="1" y="1" width={W - 2} height="3" rx="2"
-    fill={selected ? 'var(--accent)' : connecting ? 'var(--warning)' : 'var(--node-border)'}
-    opacity="0.7"
+    fill={isHead ? 'var(--success)' : isTail ? '#c084fc' : selected ? 'var(--accent)' : connecting ? 'var(--warning)' : 'var(--node-border)'}
+    opacity="0.8"
   />
 
-  <!-- var name label -->
+  <!-- head / tail badge -->
+  {#if isHead}
+    <rect x={W - 38} y="6" width="30" height="14" rx="4" fill="rgba(78,204,163,0.15)" />
+    <text x={W - 23} y="16.5" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="var(--success)" font-weight="700" letter-spacing="0.5">HEAD</text>
+  {/if}
+  {#if isTail}
+    <rect x={W - 38} y={isHead ? 22 : 6} width="30" height="14" rx="4" fill="rgba(192,132,252,0.15)" />
+    <text x={W - 23} y={isHead ? 32.5 : 16.5} text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="#c084fc" font-weight="700" letter-spacing="0.5">TAIL</text>
+  {/if}
+
+  <!-- var name label — centered -->
   <text
-    x="12" y="22"
+    x={W / 2} y="22"
+    text-anchor="middle"
     font-family="var(--font-mono)"
     font-size="10"
     fill="var(--accent)"
@@ -83,17 +100,17 @@
   <!-- divider -->
   <line x1="12" y1="28" x2={W - 12} y2="28" stroke="var(--border)" stroke-width="1"/>
 
-  <!-- data value -->
+  <!-- data value — bright white -->
   <text
     x={W / 2} y="50"
     text-anchor="middle"
     font-family="var(--font-mono)"
     font-size="13"
-    fill={node.data ? 'var(--text)' : 'var(--text-muted)'}
-    font-weight="400"
+    fill={node.data ? '#ffffff' : 'var(--text-muted)'}
+    font-weight={node.data ? '500' : '400'}
   >{node.data || 'null'}</text>
 
-  <!-- Port dot (right side, drag to connect) -->
+  <!-- Port dot -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <circle
     cx={W - 8} cy={H / 2}
@@ -105,9 +122,8 @@
     on:mousedown={onPortMousedown}
   />
 
-  <!-- Ground symbol (when no next) -->
+  <!-- Ground symbol -->
   {#if !hasNext}
-    <!-- Vertical stem down from bottom center -->
     <line
       x1={W/2} y1={H}
       x2={W/2} y2={H + groundLen}
@@ -127,7 +143,4 @@
   .node-group { cursor: grab; }
   .node-group:active { cursor: grabbing; }
   .port { cursor: crosshair; }
-  .node-group.selected rect:nth-child(2) {
-    filter: drop-shadow(0 0 8px rgba(91,143,255,0.4));
-  }
 </style>
