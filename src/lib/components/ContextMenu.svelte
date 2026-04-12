@@ -46,7 +46,7 @@
     close();
   }
 
-  function handleDelete() { dispatch('delete'); close(); }
+  function handleUnlink() { dispatch('unlink'); close(); }
   function handleDisconnect() { dispatch('disconnect'); close(); }
   function handleSetHead() { dispatch('setHead'); close(); }
   function handleSetTail() { dispatch('setTail'); close(); }
@@ -142,11 +142,11 @@
     {/if}
 
     <div class="menu-divider"></div>
-    <button class="menu-item danger" on:click={handleDelete}>
+    <button class="menu-item danger" on:click={handleUnlink}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-        <path d="M2.5 4H10.5M5 4V2.5H8V4M5.5 6V9.5M7.5 6V9.5M3.5 4L4 10.5H9L9.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 6.5h2.5M8.5 6.5H11M4.5 6.5C4.5 5.1 5.6 4 7 4s2.5 1.1 2.5 2.5S8.4 9 7 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
-      Delete node
+      Unlink node
     </button>
   {/if}
 </div>

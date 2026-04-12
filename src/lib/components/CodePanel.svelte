@@ -1,124 +1,16 @@
 <script>
-  import { nodes, edges, headId, tailId } from '../stores/graph.js';
+  import { codeLog } from '../stores/codeLog.js';
+  import { afterUpdate } from 'svelte';
 
   let lang = 'java';
+  let codeBodyEl;
 
-  function isInt(val) {
-    return /^-?\d+$/.test((val ?? '').trim());
-  }
-  function isFloat(val) {
-    return /^-?\d+\.\d+$/.test((val ?? '').trim());
-  }
-  function isNumeric(val) {
-    return isInt(val) || isFloat(val);
-  }
+  // Auto-scroll to bottom when new op added
+  afterUpdate(() => {
+    if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
+  });
 
-  // Determine the best Java type for "data" across all nodes
-  function inferJavaType(ns) {
-    const values = ns.map(n => n.data).filter(v => v !== '' && v != null);
-    if (values.length === 0) return 'String';
-    if (values.every(v => isInt(v))) return 'int';
-    if (values.every(v => isNumeric(v))) return 'double';
-    return 'String';
-  }
-
-  function formatJavaData(val, type) {
-    if (val === '' || val == null) return null; // empty → no-arg constructor
-    if (type === 'int' || type === 'double') return val.trim();
-    return `"${val}"`;
-  }
-
-  function formatPythonData(val) {
-    if (val === '' || val == null) return null;
-    if (isNumeric(val)) return val.trim();
-    return `"${val}"`;
-  }
-
-  function generateJava(ns, es, hId, tId) {
-    if (ns.length === 0) return '// Add nodes to generate code';
-    const type = inferJavaType(ns);
-    const lines = [];
-    lines.push('// ─── Node class ───────────────────────────');
-    lines.push('class Node {');
-    lines.push(`    ${type} data;`);
-    lines.push('    Node next;');
-    lines.push('');
-    // No-arg constructor
-    lines.push('    Node() {');
-    lines.push('        this.next = null;');
-    lines.push('    }');
-    lines.push('');
-    // Data constructor
-    lines.push(`    Node(${type} data) {`);
-    lines.push('        this.data = data;');
-    lines.push('        this.next = null;');
-    lines.push('    }');
-    lines.push('}');
-    lines.push('');
-    lines.push('// ─── Nodes ─────────────────────────────────');
-    for (const n of ns) {
-      const d = formatJavaData(n.data, type);
-      lines.push(`Node ${n.varName} = new Node(${d ?? ''});`);
-    }
-    if (es.length > 0) {
-      lines.push('');
-      lines.push('// ─── Links ─────────────────────────────────');
-      for (const e of es) {
-        const f = ns.find(n => n.id === e.from);
-        const t = ns.find(n => n.id === e.to);
-        if (f && t) lines.push(`${f.varName}.next = ${t.varName};`);
-      }
-    }
-    const hn = ns.find(n => n.id === hId);
-    const tn = ns.find(n => n.id === tId);
-    if (hn || tn) {
-      lines.push('');
-      lines.push('// ─── Pointers ──────────────────────────────');
-      if (hn) lines.push(`Node head = ${hn.varName};`);
-      if (tn) lines.push(`Node tail = ${tn.varName};`);
-    }
-    return lines.join('\n');
-  }
-
-  function generatePython(ns, es, hId, tId) {
-    if (ns.length === 0) return '# Add nodes to generate code';
-    const lines = [];
-    lines.push('# ─── Node class ───────────────────────────');
-    lines.push('class Node:');
-    lines.push('    def __init__(self, data=None):');
-    lines.push('        self.data = data');
-    lines.push('        self.next = None');
-    lines.push('');
-    lines.push('# ─── Nodes ─────────────────────────────────');
-    for (const n of ns) {
-      const d = formatPythonData(n.data);
-      lines.push(`${n.varName} = Node(${d ?? ''})`);
-    }
-    if (es.length > 0) {
-      lines.push('');
-      lines.push('# ─── Links ─────────────────────────────────');
-      for (const e of es) {
-        const f = ns.find(n => n.id === e.from);
-        const t = ns.find(n => n.id === e.to);
-        if (f && t) lines.push(`${f.varName}.next = ${t.varName}`);
-      }
-    }
-    const hn = ns.find(n => n.id === hId);
-    const tn = ns.find(n => n.id === tId);
-    if (hn || tn) {
-      lines.push('');
-      lines.push('# ─── Pointers ──────────────────────────────');
-      if (hn) lines.push(`head = ${hn.varName}`);
-      if (tn) lines.push(`tail = ${tn.varName}`);
-    }
-    return lines.join('\n');
-  }
-
-  $: code = lang === 'java'
-    ? generateJava($nodes, $edges, $headId, $tailId)
-    : generatePython($nodes, $edges, $headId, $tailId);
-
-  const JAVA_KW   = new Set(['class','new','int','double','String','void','null','this','Node','return']);
+  const JAVA_KW   = new Set(['class','new','int','double','String','void','null','this','Node','return','head','tail']);
   const PYTHON_KW = new Set(['class','def','self','None','True','False','return','import','from','if','else','elif','and','or','not','in']);
 
   function highlight(raw, language) {
@@ -167,12 +59,25 @@
     }).join('');
   }
 
-  $: highlighted = highlight(code, lang);
+  // Flatten all lines with line numbers and freshness
+  $: flatLines = (() => {
+    let lineNum = 1;
+    const result = [];
+    for (const entry of $codeLog) {
+      for (const line of entry.lines) {
+        result.push({ lineNum: lineNum++, text: line, fresh: entry.fresh });
+      }
+    }
+    return result;
+  })();
+
+  // Full code string for copy
+  $: fullCode = $codeLog.flatMap(e => e.lines).join('\n');
 
   let copied = false;
   let copyTimer;
   function handleCopy() {
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(fullCode);
     copied = true;
     clearTimeout(copyTimer);
     copyTimer = setTimeout(() => copied = false, 2000);
@@ -204,13 +109,28 @@
       {/if}
     </button>
   </div>
-  <div class="code-body">
-    <pre><code>{@html highlighted}</code></pre>
+
+  <div class="code-body" bind:this={codeBodyEl}>
+    {#if flatLines.length === 0}
+      <div class="empty-code">// Perform actions on the canvas to generate code</div>
+    {:else}
+      <table class="code-table">
+        <tbody>
+          {#each flatLines as line (line.lineNum)}
+            <tr class="code-row" class:fresh={line.fresh}>
+              <td class="line-num">{line.lineNum}</td>
+              <td class="line-code">{@html highlight(line.text, lang)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {/if}
   </div>
 </div>
 
 <style>
   .code-panel { display: flex; flex-direction: column; height: 100%; background: var(--code-bg); overflow: hidden; }
+
   .code-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .lang-tabs { display: flex; gap: 2px; }
   .lang-tab { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 500; cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
@@ -219,11 +139,48 @@
   .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .java-dot { background: var(--warning); }
   .python-dot { background: #4b8bbe; }
+
   .copy-btn { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--text-dim); font-family: var(--font-ui); font-size: 12px; padding: 4px 8px; cursor: pointer; transition: all 0.15s; min-width: 70px; justify-content: center; margin-bottom: 6px; }
   .copy-btn:hover { background: var(--border); color: var(--text); }
   .copy-btn.copied { background: rgba(78,204,163,0.12); border-color: var(--success); color: var(--success); }
-  .code-body { flex: 1; overflow: auto; padding: 16px; }
-  pre { margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--text-dim); white-space: pre; }
+
+  .code-body { flex: 1; overflow: auto; padding: 8px 0; }
+
+  .empty-code { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-style: italic; padding: 16px 20px; }
+
+  .code-table { width: 100%; border-collapse: collapse; }
+
+  .code-row { transition: background 0.2s; }
+  .code-row:hover { background: rgba(255,255,255,0.03); }
+  .code-row.fresh { background: rgba(91,143,255,0.10); animation: flashIn 0.4s ease; }
+
+  @keyframes flashIn {
+    from { background: rgba(91,143,255,0.28); }
+    to   { background: rgba(91,143,255,0.10); }
+  }
+
+  .line-num {
+    width: 40px;
+    min-width: 40px;
+    text-align: right;
+    padding: 1px 12px 1px 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    user-select: none;
+    vertical-align: top;
+    border-right: 1px solid var(--border);
+  }
+
+  .line-code {
+    padding: 1px 16px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text-dim);
+    white-space: pre;
+  }
+
   :global(.kw)  { color: #c792ea; font-weight: 500; }
   :global(.num) { color: #f78c6c; }
   :global(.str) { color: #c3e88d; }

@@ -1,7 +1,8 @@
 <script>
-  import { createNode, addNode, getSnapshot, applySnapshot } from '../stores/graph.js';
+  import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
   import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
   import { nodes } from '../stores/graph.js';
+  import { clearLog } from '../stores/codeLog.js';
 
   function handleAddNode() {
     pushHistory();
@@ -16,7 +17,18 @@
       if (!ok) return;
     }
     applySnapshot({ nodes: [], edges: [], headId: null, tailId: null, counter: 0 });
+    clearLog();
     initHistory();
+  }
+
+  function handleGC() {
+    pushHistory();
+    const removed = garbageCollect();
+    if (!removed) {
+      // Brief visual feedback — nothing to collect
+      alert('No unreachable nodes to collect.');
+    }
+    pushHistory();
   }
 
   function handleSave() {
@@ -75,6 +87,16 @@
       Add Node
     </button>
 
+    <button class="btn btn-gc" on:click={handleGC} title="Simulate garbage collection — removes all unreachable nodes">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M9 2h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Run GC
+    </button>
+
     <div class="separator"></div>
 
     <button class="btn btn-icon" on:click={undo} disabled={!$canUndo} title="Undo (Ctrl+Z)">
@@ -92,7 +114,7 @@
 
     <div class="separator"></div>
 
-    <button class="btn btn-secondary" on:click={handleNewCanvas} title="New canvas">
+    <button class="btn btn-secondary" on:click={handleNewCanvas}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
         <path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -117,17 +139,7 @@
 </div>
 
 <style>
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    height: 52px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    gap: 12px;
-  }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand-icon-img { width: 28px; height: 28px; flex-shrink: 0; }
   .brand-name { font-family: var(--font-ui); font-weight: 800; font-size: 18px; letter-spacing: -0.5px; color: var(--text); }
@@ -138,6 +150,8 @@
   .btn:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-primary:hover:not(:disabled) { background: #6f9fff; box-shadow: 0 0 16px var(--accent-glow); }
+  .btn-gc { background: rgba(78,204,163,0.12); color: var(--success); border: 1px solid rgba(78,204,163,0.3); }
+  .btn-gc:hover { background: rgba(78,204,163,0.22); box-shadow: 0 0 12px rgba(78,204,163,0.2); }
   .btn-secondary { background: var(--surface2); color: var(--text-dim); border-color: var(--border); }
   .btn-secondary:hover:not(:disabled) { background: var(--border); color: var(--text); }
   .btn-icon { background: var(--surface2); color: var(--text-dim); border-color: var(--border); padding: 6px 8px; }

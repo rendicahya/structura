@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { nodes, edges, updateNode, removeNode, connectNodes, disconnectNode, headId, tailId, setHead, setTail } from '../stores/graph.js';
+  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, setHead, setTail } from '../stores/graph.js';
   import { pushHistory, undo, redo } from '../stores/history.js';
   import { createNode, addNode } from '../stores/graph.js';
   import NodeComponent from './NodeComponent.svelte';
@@ -160,13 +160,6 @@
     contextMenu = null;
   }
 
-  function onMenuDelete() {
-    pushHistory();
-    removeNode(contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
-  }
-
   function onMenuDisconnect() {
     pushHistory();
     disconnectNode(contextMenu.node.id);
@@ -210,6 +203,13 @@
       e.preventDefault();
       e.returnValue = '';
     }
+  }
+
+  function onMenuUnlink() {
+    pushHistory();
+    removeNodeFromList(contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
   }
 
   onMount(() => {
@@ -317,10 +317,10 @@
     on:close={onMenuClose}
     on:rename={onMenuRename}
     on:editData={onMenuEditData}
-    on:delete={onMenuDelete}
     on:disconnect={onMenuDisconnect}
     on:setHead={onMenuSetHead}
     on:setTail={onMenuSetTail}
+    on:unlink={onMenuUnlink}
   />
 {/if}
 
