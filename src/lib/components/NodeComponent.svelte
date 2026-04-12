@@ -25,6 +25,7 @@
 
   function onContextMenu(e) {
     e.preventDefault();
+    e.stopPropagation();  // ← tambah ini
     dispatch('contextmenu', { e, node });
   }
 
