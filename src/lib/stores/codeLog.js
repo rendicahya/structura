@@ -1,15 +1,16 @@
 import { writable } from 'svelte/store';
 
-export const codeLog = writable([]); // [{ id, lines: string[], fresh: bool }]
+export const codeLog = writable([]);
 
 let opCounter = 0;
 
-export function logOp(lines) {
+export function logOp(java, python) {
   const id = `op_${++opCounter}`;
-  // Mark all previous as not fresh
+  const javaLines   = Array.isArray(java)   ? java   : [java];
+  const pythonLines = Array.isArray(python) ? python : [python ?? java];
   codeLog.update(log => [
     ...log.map(e => ({ ...e, fresh: false })),
-    { id, lines: Array.isArray(lines) ? lines : [lines], fresh: true }
+    { id, java: javaLines, python: pythonLines, fresh: true }
   ]);
 }
 

@@ -5,7 +5,6 @@
   let lang = 'java';
   let codeBodyEl;
 
-  // Auto-scroll to bottom when new op added
   afterUpdate(() => {
     if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
   });
@@ -59,20 +58,21 @@
     }).join('');
   }
 
-  // Flatten all lines with line numbers and freshness
   $: flatLines = (() => {
     let lineNum = 1;
     const result = [];
     for (const entry of $codeLog) {
-      for (const line of entry.lines) {
+      const lines = lang === 'java' ? entry.java : (entry.python ?? entry.java);
+      for (const line of lines) {
         result.push({ lineNum: lineNum++, text: line, fresh: entry.fresh });
       }
     }
     return result;
   })();
 
-  // Full code string for copy
-  $: fullCode = $codeLog.flatMap(e => e.lines).join('\n');
+  $: fullCode = $codeLog
+    .flatMap(e => lang === 'java' ? e.java : (e.python ?? e.java))
+    .join('\n');
 
   let copied = false;
   let copyTimer;
