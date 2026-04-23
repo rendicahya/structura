@@ -4,11 +4,12 @@
   export let toX = 0;
   export let toY = 0;
   export let pending = false;
+  export let type = 'next'; // 'next' | 'prev'
 
   $: cx = (fromX + toX) / 2;
   $: cy = Math.min(fromY, toY) - 40;
-  $: color = pending ? '#f0b429' : '#5b8fff';
-  $: markerId = pending ? 'arrow-pending' : 'arrow-solid';
+  $: color = pending ? '#f0b429' : type === 'prev' ? '#c792ea' : '#5b8fff';
+  $: markerId = pending ? 'arrow-pending' : type === 'prev' ? 'arrow-prev' : 'arrow-solid';
 </script>
 
 <g class="edge">

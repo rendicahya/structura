@@ -1,20 +1,39 @@
 <script>
   import { onMount } from 'svelte';
   import Toolbar from './lib/components/Toolbar.svelte';
+  import ToolbarDLL from './lib/components/ToolbarDLL.svelte';
   import Canvas from './lib/components/Canvas.svelte';
+  import CanvasDLL from './lib/components/CanvasDLL.svelte';
   import CodePanel from './lib/components/CodePanel.svelte';
+  import CodePanelDLL from './lib/components/CodePanelDLL.svelte';
   import { initHistory } from './lib/stores/history.js';
 
-  onMount(() => { initHistory(); });
+  onMount(() => {
+    initHistory();
+    // Set default hash
+    if (!location.hash || location.hash === '#') {
+      location.hash = '#/linked-list';
+    }
+    page = location.hash;
+    window.addEventListener('hashchange', () => { page = location.hash; });
+  });
 
+  let page = '#/linked-list';
+
+  $: isSLL = page === '#/linked-list';
+  $: isDLL = page === '#/doubly-linked-list';
+
+  // Resizable splitter
   let splitPos = 62;
   let draggingSplitter = false;
   let containerEl;
   let codeHidden = false;
-
-  // Zoom dikelola Canvas, tapi Toolbar perlu tahu nilainya
-  // Pakai binding lewat komponen Canvas via bind:zoom
   let zoom = 1;
+
+  const ZOOM_STEP = 0.1;
+  function zoomIn()    { zoom = Math.min(2,   +(zoom + ZOOM_STEP).toFixed(2)); }
+  function zoomOut()   { zoom = Math.max(0.3, +(zoom - ZOOM_STEP).toFixed(2)); }
+  function zoomReset() { zoom = 1; }
 
   function onSplitterMousedown(e) {
     draggingSplitter = true;
@@ -29,36 +48,53 @@
   }
 
   function onWindowMouseup() { draggingSplitter = false; }
+
+  function navigate(hash) {
+    location.hash = hash;
+    // Reset zoom saat ganti halaman
+    zoom = 1;
+  }
 </script>
 
 <svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
 
 <div id="app">
-  <Toolbar
-    {zoom}
-    zoomIn={() => zoom = Math.min(2, +(zoom + 0.1).toFixed(2))}
-    zoomOut={() => zoom = Math.max(0.3, +(zoom - 0.1).toFixed(2))}
-    zoomReset={() => zoom = 1}
-    {codeHidden}
-    on:toggleCode={() => codeHidden = !codeHidden}
-  />
+  <!-- Nav tabs -->
+  <nav class="page-nav">
+    <button class="nav-tab" class:active={isSLL} on:click={() => navigate('#/linked-list')}>
+      Linked List
+    </button>
+    <button class="nav-tab" class:active={isDLL} on:click={() => navigate('#/doubly-linked-list')}>
+      Doubly Linked List
+    </button>
+  </nav>
+
+  {#if isSLL}
+    <Toolbar {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
+  {:else}
+    <ToolbarDLL {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
+  {/if}
+
   <div class="workspace" bind:this={containerEl}>
     <div class="panel canvas-panel" style={codeHidden ? 'width:100%' : `width:${splitPos}%`}>
-      <Canvas bind:zoom />
+      {#if isSLL}
+        <Canvas bind:zoom />
+      {:else}
+        <CanvasDLL bind:zoom />
+      {/if}
     </div>
 
     {#if !codeHidden}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <div
-        class="splitter"
-        class:active={draggingSplitter}
-        on:mousedown={onSplitterMousedown}
-      >
+      <div class="splitter" class:active={draggingSplitter} on:mousedown={onSplitterMousedown}>
         <div class="splitter-handle"></div>
       </div>
-
       <div class="panel code-panel-wrap" style="width:{100 - splitPos}%">
-        <CodePanel />
+        {#if isSLL}
+          <CodePanel />
+        {:else}
+          <CodePanelDLL />
+        {/if}
       </div>
     {/if}
   </div>
@@ -66,11 +102,42 @@
 
 <style>
   #app { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; }
+
+  .page-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 20px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .nav-tab {
+    padding: 6px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+    border-radius: 6px 6px 0 0;
+  }
+  .nav-tab:hover { color: var(--text-dim); }
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
   .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
   .panel { height: 100%; overflow: hidden; flex-shrink: 0; }
   .canvas-panel { position: relative; }
   .code-panel-wrap { position: relative; }
-  .splitter { width: 5px; height: 100%; background: var(--border); cursor: col-resize; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10; }
+  .splitter { width: 5px; height: 100%; background: var(--border); cursor: col-resize; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10; }
   .splitter:hover, .splitter.active { background: var(--accent-dim); }
   .splitter-handle { width: 3px; height: 32px; border-radius: 2px; background: var(--border-bright); transition: background 0.15s; }
   .splitter:hover .splitter-handle, .splitter.active .splitter-handle { background: var(--accent); }
