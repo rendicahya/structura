@@ -6,6 +6,7 @@
   export let node = null;
   export let isHead = false;
   export let isTail = false;
+  export let isWalk = false;
 
   const dispatch = createEventDispatcher();
 
@@ -28,6 +29,8 @@
     editingVarName = true;
     setTimeout(() => varNameInput?.focus(), 10);
   }
+
+  function handleSetWalk() { dispatch('setWalk'); close(); }
 
   function handleEditData() {
     editingData = true;
@@ -129,6 +132,15 @@
         <path d="M8.5 6.5h-4M6.5 4.5l-2 2 2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       {isTail ? '✓ Tail (unset)' : 'Set as tail'}
+    </button>
+
+    <button class="menu-item walk-item" on:click={handleSetWalk}>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+        <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor"/>
+        <path d="M6.5 2V1M6.5 12v-1M2 6.5H1M12 6.5h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      {isWalk ? '✓ Walk (unset)' : 'Set as walk'}
     </button>
 
     {#if node?.nextId}
@@ -266,4 +278,6 @@
     align-self: flex-end;
   }
   .btn-confirm:hover { background: #6f9fff; }
+  .menu-item.walk-item      { color: #fb923c; }
+  .menu-item.walk-item:hover{ background: rgba(251,146,60,0.08); color: #fb923c; }
 </style>

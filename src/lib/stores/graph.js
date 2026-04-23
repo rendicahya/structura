@@ -5,6 +5,7 @@ export const nodes = writable([]);
 export const edges = writable([]);
 export const headId = writable(null);
 export const tailId = writable(null);
+export const walkId = writable(null);
 
 let nodeCounter = 0;
 
@@ -20,6 +21,17 @@ export function addNode(node, silent = false) {
     `Node ${node.varName} = new Node();`,
     `${node.varName} = Node()`
   );
+}
+
+export function setWalk(nodeId) {
+  walkId.set(nodeId);
+  const ns = get(nodes);
+  const node = ns.find(n => n.id === nodeId);
+  if (node) logOp(
+    `Node walk = ${node.varName};`,
+    `walk = ${node.varName}`
+  );
+  else logOp(`// walk unset`, `# walk unset`);
 }
 
 export function removeNodeFromList(nodeId) {
@@ -49,6 +61,7 @@ export function removeNodeFromList(nodeId) {
   nodes.update(ns => ns.map(n => n.id === nodeId ? { ...n, nextId: null } : n));
   headId.update(id => id === nodeId ? null : id);
   tailId.update(id => id === nodeId ? null : id);
+  walkId.update(id => id === nodeId ? null : id);
 
   if (javaOps.length > 0) logOp(javaOps, pyOps);
 }
@@ -173,7 +186,9 @@ export function getSnapshot() {
     edges: JSON.parse(JSON.stringify(get(edges))),
     headId: get(headId),
     tailId: get(tailId),
+    walkId: get(walkId),
     counter: nodeCounter,
+    codeLog: JSON.parse(JSON.stringify(get(codeLog))),
   };
 }
 
@@ -183,4 +198,6 @@ export function applySnapshot(snapshot) {
   edges.set(snapshot.edges ?? []);
   headId.set(snapshot.headId ?? null);
   tailId.set(snapshot.tailId ?? null);
+  walkId.set(snapshot.walkId ?? null);
+  codeLog.set(snapshot.codeLog ?? []);
 }
