@@ -7,21 +7,14 @@
 
   onMount(() => { initHistory(); });
 
-  // Resizable splitter
   let splitPos = 62;
   let draggingSplitter = false;
   let containerEl;
   let codeHidden = false;
 
-  // Zoom
+  // Zoom dikelola Canvas, tapi Toolbar perlu tahu nilainya
+  // Pakai binding lewat komponen Canvas via bind:zoom
   let zoom = 1;
-  const ZOOM_STEP = 0.1;
-  const ZOOM_MIN  = 0.3;
-  const ZOOM_MAX  = 2;
-
-  function zoomIn()    { zoom = Math.min(ZOOM_MAX, +(zoom + ZOOM_STEP).toFixed(2)); }
-  function zoomOut()   { zoom = Math.max(ZOOM_MIN, +(zoom - ZOOM_STEP).toFixed(2)); }
-  function zoomReset() { zoom = 1; }
 
   function onSplitterMousedown(e) {
     draggingSplitter = true;
@@ -41,10 +34,17 @@
 <svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
 
 <div id="app">
-  <Toolbar {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
+  <Toolbar
+    {zoom}
+    zoomIn={() => zoom = Math.min(2, +(zoom + 0.1).toFixed(2))}
+    zoomOut={() => zoom = Math.max(0.3, +(zoom - 0.1).toFixed(2))}
+    zoomReset={() => zoom = 1}
+    {codeHidden}
+    on:toggleCode={() => codeHidden = !codeHidden}
+  />
   <div class="workspace" bind:this={containerEl}>
     <div class="panel canvas-panel" style={codeHidden ? 'width:100%' : `width:${splitPos}%`}>
-      <Canvas {zoom} />
+      <Canvas bind:zoom />
     </div>
 
     {#if !codeHidden}

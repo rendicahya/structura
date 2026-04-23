@@ -9,6 +9,9 @@
 
   const NODE_W = 130;
   const NODE_H = 64;
+  const ZOOM_STEP = 0.1;
+  const ZOOM_MIN  = 0.3;
+  const ZOOM_MAX  = 2;
 
   export let zoom = 1;
 
@@ -36,6 +39,23 @@
   let panStartY = 0;
 
   let spaceDown = false;
+
+  function onWheel(e) {
+    e.preventDefault();
+    const rect = svgEl.getBoundingClientRect();
+
+    // Posisi mouse relatif ke SVG sebelum zoom
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+    const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)));
+
+    // Adjust pan agar titik di bawah mouse tidak bergeser
+    panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+    panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+    zoom = newZoom;
+  }
 
   function getSVGPoint(clientX, clientY) {
     const rect = svgEl.getBoundingClientRect();
@@ -258,10 +278,12 @@
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('keyup', onKeyup);
     window.addEventListener('beforeunload', onBeforeUnload);
+    svgEl.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('keyup', onKeyup);
       window.removeEventListener('beforeunload', onBeforeUnload);
+      svgEl.removeEventListener('wheel', onWheel);
     };
   });
 </script>
