@@ -81,6 +81,7 @@
     <div class="menu-badges">
       {#if isHead}<span class="badge head">HEAD</span>{/if}
       {#if isTail}<span class="badge tail">TAIL</span>{/if}
+      {#if isWalk}<span class="badge walk">WALK</span>{/if}
     </div>
   </div>
 
@@ -280,4 +281,5 @@
   .btn-confirm:hover { background: #6f9fff; }
   .menu-item.walk-item      { color: #fb923c; }
   .menu-item.walk-item:hover{ background: rgba(251,146,60,0.08); color: #fb923c; }
+  .badge.walk { background: rgba(251,146,60,0.15); color: #fb923c; }
 </style>

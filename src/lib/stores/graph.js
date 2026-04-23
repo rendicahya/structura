@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import { logOp } from './codeLog.js';
+import { logOp, codeLog } from './codeLog.js';
 
 export const nodes = writable([]);
 export const edges = writable([]);

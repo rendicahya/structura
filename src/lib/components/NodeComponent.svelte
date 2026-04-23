@@ -6,6 +6,7 @@
   export let connecting = false;
   export let isHead = false;
   export let isTail = false;
+  export let isWalk = false;
 
   const dispatch = createEventDispatcher();
 
@@ -64,6 +65,12 @@
     ? -(BADGE_H + ARROW_LEN) * 2 - 4               // stacked above head badge
     : -(BADGE_H + ARROW_LEN);
   $: badgeCenterX = W / 2;
+  $: walkBadgeY = (() => {
+    let y = -(BADGE_H + ARROW_LEN);
+    if (isHead) y -= (BADGE_H + ARROW_LEN + 4);
+    if (isTail) y -= (BADGE_H + ARROW_LEN + 4);
+    return y;
+  })();
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -77,6 +84,42 @@
   on:mouseup={onNodeMouseup}
   on:dblclick={onDblClick}
 >
+
+{#if isWalk}
+  <line
+    x1={badgeCenterX}
+    y1={walkBadgeY + BADGE_H}
+    x2={badgeCenterX}
+    y2={isHead ? headBadgeY : isTail ? tailBadgeY : 0}
+    stroke="#fb923c"
+    stroke-width="1.5"
+  />
+  <polygon
+    points="{badgeCenterX - 4},{isHead ? headBadgeY - 6 : isTail ? tailBadgeY - 6 : -6} {badgeCenterX + 4},{isHead ? headBadgeY - 6 : isTail ? tailBadgeY - 6 : -6} {badgeCenterX},{isHead ? headBadgeY : isTail ? tailBadgeY : 0}"
+    fill="#fb923c"
+  />
+  <rect
+    x={badgeCenterX - BADGE_W / 2}
+    y={walkBadgeY}
+    width={BADGE_W}
+    height={BADGE_H}
+    rx="5"
+    fill="rgba(251,146,60,0.15)"
+    stroke="#fb923c"
+    stroke-width="1.2"
+  />
+  <text
+    x={badgeCenterX}
+    y={walkBadgeY + 13}
+    text-anchor="middle"
+    font-family="var(--font-mono)"
+    font-size="9"
+    font-weight="700"
+    fill="#fb923c"
+    letter-spacing="0.8"
+  >WALK</text>
+{/if}
+
   <!-- ── HEAD badge ── -->
   {#if isHead}
     <!-- Arrow from badge bottom to node top -->

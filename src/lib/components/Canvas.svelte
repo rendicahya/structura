@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, setHead, setTail } from '../stores/graph.js';
+  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, walkId, setHead, setTail, setWalk } from '../stores/graph.js';
   import { pushHistory, undo, redo } from '../stores/history.js';
   import { createNode, addNode } from '../stores/graph.js';
   import NodeComponent from './NodeComponent.svelte';
@@ -28,15 +28,29 @@
   let inlineEdit = null;
   let inlineInputEl;
 
+  // Pan state
+  let panX = 0;
+  let panY = 0;
+  let panning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+
+  let spaceDown = false;
+
   function getSVGPoint(clientX, clientY) {
     const rect = svgEl.getBoundingClientRect();
     return {
-      x: (clientX - rect.left) / zoom,
-      y: (clientY - rect.top)  / zoom,
+      x: (clientX - rect.left - panX) / zoom,
+      y: (clientY - rect.top  - panY) / zoom,
     };
   }
 
   function onWindowMousemove(e) {
+    if (panning) {
+      panX = e.clientX - panStartX;
+      panY = e.clientY - panStartY;
+      return;
+    }
     if (dragging) {
       const pt = getSVGPoint(e.clientX, e.clientY);
       updateNode(dragging.nodeId, {
@@ -52,12 +66,20 @@
   }
 
   function onWindowMouseup() {
+    if (panning) { panning = false; return; }
     if (dragging) { pushHistory(); dragging = null; }
     if (pendingFrom !== null) { pendingFrom = null; }
   }
 
   function onSVGMousedown(e) {
     canvasContextMenu = null;
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+      e.preventDefault();
+      panning = true;
+      panStartX = e.clientX - panX;
+      panStartY = e.clientY - panY;
+      return;
+    }
     if (e.target === svgEl || e.target.tagName === 'svg') {
       selectedNodeId = null;
       contextMenu = null;
@@ -199,8 +221,16 @@
   }
 
   function onKeydown(e) {
+    if (e.key === ' ' && !e.target.closest('input')) {
+      e.preventDefault();
+      spaceDown = true;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
+  }
+
+  function onKeyup(e) {
+    if (e.key === ' ') spaceDown = false;
   }
 
   function onBeforeUnload(e) {
@@ -217,11 +247,20 @@
     contextMenu = null;
   }
 
+  function onMenuSetWalk() {
+    pushHistory();
+    setWalk($walkId === contextMenu.node.id ? null : contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
+  }
+
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
+    window.addEventListener('keyup', onKeyup);
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => {
       window.removeEventListener('keydown', onKeydown);
+      window.removeEventListener('keyup', onKeyup);
       window.removeEventListener('beforeunload', onBeforeUnload);
     };
   });
@@ -234,6 +273,7 @@
   <svg
     bind:this={svgEl}
     class="canvas-svg"
+    class:panning={spaceDown || panning}
     on:mousedown={onSVGMousedown}
     on:contextmenu={onSVGContextMenu}
   >
@@ -251,7 +291,7 @@
 
     <rect width="100%" height="100%" fill="url(#grid)" />
 
-    <g transform="scale({zoom})" style="transform-origin: 0 0;">
+    <g transform="translate({panX}, {panY}) scale({zoom})">
       {#each $edges as edge (edge.from + '-' + edge.to)}
         {#if edgePos(edge, $nodes)}
           {@const pos = edgePos(edge, $nodes)}
@@ -279,6 +319,7 @@
           connecting={pendingFrom === node.id}
           isHead={$headId === node.id}
           isTail={$tailId === node.id}
+          isWalk={$walkId === node.id}
           on:dragstart={onNodeDragstart}
           on:portdragstart={onPortDragstart}
           on:connecttarget={onConnectTarget}
@@ -321,6 +362,7 @@
     node={$nodes.find(n => n.id === contextMenu.node.id)}
     isHead={$headId === contextMenu.node.id}
     isTail={$tailId === contextMenu.node.id}
+    isWalk={$walkId === contextMenu.node.id}
     on:close={onMenuClose}
     on:rename={onMenuRename}
     on:editData={onMenuEditData}
@@ -328,6 +370,7 @@
     on:setHead={onMenuSetHead}
     on:setTail={onMenuSetTail}
     on:unlink={onMenuUnlink}
+    on:setWalk={onMenuSetWalk}
   />
 {/if}
 
@@ -428,4 +471,6 @@
     transition: all 0.1s;
   }
   .ctx-item:hover { background: var(--surface2); color: var(--text); }
+  .canvas-svg.panning { cursor: grab; }
+  .canvas-svg.panning:active { cursor: grabbing; }
 </style>
