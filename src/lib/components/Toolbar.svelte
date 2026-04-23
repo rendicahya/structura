@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
-  import { pushHistory, initHistory, canUndo, canRedo } from '../stores/history.js';
+  import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
   import { nodes } from '../stores/graph.js';
   import { clearLog } from '../stores/codeLog.js';
 
