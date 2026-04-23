@@ -67,7 +67,7 @@
 <style>
   #app { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; }
   .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
-  .panel { height: 100%; overflow: hidden; flex-shrink: 0; transition: width 0.2s ease; }
+  .panel { height: 100%; overflow: hidden; flex-shrink: 0; }
   .canvas-panel { position: relative; }
   .code-panel-wrap { position: relative; }
   .splitter { width: 5px; height: 100%; background: var(--border); cursor: col-resize; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10; }
