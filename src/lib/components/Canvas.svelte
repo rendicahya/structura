@@ -10,6 +10,8 @@
   const NODE_W = 130;
   const NODE_H = 64;
 
+  export let zoom = 1;
+
   let dragging = null;
   let svgEl;
   let wrapperEl;
@@ -28,7 +30,10 @@
 
   function getSVGPoint(clientX, clientY) {
     const rect = svgEl.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    return {
+      x: (clientX - rect.left) / zoom,
+      y: (clientY - rect.top)  / zoom,
+    };
   }
 
   function onWindowMousemove(e) {
@@ -122,8 +127,8 @@
     const svgRect = svgEl.getBoundingClientRect();
     inlineEdit = {
       nodeId: node.id,
-      x: svgRect.left + node.x,
-      y: svgRect.top + node.y + 32,
+      x: svgRect.left + node.x * zoom,
+      y: svgRect.top  + node.y * zoom + 32 * zoom,
       value: node.data,
     };
     setTimeout(() => { inlineInputEl?.focus(); inlineInputEl?.select(); }, 10);
@@ -246,40 +251,42 @@
 
     <rect width="100%" height="100%" fill="url(#grid)" />
 
-    {#each $edges as edge (edge.from + '-' + edge.to)}
-      {#if edgePos(edge, $nodes)}
-        {@const pos = edgePos(edge, $nodes)}
-        <EdgeComponent {...pos} />
-      {/if}
-    {/each}
+    <g transform="scale({zoom})" style="transform-origin: 0 0;">
+      {#each $edges as edge (edge.from + '-' + edge.to)}
+        {#if edgePos(edge, $nodes)}
+          {@const pos = edgePos(edge, $nodes)}
+          <EdgeComponent {...pos} />
+        {/if}
+      {/each}
 
-    {#if pendingFrom !== null}
-      {#if $nodes.find(n => n.id === pendingFrom)}
-        {@const from = $nodes.find(n => n.id === pendingFrom)}
-        <EdgeComponent
-          fromX={from.x + NODE_W - 8}
-          fromY={from.y + NODE_H / 2}
-          toX={pendingX}
-          toY={pendingY}
-          pending={true}
+      {#if pendingFrom !== null}
+        {#if $nodes.find(n => n.id === pendingFrom)}
+          {@const from = $nodes.find(n => n.id === pendingFrom)}
+          <EdgeComponent
+            fromX={from.x + NODE_W - 8}
+            fromY={from.y + NODE_H / 2}
+            toX={pendingX}
+            toY={pendingY}
+            pending={true}
+          />
+        {/if}
+      {/if}
+
+      {#each $nodes as node (node.id)}
+        <NodeComponent
+          {node}
+          selected={selectedNodeId === node.id}
+          connecting={pendingFrom === node.id}
+          isHead={$headId === node.id}
+          isTail={$tailId === node.id}
+          on:dragstart={onNodeDragstart}
+          on:portdragstart={onPortDragstart}
+          on:connecttarget={onConnectTarget}
+          on:contextmenu={onContextMenu}
+          on:dblclick={onNodeDblClick}
         />
-      {/if}
-    {/if}
-
-    {#each $nodes as node (node.id)}
-      <NodeComponent
-        {node}
-        selected={selectedNodeId === node.id}
-        connecting={pendingFrom === node.id}
-        isHead={$headId === node.id}
-        isTail={$tailId === node.id}
-        on:dragstart={onNodeDragstart}
-        on:portdragstart={onPortDragstart}
-        on:connecttarget={onConnectTarget}
-        on:contextmenu={onContextMenu}
-        on:dblclick={onNodeDblClick}
-      />
-    {/each}
+      {/each}
+    </g>
   </svg>
 
   {#if inlineEdit}

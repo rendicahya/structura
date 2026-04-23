@@ -8,9 +8,20 @@
   onMount(() => { initHistory(); });
 
   // Resizable splitter
-  let splitPos = 62; // percent
+  let splitPos = 62;
   let draggingSplitter = false;
   let containerEl;
+  let codeHidden = false;
+
+  // Zoom
+  let zoom = 1;
+  const ZOOM_STEP = 0.1;
+  const ZOOM_MIN  = 0.3;
+  const ZOOM_MAX  = 2;
+
+  function zoomIn()    { zoom = Math.min(ZOOM_MAX, +(zoom + ZOOM_STEP).toFixed(2)); }
+  function zoomOut()   { zoom = Math.max(ZOOM_MIN, +(zoom - ZOOM_STEP).toFixed(2)); }
+  function zoomReset() { zoom = 1; }
 
   function onSplitterMousedown(e) {
     draggingSplitter = true;
@@ -27,86 +38,40 @@
   function onWindowMouseup() { draggingSplitter = false; }
 </script>
 
-<svelte:window
-  on:mousemove={onWindowMousemove}
-  on:mouseup={onWindowMouseup}
-/>
+<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
 
 <div id="app">
-  <Toolbar />
+  <Toolbar {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
   <div class="workspace" bind:this={containerEl}>
-    <div class="panel canvas-panel" style="width: {splitPos}%">
-      <Canvas />
+    <div class="panel canvas-panel" style={codeHidden ? 'width:100%' : `width:${splitPos}%`}>
+      <Canvas {zoom} />
     </div>
 
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div
-      class="splitter"
-      class:active={draggingSplitter}
-      on:mousedown={onSplitterMousedown}
-    >
-      <div class="splitter-handle"></div>
-    </div>
+    {#if !codeHidden}
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div
+        class="splitter"
+        class:active={draggingSplitter}
+        on:mousedown={onSplitterMousedown}
+      >
+        <div class="splitter-handle"></div>
+      </div>
 
-    <div class="panel code-panel-wrap" style="width: {100 - splitPos}%">
-      <CodePanel />
-    </div>
+      <div class="panel code-panel-wrap" style="width:{100 - splitPos}%">
+        <CodePanel />
+      </div>
+    {/if}
   </div>
 </div>
 
 <style>
-  #app {
-    display: flex;
-    flex-direction: column;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .workspace {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .panel {
-    height: 100%;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
+  #app { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; }
+  .workspace { display: flex; flex: 1; overflow: hidden; position: relative; }
+  .panel { height: 100%; overflow: hidden; flex-shrink: 0; transition: width 0.2s ease; }
   .canvas-panel { position: relative; }
   .code-panel-wrap { position: relative; }
-
-  .splitter {
-    width: 5px;
-    height: 100%;
-    background: var(--border);
-    cursor: col-resize;
-    flex-shrink: 0;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-    z-index: 10;
-  }
-
-  .splitter:hover, .splitter.active {
-    background: var(--accent-dim);
-  }
-
-  .splitter-handle {
-    width: 3px;
-    height: 32px;
-    border-radius: 2px;
-    background: var(--border-bright);
-    transition: background 0.15s;
-  }
-
-  .splitter:hover .splitter-handle,
-  .splitter.active .splitter-handle {
-    background: var(--accent);
-  }
+  .splitter { width: 5px; height: 100%; background: var(--border); cursor: col-resize; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 10; }
+  .splitter:hover, .splitter.active { background: var(--accent-dim); }
+  .splitter-handle { width: 3px; height: 32px; border-radius: 2px; background: var(--border-bright); transition: background 0.15s; }
+  .splitter:hover .splitter-handle, .splitter.active .splitter-handle { background: var(--accent); }
 </style>

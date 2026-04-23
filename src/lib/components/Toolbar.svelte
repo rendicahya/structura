@@ -1,8 +1,17 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
-  import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
+  import { pushHistory, initHistory, canUndo, canRedo } from '../stores/history.js';
   import { nodes } from '../stores/graph.js';
   import { clearLog } from '../stores/codeLog.js';
+
+  export let zoom = 1;
+  export let zoomIn;
+  export let zoomOut;
+  export let zoomReset;
+  export let codeHidden = false;
+
+  const dispatch = createEventDispatcher();
 
   function handleAddNode() {
     pushHistory();
@@ -23,11 +32,7 @@
 
   function handleGC() {
     pushHistory();
-    const removed = garbageCollect();
-    if (!removed) {
-      // Brief visual feedback — nothing to collect
-      alert('No unreachable nodes to collect.');
-    }
+    garbageCollect();
     pushHistory();
   }
 
@@ -58,6 +63,8 @@
     };
     input.click();
   }
+
+  $: zoomPct = Math.round(zoom * 100) + '%';
 </script>
 
 <div class="toolbar">
@@ -87,7 +94,7 @@
       Add Node
     </button>
 
-    <button class="btn btn-gc" on:click={handleGC} title="Simulate garbage collection — removes all unreachable nodes">
+    <button class="btn btn-gc" on:click={handleGC}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         <path d="M9 2h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -95,6 +102,29 @@
         <path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       Run GC
+    </button>
+
+    <div class="separator"></div>
+
+    <!-- Zoom controls -->
+    <button class="btn btn-icon" on:click={zoomOut} title="Zoom out">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M4.5 6.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <button class="zoom-label" on:click={zoomReset} title="Reset zoom to 100%">
+      {zoomPct}
+    </button>
+
+    <button class="btn btn-icon" on:click={zoomIn} title="Zoom in">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M4.5 6.5h4M6.5 4.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
     </button>
 
     <div class="separator"></div>
@@ -135,6 +165,26 @@
       </svg>
       Load
     </button>
+
+    <div class="separator"></div>
+
+    <!-- Hide/show code panel -->
+    <button
+      class="btn btn-icon"
+      class:active={codeHidden}
+      on:click={() => dispatch('toggleCode')}
+      title={codeHidden ? 'Show code panel' : 'Hide code panel'}
+    >
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <rect x="1" y="2" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/>
+        <line x1="9" y1="2" x2="9" y2="13" stroke="currentColor" stroke-width="1.4"/>
+        {#if codeHidden}
+          <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        {:else}
+          <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+        {/if}
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -156,4 +206,21 @@
   .btn-secondary:hover:not(:disabled) { background: var(--border); color: var(--text); }
   .btn-icon { background: var(--surface2); color: var(--text-dim); border-color: var(--border); padding: 6px 8px; }
   .btn-icon:hover:not(:disabled) { background: var(--border); color: var(--text); }
+  .btn-icon.active { background: var(--accent-dim); color: #fff; border-color: var(--accent-dim); }
+
+  .zoom-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 7px;
+    cursor: pointer;
+    min-width: 42px;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .zoom-label:hover { background: var(--border); color: var(--text); }
 </style>

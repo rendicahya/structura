@@ -19,25 +19,27 @@
     { y: 12, w: 4 },
   ];
 
+  // Badge dimensions
+  const BADGE_W = 40;
+  const BADGE_H = 20;
+  const BADGE_GAP = 10; // gap between badge bottom and node top
+  const ARROW_LEN = BADGE_GAP;
+
   function onMousedown(e) {
     if (e.button === 0) dispatch('dragstart', { e, nodeId: node.id });
   }
-
   function onContextMenu(e) {
     e.preventDefault();
-    e.stopPropagation();  // ← tambah ini
+    e.stopPropagation();
     dispatch('contextmenu', { e, node });
   }
-
   function onPortMousedown(e) {
     e.stopPropagation();
     dispatch('portdragstart', { e, nodeId: node.id });
   }
-
   function onNodeMouseup(e) {
     dispatch('connecttarget', { e, nodeId: node.id });
   }
-
   function onDblClick(e) {
     e.stopPropagation();
     dispatch('dblclick', { node });
@@ -53,6 +55,15 @@
     : isTail
     ? '#c084fc'
     : 'var(--node-border)';
+
+  // How many badges sit above? used to stack HEAD above TAIL
+  // HEAD badge: centered above node
+  // TAIL badge: if both, stack above HEAD
+  $: headBadgeY  = -(BADGE_H + ARROW_LEN);         // bottom of badge touches arrow top
+  $: tailBadgeY  = isHead
+    ? -(BADGE_H + ARROW_LEN) * 2 - 4               // stacked above head badge
+    : -(BADGE_H + ARROW_LEN);
+  $: badgeCenterX = W / 2;
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -66,6 +77,83 @@
   on:mouseup={onNodeMouseup}
   on:dblclick={onDblClick}
 >
+  <!-- ── HEAD badge ── -->
+  {#if isHead}
+    <!-- Arrow from badge bottom to node top -->
+    <line
+      x1={badgeCenterX}
+      y1={headBadgeY + BADGE_H}
+      x2={badgeCenterX}
+      y2={0}
+      stroke="var(--success)"
+      stroke-width="1.5"
+      stroke-dasharray="none"
+    />
+    <!-- Arrowhead pointing down into node -->
+    <polygon
+      points="{badgeCenterX - 4},{-6} {badgeCenterX + 4},{-6} {badgeCenterX},{0}"
+      fill="var(--success)"
+    />
+    <!-- Badge box -->
+    <rect
+      x={badgeCenterX - BADGE_W / 2}
+      y={headBadgeY}
+      width={BADGE_W}
+      height={BADGE_H}
+      rx="5"
+      fill="rgba(78,204,163,0.15)"
+      stroke="var(--success)"
+      stroke-width="1.2"
+    />
+    <text
+      x={badgeCenterX}
+      y={headBadgeY + 13}
+      text-anchor="middle"
+      font-family="var(--font-mono)"
+      font-size="9"
+      font-weight="700"
+      fill="var(--success)"
+      letter-spacing="0.8"
+    >HEAD</text>
+  {/if}
+
+  <!-- ── TAIL badge ── -->
+  {#if isTail}
+    <line
+      x1={badgeCenterX}
+      y1={tailBadgeY + BADGE_H}
+      x2={badgeCenterX}
+      y2={isHead ? headBadgeY : 0}
+      stroke="#c084fc"
+      stroke-width="1.5"
+    />
+    <polygon
+      points="{badgeCenterX - 4},{isHead ? headBadgeY - 6 : -6} {badgeCenterX + 4},{isHead ? headBadgeY - 6 : -6} {badgeCenterX},{isHead ? headBadgeY : 0}"
+      fill="#c084fc"
+    />
+    <rect
+      x={badgeCenterX - BADGE_W / 2}
+      y={tailBadgeY}
+      width={BADGE_W}
+      height={BADGE_H}
+      rx="5"
+      fill="rgba(192,132,252,0.15)"
+      stroke="#c084fc"
+      stroke-width="1.2"
+    />
+    <text
+      x={badgeCenterX}
+      y={tailBadgeY + 13}
+      text-anchor="middle"
+      font-family="var(--font-mono)"
+      font-size="9"
+      font-weight="700"
+      fill="#c084fc"
+      letter-spacing="0.8"
+    >TAIL</text>
+  {/if}
+
+  <!-- ── Node box ── -->
   <!-- Shadow -->
   <rect x="2" y="4" width={W} height={H} rx="10" fill="rgba(0,0,0,0.35)" />
 
@@ -84,17 +172,7 @@
     opacity="0.8"
   />
 
-  <!-- head / tail badge -->
-  {#if isHead}
-    <rect x={W - 38} y="6" width="30" height="14" rx="4" fill="rgba(78,204,163,0.15)" />
-    <text x={W - 23} y="16.5" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="var(--success)" font-weight="700" letter-spacing="0.5">HEAD</text>
-  {/if}
-  {#if isTail}
-    <rect x={W - 38} y={isHead ? 22 : 6} width="30" height="14" rx="4" fill="rgba(192,132,252,0.15)" />
-    <text x={W - 23} y={isHead ? 32.5 : 16.5} text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="#c084fc" font-weight="700" letter-spacing="0.5">TAIL</text>
-  {/if}
-
-  <!-- var name label -->
+  <!-- var name label — centered -->
   <text
     x={W / 2} y="22"
     text-anchor="middle"
