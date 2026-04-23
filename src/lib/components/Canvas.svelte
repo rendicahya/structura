@@ -38,8 +38,6 @@
   let panStartX = 0;
   let panStartY = 0;
 
-  let spaceDown = false;
-
   function onWheel(e) {
     e.preventDefault();
     const rect = svgEl.getBoundingClientRect();
@@ -93,17 +91,21 @@
 
   function onSVGMousedown(e) {
     canvasContextMenu = null;
-    if (e.button === 1 || (e.button === 0 && spaceDown)) {
-      e.preventDefault();
+    if (e.button !== 0) return;
+
+    // Mulai pan kalau klik di area kosong (bukan di node/port)
+    const isBackground = e.target === svgEl
+      || e.target.tagName === 'rect' && e.target.getAttribute('fill') === 'url(#grid)'
+      || e.target.tagName === 'circle' && !e.target.classList.contains('port');
+
+    if (isBackground) {
+      selectedNodeId = null;
+      contextMenu = null;
+      commitInlineEdit();
       panning = true;
       panStartX = e.clientX - panX;
       panStartY = e.clientY - panY;
       return;
-    }
-    if (e.target === svgEl || e.target.tagName === 'svg') {
-      selectedNodeId = null;
-      contextMenu = null;
-      commitInlineEdit();
     }
   }
 
@@ -169,8 +171,8 @@
     const svgRect = svgEl.getBoundingClientRect();
     inlineEdit = {
       nodeId: node.id,
-      x: svgRect.left + node.x * zoom,
-      y: svgRect.top  + node.y * zoom + 32 * zoom,
+      x: svgRect.left + node.x * zoom + panX,
+      y: svgRect.top  + node.y * zoom + panY + 32 * zoom,
       value: node.data,
     };
     setTimeout(() => { inlineInputEl?.focus(); inlineInputEl?.select(); }, 10);
@@ -241,16 +243,8 @@
   }
 
   function onKeydown(e) {
-    if (e.key === ' ' && !e.target.closest('input')) {
-      e.preventDefault();
-      spaceDown = true;
-    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
-  }
-
-  function onKeyup(e) {
-    if (e.key === ' ') spaceDown = false;
   }
 
   function onBeforeUnload(e) {
@@ -276,12 +270,10 @@
 
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
-    window.addEventListener('keyup', onKeyup);
     window.addEventListener('beforeunload', onBeforeUnload);
     svgEl.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       window.removeEventListener('keydown', onKeydown);
-      window.removeEventListener('keyup', onKeyup);
       window.removeEventListener('beforeunload', onBeforeUnload);
       svgEl.removeEventListener('wheel', onWheel);
     };
@@ -295,7 +287,7 @@
   <svg
     bind:this={svgEl}
     class="canvas-svg"
-    class:panning={spaceDown || panning}
+    class:panning
     on:mousedown={onSVGMousedown}
     on:contextmenu={onSVGContextMenu}
   >
@@ -420,13 +412,6 @@
     overflow: hidden;
     background: var(--bg);
   }
-  .canvas-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    cursor: default;
-    user-select: none;
-  }
   .inline-edit {
     position: fixed;
     transform: translateX(-50%);
@@ -493,6 +478,12 @@
     transition: all 0.1s;
   }
   .ctx-item:hover { background: var(--surface2); color: var(--text); }
-  .canvas-svg.panning { cursor: grab; }
-  .canvas-svg.panning:active { cursor: grabbing; }
+  .canvas-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    user-select: none;
+  }
+  .canvas-svg.panning { cursor: grabbing; }
 </style>
