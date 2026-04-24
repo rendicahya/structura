@@ -7,6 +7,8 @@
   export let isHead = false;
   export let isTail = false;
   export let isWalk = false;
+  export let hasPrev = false;
+  export let hasNext = false;
 
   const dispatch = createEventDispatcher();
 
@@ -51,6 +53,8 @@
 
   function handleUnlink() { dispatch('unlink'); close(); }
   function handleDisconnect() { dispatch('disconnect'); close(); }
+  function handleDisconnectPrev() { dispatch('disconnectPrev'); close(); }
+  function handleDisconnectNext() { dispatch('disconnectNext'); close(); }
   function handleSetHead() { dispatch('setHead'); close(); }
   function handleSetTail() { dispatch('setTail'); close(); }
 
@@ -144,13 +148,20 @@
       {isWalk ? '✓ Walk (unset)' : 'Set as walk'}
     </button>
 
-    {#if node?.nextId}
-      <div class="menu-divider"></div>
-      <button class="menu-item" on:click={handleDisconnect}>
+    {#if hasNext}
+      <button class="menu-item" on:click={handleDisconnectNext}>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M4 4L9 9M9 4L4 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
         Disconnect next
+      </button>
+    {/if}
+    {#if hasPrev}
+      <button class="menu-item" on:click={handleDisconnectPrev}>
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M4 4L9 9M9 4L4 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Disconnect prev
       </button>
     {/if}
 

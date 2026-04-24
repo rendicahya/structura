@@ -334,11 +334,11 @@
           isHead={$headId === node.id}
           isTail={$tailId === node.id}
           isWalk={$walkId === node.id}
-          on:dragstart={onNodeDragstart}
-          on:portdragstart={onPortDragstart}
-          on:connecttarget={onConnectTarget}
-          on:contextmenu={onContextMenu}
-          on:dblclick={onNodeDblClick}
+          ondragstart={({ e, nodeId }) => onNodeDragstart({ detail: { e, nodeId } })}
+          onportdragstart={({ e, nodeId, portType }) => onPortDragstart({ detail: { e, nodeId, portType } })}
+          onconnecttarget={({ e, nodeId }) => onConnectTarget({ detail: { nodeId } })}
+          oncontextmenu={({ e, node }) => onContextMenu({ detail: { e, node } })}
+          ondblclick={({ node }) => onNodeDblClick({ detail: { node } })}
         />
       {/each}
     </g>
@@ -377,14 +377,16 @@
     isHead={$headId === contextMenu.node.id}
     isTail={$tailId === contextMenu.node.id}
     isWalk={$walkId === contextMenu.node.id}
+    hasNext={!!($nodes.find(n => n.id === contextMenu.node.id)?.nextId)}
+    hasPrev={false}
     on:close={onMenuClose}
     on:rename={onMenuRename}
     on:editData={onMenuEditData}
-    on:disconnect={onMenuDisconnect}
+    on:disconnectNext={onMenuDisconnect}
     on:setHead={onMenuSetHead}
     on:setTail={onMenuSetTail}
-    on:unlink={onMenuUnlink}
     on:setWalk={onMenuSetWalk}
+    on:unlink={onMenuUnlink}
   />
 {/if}
 

@@ -1,82 +1,74 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-
-  export let node;
-  export let selected = false;
-  export let connecting = false;
-  export let connectingPort = null; // 'next' | 'prev' | null
-  export let isHead = false;
-  export let isTail = false;
-  export let isWalk = false;
-  export let doubly = false;
-
-  const dispatch = createEventDispatcher();
+  const {
+    node,
+    selected = false,
+    connecting = false,
+    isHead = false,
+    isTail = false,
+    isWalk = false,
+    doubly = false,
+    ondragstart,
+    onportdragstart,
+    onconnecttarget,
+    oncontextmenu,
+    ondblclick,
+  } = $props();
 
   const W = 130;
   const H = 64;
-
-  const groundLen = 22;
-  const groundLines = [
-    { y: 0, w: 14 },
-    { y: 6, w: 9 },
-    { y: 12, w: 4 },
-  ];
 
   const BADGE_W = 40;
   const BADGE_H = 20;
   const BADGE_GAP = 10;
   const ARROW_LEN = BADGE_GAP;
 
-  function onMousedown(e) {
-    if (e.button === 0) dispatch('dragstart', { e, nodeId: node.id });
+  function handleMousedown(e) {
+    if (e.button === 0) ondragstart?.({ e, nodeId: node.id });
   }
-  function onContextMenu(e) {
+  function handleContextMenu(e) {
     e.preventDefault();
     e.stopPropagation();
-    dispatch('contextmenu', { e, node });
+    oncontextmenu?.({ e, node });
   }
-  function onNextPortMousedown(e) {
+  function handleNextPortMousedown(e) {
     e.stopPropagation();
-    dispatch('portdragstart', { e, nodeId: node.id, portType: 'next' });
+    onportdragstart?.({ e, nodeId: node.id, portType: 'next' });
   }
-  function onPrevPortMousedown(e) {
+  function handlePrevPortMousedown(e) {
     e.stopPropagation();
-    dispatch('portdragstart', { e, nodeId: node.id, portType: 'prev' });
+    onportdragstart?.({ e, nodeId: node.id, portType: 'prev' });
   }
-  function onNodeMouseup(e) {
-    dispatch('connecttarget', { e, nodeId: node.id });
+  function handleNodeMouseup(e) {
+    onconnecttarget?.({ e, nodeId: node.id });
   }
-  function onDblClick(e) {
+  function handleDblClick(e) {
     e.stopPropagation();
-    dispatch('dblclick', { node });
+    ondblclick?.({ node });
   }
 
-  $: hasNext = !!node.nextId;
-  $: hasPrev = !!node.prevId;
+  let hasNext = $derived(!!node.nextId);
+  let hasPrev = $derived(!!node.prevId);
 
-  $: borderColor = selected
-    ? 'var(--node-selected)'
-    : connecting
-    ? 'var(--warning)'
-    : isHead
-    ? 'var(--success)'
-    : isTail
-    ? '#c084fc'
-    : isWalk
-    ? '#fb923c'
-    : 'var(--node-border)';
+  let borderColor = $derived(
+    selected ? 'var(--node-selected)'
+    : connecting ? 'var(--warning)'
+    : isHead ? 'var(--success)'
+    : isTail ? '#c084fc'
+    : isWalk ? '#fb923c'
+    : 'var(--node-border)'
+  );
 
-  $: headBadgeY = -(BADGE_H + ARROW_LEN);
-  $: tailBadgeY = isHead
+  let headBadgeY  = $derived(-(BADGE_H + ARROW_LEN));
+  let tailBadgeY  = $derived(isHead
     ? -(BADGE_H + ARROW_LEN) * 2 - 4
-    : -(BADGE_H + ARROW_LEN);
-  $: walkBadgeY = (() => {
+    : -(BADGE_H + ARROW_LEN));
+  let walkBadgeY  = $derived((() => {
     let y = -(BADGE_H + ARROW_LEN);
     if (isHead) y -= (BADGE_H + ARROW_LEN + 4);
     if (isTail) y -= (BADGE_H + ARROW_LEN + 4);
     return y;
-  })();
-  $: badgeCenterX = W / 2;
+  })());
+  let badgeCenterX = W / 2;
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -85,10 +77,10 @@
   class:selected
   class:connecting
   transform="translate({node.x}, {node.y})"
-  on:mousedown={onMousedown}
-  on:contextmenu={onContextMenu}
-  on:mouseup={onNodeMouseup}
-  on:dblclick={onDblClick}
+  onmousedown={handleMousedown}
+  oncontextmenu={handleContextMenu}
+  onmouseup={handleNodeMouseup}
+  ondblclick={handleDblClick}
 >
   <!-- WALK badge -->
   {#if isWalk}
@@ -150,7 +142,7 @@
     stroke={hasNext ? 'var(--accent-dim)' : 'var(--border-bright)'}
     stroke-width="1"
     class="port"
-    on:mousedown={onNextPortMousedown}
+    onmousedown={handleNextPortMousedown}
   />
 
   <!-- Prev port (left) — only for doubly -->
@@ -162,36 +154,30 @@
       stroke={hasPrev ? '#a855f7' : 'var(--border-bright)'}
       stroke-width="1"
       class="port"
-      on:mousedown={onPrevPortMousedown}
+      onmousedown={handlePrevPortMousedown}
     />
   {/if}
 
-  <!-- Ground symbol next (kanan) — muncul kalau tidak ada next -->
+  <!-- Ground symbol next (kanan) -->
   {#if !hasNext}
     {@const gx = W + 6}
     {@const gy = H / 2}
-    <!-- Garis horizontal keluar dari sisi kanan -->
-    <line x1={W - 8} y1={gy} x2={gx + 10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <!-- Belok ke bawah -->
-    <line x1={gx + 10} y1={gy} x2={gx + 10} y2={gy + 18} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <!-- Tiga garis ground -->
-    <line x1={gx + 3}  y1={gy + 18} x2={gx + 17} y2={gy + 18} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <line x1={gx + 6}  y1={gy + 24} x2={gx + 14} y2={gy + 24} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <line x1={gx + 9}  y1={gy + 30} x2={gx + 11} y2={gy + 30} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={W-8} y1={gy} x2={gx+10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx+10} y1={gy} x2={gx+10} y2={gy+18} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx+3}  y1={gy+18} x2={gx+17} y2={gy+18} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx+6}  y1={gy+24} x2={gx+14} y2={gy+24} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx+9}  y1={gy+30} x2={gx+11} y2={gy+30} stroke="var(--text-muted)" stroke-width="1.5"/>
   {/if}
 
-  <!-- Ground symbol prev (kiri) — hanya untuk doubly, muncul kalau tidak ada prev -->
+  <!-- Ground symbol prev (kiri) — only for doubly -->
   {#if doubly && !hasPrev}
     {@const gx = -6}
     {@const gy = H / 2}
-    <!-- Garis horizontal keluar dari sisi kiri -->
-    <line x1={8} y1={gy} x2={gx - 10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <!-- Belok ke bawah -->
-    <line x1={gx - 10} y1={gy} x2={gx - 10} y2={gy + 18} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <!-- Tiga garis ground -->
-    <line x1={gx - 17} y1={gy + 18} x2={gx - 3}  y2={gy + 18} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <line x1={gx - 14} y1={gy + 24} x2={gx - 6}  y2={gy + 24} stroke="var(--text-muted)" stroke-width="1.5"/>
-    <line x1={gx - 11} y1={gy + 30} x2={gx - 9}  y2={gy + 30} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={8} y1={gy} x2={gx-10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx-10} y1={gy} x2={gx-10} y2={gy+18} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx-17} y1={gy+18} x2={gx-3}  y2={gy+18} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx-14} y1={gy+24} x2={gx-6}  y2={gy+24} stroke="var(--text-muted)" stroke-width="1.5"/>
+    <line x1={gx-11} y1={gy+30} x2={gx-9}  y2={gy+30} stroke="var(--text-muted)" stroke-width="1.5"/>
   {/if}
 </g>
 

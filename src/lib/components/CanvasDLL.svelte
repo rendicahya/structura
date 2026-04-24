@@ -279,6 +279,20 @@
     }
   }
 
+  function onMenuDisconnectNext() {
+    pushHistory();
+    disconnectNextDLL(contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
+  }
+
+  function onMenuDisconnectPrev() {
+    pushHistory();
+    disconnectPrevDLL(contextMenu.node.id);
+    pushHistory();
+    contextMenu = null;
+  }
+
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -349,11 +363,11 @@
           isHead={$headIdDLL === node.id}
           isTail={$tailIdDLL === node.id}
           isWalk={$walkIdDLL === node.id}
-          on:dragstart={onNodeDragstart}
-          on:portdragstart={onPortDragstart}
-          on:connecttarget={onConnectTarget}
-          on:contextmenu={onContextMenu}
-          on:dblclick={onNodeDblClick}
+          ondragstart={({ e, nodeId }) => onNodeDragstart({ detail: { e, nodeId } })}
+          onportdragstart={({ e, nodeId, portType }) => onPortDragstart({ detail: { e, nodeId, portType } })}
+          onconnecttarget={({ e, nodeId }) => onConnectTarget({ detail: { nodeId } })}
+          oncontextmenu={({ e, node }) => onContextMenu({ detail: { e, node } })}
+          ondblclick={({ node }) => onNodeDblClick({ detail: { node } })}
         />
       {/each}
     </g>
@@ -389,10 +403,13 @@
     isHead={$headIdDLL === contextMenu.node.id}
     isTail={$tailIdDLL === contextMenu.node.id}
     isWalk={$walkIdDLL === contextMenu.node.id}
+    hasNext={!!($nodesDLL.find(n => n.id === contextMenu.node.id)?.nextId)}
+    hasPrev={!!($nodesDLL.find(n => n.id === contextMenu.node.id)?.prevId)}
     on:close={onMenuClose}
     on:rename={onMenuRename}
     on:editData={onMenuEditData}
-    on:disconnect={onMenuDisconnect}
+    on:disconnectNext={onMenuDisconnectNext}
+    on:disconnectPrev={onMenuDisconnectPrev}
     on:setHead={onMenuSetHead}
     on:setTail={onMenuSetTail}
     on:setWalk={onMenuSetWalk}
