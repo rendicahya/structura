@@ -39,7 +39,7 @@
 
 <style>
   .tooltip-wrapper {
-    display: contents;
+    display: inline-flex;
   }
 
   .tooltip {
