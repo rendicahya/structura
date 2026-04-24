@@ -4,7 +4,8 @@
   import Canvas from './lib/components/Canvas.svelte';
   import CanvasDLL from './lib/components/CanvasDLL.svelte';
   import CodePanel from './lib/components/CodePanel.svelte';
-  import CodePanelDLL from './lib/components/CodePanelDLL.svelte';
+  import { codeLog } from './lib/stores/codeLog.js';
+  import { codeLogDLL } from './lib/stores/codeLogDLL.js';
   import { initHistory } from './lib/stores/history.js';
 
   onMount(() => {
@@ -90,11 +91,7 @@
         <div class="splitter-handle"></div>
       </div>
       <div class="panel code-panel-wrap" style="width:{100 - splitPos}%">
-        {#if isSLL}
-          <CodePanel />
-        {:else}
-          <CodePanelDLL />
-        {/if}
+        <CodePanel log={isSLL ? codeLog : codeLogDLL} />
       </div>
     {/if}
   </div>

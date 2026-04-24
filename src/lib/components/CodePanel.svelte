@@ -1,6 +1,7 @@
 <script>
-  import { codeLog } from '../stores/codeLog.js';
   import { afterUpdate } from 'svelte';
+
+  export let log; // store: codeLog atau codeLogDLL
 
   let lang = 'java';
   let codeBodyEl;
@@ -9,7 +10,7 @@
     if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
   });
 
-  const JAVA_KW   = new Set(['class','new','int','double','String','void','null','this','Node','return','head','tail']);
+  const JAVA_KW   = new Set(['class','new','int','double','String','void','null','this','Node','return','head','tail','walk']);
   const PYTHON_KW = new Set(['class','def','self','None','True','False','return','import','from','if','else','elif','and','or','not','in']);
 
   function highlight(raw, language) {
@@ -24,23 +25,19 @@
         tokens.push({ type: 'comment', text }); i += text.length; continue;
       }
       if (raw[i] === '"') {
-        let j = i + 1;
-        while (j < raw.length && raw[j] !== '"') j++;
+        let j = i + 1; while (j < raw.length && raw[j] !== '"') j++;
         tokens.push({ type: 'string', text: raw.slice(i, j + 1) }); i = j + 1; continue;
       }
       if (raw[i] === "'") {
-        let j = i + 1;
-        while (j < raw.length && raw[j] !== "'") j++;
+        let j = i + 1; while (j < raw.length && raw[j] !== "'") j++;
         tokens.push({ type: 'string', text: raw.slice(i, j + 1) }); i = j + 1; continue;
       }
       if (/[0-9]/.test(raw[i]) || (raw[i] === '-' && /[0-9]/.test(raw[i+1] ?? ''))) {
-        let j = i + 1;
-        while (j < raw.length && /[0-9.]/.test(raw[j])) j++;
+        let j = i + 1; while (j < raw.length && /[0-9.]/.test(raw[j])) j++;
         tokens.push({ type: 'number', text: raw.slice(i, j) }); i = j; continue;
       }
       if (/[a-zA-Z_]/.test(raw[i])) {
-        let j = i + 1;
-        while (j < raw.length && /[a-zA-Z0-9_]/.test(raw[j])) j++;
+        let j = i + 1; while (j < raw.length && /[a-zA-Z0-9_]/.test(raw[j])) j++;
         const word = raw.slice(i, j);
         tokens.push({ type: KW.has(word) ? 'keyword' : 'ident', text: word }); i = j; continue;
       }
@@ -61,7 +58,7 @@
   $: flatLines = (() => {
     let lineNum = 1;
     const result = [];
-    for (const entry of $codeLog) {
+    for (const entry of $log) {
       const lines = lang === 'java' ? entry.java : (entry.python ?? entry.java);
       for (const line of lines) {
         result.push({ lineNum: lineNum++, text: line, fresh: entry.fresh });
@@ -70,7 +67,7 @@
     return result;
   })();
 
-  $: fullCode = $codeLog
+  $: fullCode = $log
     .flatMap(e => lang === 'java' ? e.java : (e.python ?? e.java))
     .join('\n');
 
@@ -130,7 +127,6 @@
 
 <style>
   .code-panel { display: flex; flex-direction: column; height: 100%; background: var(--code-bg); overflow: hidden; }
-
   .code-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .lang-tabs { display: flex; gap: 2px; }
   .lang-tab { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 500; cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
@@ -139,48 +135,18 @@
   .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .java-dot { background: var(--warning); }
   .python-dot { background: #4b8bbe; }
-
   .copy-btn { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--text-dim); font-family: var(--font-ui); font-size: 12px; padding: 4px 8px; cursor: pointer; transition: all 0.15s; min-width: 70px; justify-content: center; margin-bottom: 6px; }
   .copy-btn:hover { background: var(--border); color: var(--text); }
   .copy-btn.copied { background: rgba(78,204,163,0.12); border-color: var(--success); color: var(--success); }
-
   .code-body { flex: 1; overflow: auto; padding: 8px 0; }
-
   .empty-code { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-style: italic; padding: 16px 20px; }
-
   .code-table { width: 100%; border-collapse: collapse; }
-
   .code-row { transition: background 0.2s; }
   .code-row:hover { background: rgba(255,255,255,0.03); }
   .code-row.fresh { background: rgba(91,143,255,0.10); animation: flashIn 0.4s ease; }
-
-  @keyframes flashIn {
-    from { background: rgba(91,143,255,0.28); }
-    to   { background: rgba(91,143,255,0.10); }
-  }
-
-  .line-num {
-    width: 40px;
-    min-width: 40px;
-    text-align: right;
-    padding: 1px 12px 1px 8px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    user-select: none;
-    vertical-align: top;
-    border-right: 1px solid var(--border);
-  }
-
-  .line-code {
-    padding: 1px 16px;
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    line-height: 1.75;
-    color: var(--text-dim);
-    white-space: pre;
-  }
-
+  @keyframes flashIn { from { background: rgba(91,143,255,0.28); } to { background: rgba(91,143,255,0.10); } }
+  .line-num { width: 40px; min-width: 40px; text-align: right; padding: 1px 12px 1px 8px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); user-select: none; vertical-align: top; border-right: 1px solid var(--border); }
+  .line-code { padding: 1px 16px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.75; color: var(--text-dim); white-space: pre; }
   :global(.kw)  { color: #c792ea; font-weight: 500; }
   :global(.num) { color: #f78c6c; }
   :global(.str) { color: #c3e88d; }
