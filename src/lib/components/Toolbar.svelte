@@ -11,6 +11,8 @@
   // DLL imports
   import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../stores/graphDLL.js';
   import { nodesDLL } from '../stores/graphDLL.js';
+  
+  import Tooltip from './Tooltip.svelte';
 
   export let mode = 'sll'; // 'sll' | 'dll'
   export let zoom = 1;
@@ -115,99 +117,125 @@
   </div>
 
   <div class="actions">
-    <button class="btn btn-primary" on:click={handleAddNode}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      Add Node
-    </button>
+    <Tooltip text="Add Node">
+      <button class="btn btn-primary" on:click={handleAddNode}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Add Node
+      </button>
+    </Tooltip>
 
-    <button class="btn btn-gc" on:click={handleGC}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <path d="M9 2h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M9 5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Run GC
-    </button>
-
-    <div class="separator"></div>
-
-    <button class="btn btn-icon" on:click={zoomOut} title="Zoom out">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-        <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M4.5 6.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <button class="zoom-label" on:click={zoomReset} title="Reset zoom">{zoomPct}</button>
-    <button class="btn btn-icon" on:click={zoomIn} title="Zoom in">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-        <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M4.5 6.5h4M6.5 4.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-    </button>
+    <Tooltip text="Run Garbage Collection">
+      <button class="btn btn-gc" on:click={handleGC}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M9 2h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Run GC
+      </button>
+    </Tooltip>
 
     <div class="separator"></div>
 
-    <button class="btn btn-icon" on:click={undo} disabled={!$canUndo} title="Undo (Ctrl+Z)">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M3 6H10C12.2 6 14 7.8 14 10C14 12.2 12.2 14 10 14H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M5.5 3.5L3 6L5.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button class="btn btn-icon" on:click={redo} disabled={!$canRedo} title="Redo (Ctrl+Y)">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M13 6H6C3.8 6 2 7.8 2 10C2 12.2 3.8 14 6 14H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M10.5 3.5L13 6L10.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <Tooltip text="Zoom Out" shortcut="Scroll ↓">
+      <button class="btn btn-icon" on:click={zoomOut}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M4.5 6.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Reset Zoom">
+      <button class="zoom-label" on:click={zoomReset}>{zoomPct}</button>
+    </Tooltip>
+
+    <Tooltip text="Zoom In" shortcut="Scroll ↑">
+      <button class="btn btn-icon" on:click={zoomIn}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M4.5 6.5h4M6.5 4.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </Tooltip>
 
     <div class="separator"></div>
 
-    <button class="btn btn-secondary" on:click={handleNewCanvas}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-      New
-    </button>
-    <button class="btn btn-secondary" on:click={handleSave}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M7 2V9M4.5 6.5L7 9L9.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Save
-    </button>
-    <button class="btn btn-secondary" on:click={handleLoad}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M7 9V2M4.5 4.5L7 2L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Load
-    </button>
+    <Tooltip text="Undo" shortcut="Ctrl+Z">
+      <button class="btn btn-icon" on:click={undo} disabled={!$canUndo}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 6H10C12.2 6 14 7.8 14 10C14 12.2 12.2 14 10 14H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M5.5 3.5L3 6L5.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Redo" shortcut="Ctrl+Y">
+      <button class="btn btn-icon" on:click={redo} disabled={!$canRedo}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M13 6H6C3.8 6 2 7.8 2 10C2 12.2 3.8 14 6 14H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M10.5 3.5L13 6L10.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </Tooltip>
 
     <div class="separator"></div>
 
-    <button
-      class="btn btn-icon"
-      class:active={codeHidden}
-      on:click={() => dispatch('toggleCode')}
-      title={codeHidden ? 'Show code panel' : 'Hide code panel'}
-    >
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-        <rect x="1" y="2" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/>
-        <line x1="9" y1="2" x2="9" y2="13" stroke="currentColor" stroke-width="1.4"/>
-        {#if codeHidden}
-          <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-        {:else}
-          <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
-        {/if}
-      </svg>
-    </button>
+    <Tooltip text="New Canvas">
+      <button class="btn btn-secondary" on:click={handleNewCanvas}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        New
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Save to file">
+      <button class="btn btn-secondary" on:click={handleSave}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M7 2V9M4.5 6.5L7 9L9.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Save
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Load from file">
+      <button class="btn btn-secondary" on:click={handleLoad}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M7 9V2M4.5 4.5L7 2L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Load
+      </button>
+    </Tooltip>
+
+    <div class="separator"></div>
+
+    <Tooltip text={codeHidden ? 'Show Code Panel' : 'Hide Code Panel'}>
+      <button
+        class="btn btn-icon"
+        class:active={codeHidden}
+        on:click={() => dispatch('toggleCode')}
+      >
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <rect x="1" y="2" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <line x1="9" y1="2" x2="9" y2="13" stroke="currentColor" stroke-width="1.4"/>
+          {#if codeHidden}
+            <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          {:else}
+            <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+          {/if}
+        </svg>
+      </button>
+    </Tooltip>
   </div>
 </div>
 
