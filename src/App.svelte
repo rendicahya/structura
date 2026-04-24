@@ -1,7 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   import Toolbar from './lib/components/Toolbar.svelte';
-  import ToolbarDLL from './lib/components/ToolbarDLL.svelte';
   import Canvas from './lib/components/Canvas.svelte';
   import CanvasDLL from './lib/components/CanvasDLL.svelte';
   import CodePanel from './lib/components/CodePanel.svelte';
@@ -69,11 +68,12 @@
     </button>
   </nav>
 
-  {#if isSLL}
-    <Toolbar {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
-  {:else}
-    <ToolbarDLL {zoom} {zoomIn} {zoomOut} {zoomReset} {codeHidden} on:toggleCode={() => codeHidden = !codeHidden} />
-  {/if}
+  <Toolbar
+    mode={isSLL ? 'sll' : 'dll'}
+    {zoom} {zoomIn} {zoomOut} {zoomReset}
+    {codeHidden}
+    on:toggleCode={() => codeHidden = !codeHidden}
+  />
 
   <div class="workspace" bind:this={containerEl}>
     <div class="panel canvas-panel" style={codeHidden ? 'width:100%' : `width:${splitPos}%`}>

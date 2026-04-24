@@ -1,10 +1,18 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
   import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
+
+  // SLL imports
+  import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
   import { nodes } from '../stores/graph.js';
   import { clearLog } from '../stores/codeLog.js';
 
+  // DLL imports
+  import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../stores/graphDLL.js';
+  import { nodesDLL } from '../stores/graphDLL.js';
+  import { clearLogDLL } from '../stores/codeLogDLL.js';
+
+  export let mode = 'sll'; // 'sll' | 'dll'
   export let zoom = 1;
   export let zoomIn;
   export let zoomOut;
@@ -13,41 +21,61 @@
 
   const dispatch = createEventDispatcher();
 
+  $: isSLL = mode === 'sll';
+  $: isDLL = mode === 'dll';
+  $: currentNodes = isSLL ? $nodes : $nodesDLL;
+  $: modeLabel = isSLL ? 'Linked List' : 'Doubly Linked List';
+
   function handleAddNode() {
     pushHistory();
-    const node = createNode(80 + Math.random() * 400, 80 + Math.random() * 300);
-    addNode(node);
+    if (isSLL) {
+      const node = createNode(80 + Math.random() * 400, 80 + Math.random() * 300);
+      addNode(node);
+    } else {
+      const node = createNodeDLL(80 + Math.random() * 400, 80 + Math.random() * 300);
+      addNodeDLL(node);
+    }
     pushHistory();
   }
 
   function handleNewCanvas() {
-    if ($nodes.length > 0) {
+    if (currentNodes.length > 0) {
       const ok = confirm('Start a new canvas? All unsaved work will be lost.');
       if (!ok) return;
     }
-    applySnapshot({ nodes: [], edges: [], headId: null, tailId: null, counter: 0 });
-    clearLog();
+    if (isSLL) {
+      applySnapshot({ nodes: [], edges: [], headId: null, tailId: null, walkId: null, counter: 0, codeLog: [] });
+      clearLog();
+    } else {
+      applySnapshotDLL({ nodes: [], edges: [], headId: null, tailId: null, walkId: null, counter: 0, codeLog: [] });
+      clearLogDLL();
+    }
     initHistory();
   }
 
   function handleGC() {
     pushHistory();
-    garbageCollect();
+    if (isSLL) garbageCollect();
+    else garbageCollectDLL();
     pushHistory();
   }
 
   function handleSave() {
-    const snap = getSnapshot();
+    const snap = isSLL ? getSnapshot() : getSnapshotDLL();
+    snap._type = mode;
     const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'structura-save.json'; a.click();
+    a.href = url;
+    a.download = `structura-${mode}-save.json`;
+    a.click();
     URL.revokeObjectURL(url);
   }
 
   function handleLoad() {
     const input = document.createElement('input');
-    input.type = 'file'; input.accept = '.json';
+    input.type = 'file';
+    input.accept = '.json';
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -56,7 +84,8 @@
         try {
           const snap = JSON.parse(ev.target.result);
           pushHistory();
-          applySnapshot(snap);
+          if (isSLL) applySnapshot(snap);
+          else applySnapshotDLL(snap);
         } catch { alert('Invalid save file.'); }
       };
       reader.readAsText(file);
@@ -82,7 +111,7 @@
       <line x1="61" y1="38" x2="63" y2="38" stroke="#444d66" stroke-width="1.5"/>
     </svg>
     <span class="brand-name">Structura</span>
-    <span class="brand-sub">Linked List</span>
+    <span class="brand-sub">{modeLabel}</span>
   </div>
 
   <div class="actions">
@@ -106,7 +135,6 @@
 
     <div class="separator"></div>
 
-    <!-- Zoom controls -->
     <button class="btn btn-icon" on:click={zoomOut} title="Zoom out">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
         <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
@@ -114,11 +142,7 @@
         <path d="M10.5 10.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     </button>
-
-    <button class="zoom-label" on:click={zoomReset} title="Reset zoom to 100%">
-      {zoomPct}
-    </button>
-
+    <button class="zoom-label" on:click={zoomReset} title="Reset zoom">{zoomPct}</button>
     <button class="btn btn-icon" on:click={zoomIn} title="Zoom in">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
         <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
@@ -168,7 +192,6 @@
 
     <div class="separator"></div>
 
-    <!-- Hide/show code panel -->
     <button
       class="btn btn-icon"
       class:active={codeHidden}
@@ -207,20 +230,6 @@
   .btn-icon { background: var(--surface2); color: var(--text-dim); border-color: var(--border); padding: 6px 8px; }
   .btn-icon:hover:not(:disabled) { background: var(--border); color: var(--text); }
   .btn-icon.active { background: var(--accent-dim); color: #fff; border-color: var(--accent-dim); }
-
-  .zoom-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-dim);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    padding: 4px 7px;
-    cursor: pointer;
-    min-width: 42px;
-    text-align: center;
-    transition: all 0.15s;
-  }
+  .zoom-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 4px 7px; cursor: pointer; min-width: 42px; text-align: center; transition: all 0.15s; }
   .zoom-label:hover { background: var(--border); color: var(--text); }
 </style>

@@ -275,7 +275,7 @@
     return () => {
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      svgEl.removeEventListener('wheel', onWheel);
+      svgEl?.removeEventListener('wheel', onWheel); // ← tambah ?. di sini
     };
   });
 </script>
