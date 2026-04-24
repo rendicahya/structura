@@ -5,12 +5,12 @@
   // SLL imports
   import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
   import { nodes } from '../stores/graph.js';
-  import { clearLog } from '../stores/codeLog.js';
+  import { clearLog } from '../stores/sllLog.js';
+  import { clearLogDLL } from '../stores/dllLog.js';
 
   // DLL imports
   import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../stores/graphDLL.js';
   import { nodesDLL } from '../stores/graphDLL.js';
-  import { clearLogDLL } from '../stores/codeLogDLL.js';
 
   export let mode = 'sll'; // 'sll' | 'dll'
   export let zoom = 1;

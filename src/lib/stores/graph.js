@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store';
-import { logOp, codeLog } from './codeLog.js';
+import { logOp, codeLog } from './sllLog.js';
+import { formatValue, formatPythonValue } from '../utils/formatters.js';
 
 export const nodes = writable([]);
 export const edges = writable([]);
@@ -165,19 +166,6 @@ export function garbageCollect() {
   edges.update(es => es.filter(e =>
     reachable.has(e.from) && reachable.has(e.to)
   ));
-}
-
-// Helpers
-function formatValue(val) {
-  if (!val) return 'null';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
-}
-
-function formatPythonValue(val) {
-  if (!val) return 'None';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
 }
 
 export function getSnapshot() {

@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store';
-import { logOpDLL } from './codeLogDLL.js';
+import { logOpDLL as logOp, codeLogDLL as codeLog } from './dllLog.js';
+import { formatValue, formatPythonValue } from '../utils/formatters.js';
 
 export const nodesDLL = writable([]);
 export const edgesDLL = writable([]);
@@ -17,7 +18,7 @@ export function createNodeDLL(x = 200, y = 200) {
 
 export function addNodeDLL(node, silent = false) {
   nodesDLL.update(ns => [...ns, node]);
-  if (!silent) logOpDLL(
+  if (!silent) logOp(
     `Node ${node.varName} = new Node();`,
     `${node.varName} = Node()`
   );
@@ -30,7 +31,7 @@ export function updateNodeDLL(nodeId, patch, silent = false) {
 
   if (!silent && old) {
     if (patch.varName !== undefined) {
-      logOpDLL(
+      logOp(
         `// renamed: ${old.varName} → ${patch.varName}`,
         `# renamed: ${old.varName} → ${patch.varName}`
       );
@@ -39,7 +40,7 @@ export function updateNodeDLL(nodeId, patch, silent = false) {
       const updated = get(nodesDLL).find(n => n.id === nodeId);
       const val = formatValue(patch.data);
       const pyVal = formatPythonValue(patch.data);
-      logOpDLL(
+      logOp(
         `${updated.varName}.data = ${val};`,
         `${updated.varName}.data = ${pyVal}`
       );
@@ -67,7 +68,7 @@ export function connectNextDLL(fromId, toId, silent = false) {
     const ns = get(nodesDLL);
     const from = ns.find(n => n.id === fromId);
     const to   = ns.find(n => n.id === toId);
-    if (from && to) logOpDLL(
+    if (from && to) logOp(
       `${from.varName}.next = ${to.varName};\n${to.varName}.prev = ${from.varName};`,
       `${from.varName}.next = ${to.varName}\n${to.varName}.prev = ${from.varName}`
     );
@@ -90,7 +91,7 @@ export function connectPrevDLL(fromId, toId, silent = false) {
     const ns = get(nodesDLL);
     const from = ns.find(n => n.id === fromId);
     const to   = ns.find(n => n.id === toId);
-    if (from && to) logOpDLL(
+    if (from && to) logOp(
       `${from.varName}.prev = ${to.varName};\n${to.varName}.next = ${from.varName};`,
       `${from.varName}.prev = ${to.varName}\n${to.varName}.next = ${from.varName}`
     );
@@ -117,7 +118,7 @@ export function disconnectNextDLL(nodeId, silent = false) {
       ops.push(`${successor.varName}.prev = null;`);
       pyOps.push(`${successor.varName}.prev = None`);
     }
-    logOpDLL(ops, pyOps);
+    logOp(ops, pyOps);
   }
 }
 
@@ -141,7 +142,7 @@ export function disconnectPrevDLL(nodeId, silent = false) {
       ops.push(`${predecessor.varName}.next = null;`);
       pyOps.push(`${predecessor.varName}.next = None`);
     }
-    logOpDLL(ops, pyOps);
+    logOp(ops, pyOps);
   }
 }
 
@@ -208,31 +209,31 @@ export function removeNodeFromListDLL(nodeId) {
   tailIdDLL.update(id => id === nodeId ? null : id);
   walkIdDLL.update(id => id === nodeId ? null : id);
 
-  if (javaOps.length > 0) logOpDLL(javaOps, pyOps);
+  if (javaOps.length > 0) logOp(javaOps, pyOps);
 }
 
 export function setHeadDLL(nodeId) {
   headIdDLL.set(nodeId);
   const ns = get(nodesDLL);
   const node = ns.find(n => n.id === nodeId);
-  if (node) logOpDLL(`Node head = ${node.varName};`, `head = ${node.varName}`);
-  else logOpDLL(`// head unset`, `# head unset`);
+  if (node) logOp(`Node head = ${node.varName};`, `head = ${node.varName}`);
+  else logOp(`// head unset`, `# head unset`);
 }
 
 export function setTailDLL(nodeId) {
   tailIdDLL.set(nodeId);
   const ns = get(nodesDLL);
   const node = ns.find(n => n.id === nodeId);
-  if (node) logOpDLL(`Node tail = ${node.varName};`, `tail = ${node.varName}`);
-  else logOpDLL(`// tail unset`, `# tail unset`);
+  if (node) logOp(`Node tail = ${node.varName};`, `tail = ${node.varName}`);
+  else logOp(`// tail unset`, `# tail unset`);
 }
 
 export function setWalkDLL(nodeId) {
   walkIdDLL.set(nodeId);
   const ns = get(nodesDLL);
   const node = ns.find(n => n.id === nodeId);
-  if (node) logOpDLL(`Node walk = ${node.varName};`, `walk = ${node.varName}`);
-  else logOpDLL(`// walk unset`, `# walk unset`);
+  if (node) logOp(`Node walk = ${node.varName};`, `walk = ${node.varName}`);
+  else logOp(`// walk unset`, `# walk unset`);
 }
 
 export function garbageCollectDLL() {
@@ -253,13 +254,13 @@ export function garbageCollectDLL() {
   const toRemove = ns.filter(n => !reachable.has(n.id));
 
   if (toRemove.length === 0) {
-    logOpDLL('// GC: no unreachable nodes found', '# GC: no unreachable nodes found');
+    logOp('// GC: no unreachable nodes found', '# GC: no unreachable nodes found');
     return;
   }
 
   const javaOps = toRemove.map(n => `// GC: ${n.varName} collected`);
   const pyOps   = toRemove.map(n => `# GC: ${n.varName} collected`);
-  logOpDLL(javaOps, pyOps);
+  logOp(javaOps, pyOps);
 
   nodesDLL.update(ns => ns.filter(n => reachable.has(n.id)));
   edgesDLL.update(es => es.filter(e => reachable.has(e.from) && reachable.has(e.to)));
@@ -273,7 +274,7 @@ export function getSnapshotDLL() {
     tailId: get(tailIdDLL),
     walkId: get(walkIdDLL),
     counter: nodeCounter,
-    codeLog: JSON.parse(JSON.stringify(get(codeLogDLL))),
+    codeLog: JSON.parse(JSON.stringify(get(codeLog))),
   };
 }
 
@@ -284,19 +285,5 @@ export function applySnapshotDLL(snapshot) {
   headIdDLL.set(snapshot.headId ?? null);
   tailIdDLL.set(snapshot.tailId ?? null);
   walkIdDLL.set(snapshot.walkId ?? null);
-  codeLogDLL.set(snapshot.codeLog ?? []);
+  codeLog.set(snapshot.codeLog ?? []);
 }
-
-function formatValue(val) {
-  if (!val) return 'null';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
-}
-
-function formatPythonValue(val) {
-  if (!val) return 'None';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
-}
-
-import { codeLogDLL } from './codeLogDLL.js';

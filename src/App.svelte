@@ -4,8 +4,8 @@
   import Canvas from './lib/components/Canvas.svelte';
   import CanvasDLL from './lib/components/CanvasDLL.svelte';
   import CodePanel from './lib/components/CodePanel.svelte';
-  import { codeLog } from './lib/stores/codeLog.js';
-  import { codeLogDLL } from './lib/stores/codeLogDLL.js';
+  import { codeLog } from './lib/stores/sllLog.js';
+  import { codeLogDLL } from './lib/stores/dllLog.js';
   import { initHistory } from './lib/stores/history.js';
 
   onMount(() => {
