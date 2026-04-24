@@ -1,25 +1,23 @@
 <script>
   import { onMount } from 'svelte';
-  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, walkId, setHead, setTail, setWalk } from '../stores/graph.js';
+  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, walkId, setHead, setTail, setWalk, createNode, addNode } from '../stores/graph.js';
   import { pushHistory, undo, redo } from '../stores/history.js';
-  import { createNode, addNode } from '../stores/graph.js';
+  import { createCanvasLogic } from '../utils/canvasLogic.js';
   import NodeComponent from './NodeComponent.svelte';
   import EdgeComponent from './EdgeComponent.svelte';
   import ContextMenu from './ContextMenu.svelte';
 
   const NODE_W = 130;
   const NODE_H = 64;
-  const ZOOM_STEP = 0.1;
-  const ZOOM_MIN  = 0.3;
-  const ZOOM_MAX  = 2;
 
   export let zoom = 1;
 
-  let dragging = null;
   let svgEl;
   let wrapperEl;
+  let panX = 0;
+  let panY = 0;
+  let panning = false;
 
-  // Use separate x/y so Svelte reactivity triggers properly
   let pendingFrom = null;
   let pendingX = 0;
   let pendingY = 0;
@@ -27,92 +25,54 @@
   let contextMenu = null;
   let canvasContextMenu = null;
   let selectedNodeId = null;
-
   let inlineEdit = null;
   let inlineInputEl;
 
-  // Pan state
-  let panX = 0;
-  let panY = 0;
-  let panning = false;
-  let panStartX = 0;
-  let panStartY = 0;
+  const logic = createCanvasLogic({
+    getZoom: () => zoom,
+    setZoom: (z) => { zoom = z; },
+    getNodes: () => $nodes,
+    updateNodeFn: (id, patch, silent) => updateNode(id, patch, silent),
+  });
 
-  function onWheel(e) {
-    e.preventDefault();
-    const rect = svgEl.getBoundingClientRect();
-
-    // Posisi mouse relatif ke SVG sebelum zoom
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-    const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)));
-
-    // Adjust pan agar titik di bawah mouse tidak bergeser
-    panX = mouseX - (mouseX - panX) * (newZoom / zoom);
-    panY = mouseY - (mouseY - panY) * (newZoom / zoom);
-    zoom = newZoom;
-  }
-
-  function getSVGPoint(clientX, clientY) {
-    const rect = svgEl.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - panX) / zoom,
-      y: (clientY - rect.top  - panY) / zoom,
-    };
+  function syncPan() {
+    panX = logic.getPanX();
+    panY = logic.getPanY();
+    panning = logic.isPanning();
   }
 
   function onWindowMousemove(e) {
-    if (panning) {
-      panX = e.clientX - panStartX;
-      panY = e.clientY - panStartY;
-      return;
-    }
-    if (dragging) {
-      const pt = getSVGPoint(e.clientX, e.clientY);
-      updateNode(dragging.nodeId, {
-        x: pt.x - dragging.offsetX,
-        y: pt.y - dragging.offsetY,
-      });
-    }
+    logic.onMousemove(e.clientX, e.clientY);
+    syncPan();
     if (pendingFrom !== null) {
-      const pt = getSVGPoint(e.clientX, e.clientY);
+      const pt = logic.getSVGPoint(e.clientX, e.clientY);
       pendingX = pt.x;
       pendingY = pt.y;
     }
   }
 
   function onWindowMouseup() {
-    if (panning) { panning = false; return; }
-    if (dragging) { pushHistory(); dragging = null; }
+    logic.onMouseup(pushHistory);
+    syncPan();
     if (pendingFrom !== null) { pendingFrom = null; }
   }
 
   function onSVGMousedown(e) {
     canvasContextMenu = null;
     if (e.button !== 0) return;
-
-    // Mulai pan kalau klik di area kosong (bukan di node/port)
-    const isBackground = e.target === svgEl
-      || e.target.tagName === 'rect' && e.target.getAttribute('fill') === 'url(#grid)'
-      || e.target.tagName === 'circle' && !e.target.classList.contains('port');
-
-    if (isBackground) {
+    if (logic.isBackground(e.target)) {
       selectedNodeId = null;
       contextMenu = null;
       commitInlineEdit();
-      panning = true;
-      panStartX = e.clientX - panX;
-      panStartY = e.clientY - panY;
-      return;
+      logic.startPan(e.clientX, e.clientY);
+      syncPan();
     }
   }
 
   function onSVGContextMenu(e) {
     e.preventDefault();
     contextMenu = null;
-    const pt = getSVGPoint(e.clientX, e.clientY);
+    const pt = logic.getSVGPoint(e.clientX, e.clientY);
     canvasContextMenu = { clientX: e.clientX, clientY: e.clientY, svgX: pt.x, svgY: pt.y };
   }
 
@@ -124,28 +84,23 @@
     canvasContextMenu = null;
   }
 
-  function onNodeDragstart({ detail }) {
-    const { e, nodeId } = detail;
+  function onNodeDragstart({ e, nodeId }) {
     e.stopPropagation();
     contextMenu = null;
     canvasContextMenu = null;
     selectedNodeId = nodeId;
-    const pt = getSVGPoint(e.clientX, e.clientY);
-    const node = $nodes.find(n => n.id === nodeId);
-    dragging = { nodeId, offsetX: pt.x - node.x, offsetY: pt.y - node.y };
+    logic.startDrag(nodeId, e.clientX, e.clientY);
   }
 
-  function onPortDragstart({ detail }) {
-    const { e, nodeId } = detail;
+  function onPortDragstart({ e, nodeId }) {
     e.stopPropagation();
-    const pt = getSVGPoint(e.clientX, e.clientY);
+    const pt = logic.getSVGPoint(e.clientX, e.clientY);
     pendingFrom = nodeId;
     pendingX = pt.x;
     pendingY = pt.y;
   }
 
-  function onConnectTarget({ detail }) {
-    const { nodeId } = detail;
+  function onConnectTarget({ nodeId }) {
     if (pendingFrom !== null && pendingFrom !== nodeId) {
       pushHistory();
       connectNodes(pendingFrom, nodeId);
@@ -154,8 +109,7 @@
     pendingFrom = null;
   }
 
-  function onContextMenu({ detail }) {
-    const { e, node } = detail;
+  function onContextMenu({ e, node }) {
     e.preventDefault();
     commitInlineEdit();
     canvasContextMenu = null;
@@ -163,18 +117,12 @@
     selectedNodeId = node.id;
   }
 
-  function onNodeDblClick({ detail }) {
-    const { node } = detail;
+  function onNodeDblClick({ node }) {
     commitInlineEdit();
     contextMenu = null;
     selectedNodeId = node.id;
-    const svgRect = svgEl.getBoundingClientRect();
-    inlineEdit = {
-      nodeId: node.id,
-      x: svgRect.left + node.x * zoom + panX,
-      y: svgRect.top  + node.y * zoom + panY + 32 * zoom,
-      value: node.data,
-    };
+    const pos = logic.getInlineEditPos(node);
+    inlineEdit = { nodeId: node.id, x: pos.x, y: pos.y, value: node.data };
     setTimeout(() => { inlineInputEl?.focus(); inlineInputEl?.select(); }, 10);
   }
 
@@ -194,41 +142,13 @@
   }
 
   function onMenuClose() { contextMenu = null; }
-
-  function onMenuRename({ detail }) {
-    pushHistory();
-    updateNode(contextMenu.node.id, { varName: detail.varName });
-    pushHistory();
-    contextMenu = null;
-  }
-
-  function onMenuEditData({ detail }) {
-    pushHistory();
-    updateNode(contextMenu.node.id, { data: detail.data });
-    pushHistory();
-    contextMenu = null;
-  }
-
-  function onMenuDisconnect() {
-    pushHistory();
-    disconnectNode(contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
-  }
-
-  function onMenuSetHead() {
-    pushHistory();
-    setHead($headId === contextMenu.node.id ? null : contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
-  }
-
-  function onMenuSetTail() {
-    pushHistory();
-    setTail($tailId === contextMenu.node.id ? null : contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
-  }
+  function onMenuRename({ varName }) { pushHistory(); updateNode(contextMenu.node.id, { varName }); pushHistory(); contextMenu = null; }
+  function onMenuEditData({ data }) { pushHistory(); updateNode(contextMenu.node.id, { data }); pushHistory(); contextMenu = null; }
+  function onMenuDisconnect() { pushHistory(); disconnectNode(contextMenu.node.id); pushHistory(); contextMenu = null; }
+  function onMenuSetHead() { pushHistory(); setHead($headId === contextMenu.node.id ? null : contextMenu.node.id); pushHistory(); contextMenu = null; }
+  function onMenuSetTail() { pushHistory(); setTail($tailId === contextMenu.node.id ? null : contextMenu.node.id); pushHistory(); contextMenu = null; }
+  function onMenuSetWalk() { pushHistory(); setWalk($walkId === contextMenu.node.id ? null : contextMenu.node.id); pushHistory(); contextMenu = null; }
+  function onMenuUnlink() { pushHistory(); removeNodeFromList(contextMenu.node.id); pushHistory(); contextMenu = null; }
 
   function edgePos(edge, ns) {
     const from = ns.find(n => n.id === edge.from);
@@ -248,34 +168,18 @@
   }
 
   function onBeforeUnload(e) {
-    if ($nodes.length > 0) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  }
-
-  function onMenuUnlink() {
-    pushHistory();
-    removeNodeFromList(contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
-  }
-
-  function onMenuSetWalk() {
-    pushHistory();
-    setWalk($walkId === contextMenu.node.id ? null : contextMenu.node.id);
-    pushHistory();
-    contextMenu = null;
+    if ($nodes.length > 0) { e.preventDefault(); e.returnValue = ''; }
   }
 
   onMount(() => {
+    logic.setSvgEl(svgEl);
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('beforeunload', onBeforeUnload);
-    svgEl.addEventListener('wheel', onWheel, { passive: false });
+    svgEl.addEventListener('wheel', logic.onWheel, { passive: false });
     return () => {
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      svgEl?.removeEventListener('wheel', onWheel); // ← tambah ?. di sini
+      svgEl?.removeEventListener('wheel', logic.onWheel);
     };
   });
 </script>
@@ -334,11 +238,11 @@
           isHead={$headId === node.id}
           isTail={$tailId === node.id}
           isWalk={$walkId === node.id}
-          ondragstart={({ e, nodeId }) => onNodeDragstart({ detail: { e, nodeId } })}
-          onportdragstart={({ e, nodeId, portType }) => onPortDragstart({ detail: { e, nodeId, portType } })}
-          onconnecttarget={({ e, nodeId }) => onConnectTarget({ detail: { nodeId } })}
-          oncontextmenu={({ e, node }) => onContextMenu({ detail: { e, node } })}
-          ondblclick={({ node }) => onNodeDblClick({ detail: { node } })}
+          ondragstart={onNodeDragstart}
+          onportdragstart={onPortDragstart}
+          onconnecttarget={onConnectTarget}
+          oncontextmenu={onContextMenu}
+          ondblclick={onNodeDblClick}
         />
       {/each}
     </g>
@@ -361,14 +265,11 @@
     <div class="empty-hint">
       <div class="empty-icon">◈</div>
       <div class="empty-title">No nodes yet</div>
-      <div class="empty-sub">
-        Click <strong>Add Node</strong> or right-click canvas to get started
-      </div>
+      <div class="empty-sub">Click <strong>Add Node</strong> or right-click canvas to get started</div>
     </div>
   {/if}
 </div>
 
-<!-- Node context menu -->
 {#if contextMenu}
   <ContextMenu
     x={contextMenu.x}
@@ -380,8 +281,8 @@
     hasNext={!!($nodes.find(n => n.id === contextMenu.node.id)?.nextId)}
     hasPrev={false}
     on:close={onMenuClose}
-    on:rename={onMenuRename}
-    on:editData={onMenuEditData}
+    on:rename={({ detail }) => onMenuRename(detail)}
+    on:editData={({ detail }) => onMenuEditData(detail)}
     on:disconnectNext={onMenuDisconnect}
     on:setHead={onMenuSetHead}
     on:setTail={onMenuSetTail}
@@ -390,12 +291,8 @@
   />
 {/if}
 
-<!-- Canvas context menu -->
 {#if canvasContextMenu}
-  <div
-    class="canvas-ctx-menu"
-    style="left: {canvasContextMenu.clientX}px; top: {canvasContextMenu.clientY}px;"
-  >
+  <div class="canvas-ctx-menu" style="left: {canvasContextMenu.clientX}px; top: {canvasContextMenu.clientY}px;">
     <button class="ctx-item" on:click={onCanvasAddNode}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
         <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/>
@@ -407,85 +304,17 @@
 {/if}
 
 <style>
-  .canvas-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  .inline-edit {
-    position: fixed;
-    transform: translateX(-50%);
-    width: 110px;
-    background: var(--surface2);
-    border: 1.5px solid var(--accent);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 500;
-    padding: 4px 8px;
-    text-align: center;
-    outline: none;
-    box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4);
-    z-index: 500;
-  }
-  .empty-hint {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    pointer-events: none;
-    animation: fadeIn 0.4s ease;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -48%); }
-    to   { opacity: 1; transform: translate(-50%, -50%); }
-  }
+  .canvas-wrapper { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+  .canvas-svg { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; }
+  .canvas-svg.panning { cursor: grabbing; }
+  .inline-edit { position: fixed; transform: translateX(-50%); width: 110px; background: var(--surface2); border: 1.5px solid var(--accent); border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 13px; font-weight: 500; padding: 4px 8px; text-align: center; outline: none; box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4); z-index: 500; }
+  .empty-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
   .empty-icon  { font-size: 40px; color: var(--border-bright); margin-bottom: 12px; }
   .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
   .empty-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
   .empty-sub strong { color: var(--accent); }
-
-  .canvas-ctx-menu {
-    position: fixed;
-    z-index: 1000;
-    background: var(--surface);
-    border: 1px solid var(--border-bright);
-    border-radius: 10px;
-    padding: 6px;
-    min-width: 160px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    animation: menuIn 0.12s ease;
-  }
-  @keyframes menuIn {
-    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  .ctx-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 7px 10px;
-    background: none;
-    border: none;
-    border-radius: 6px;
-    color: var(--text-dim);
-    font-family: var(--font-ui);
-    font-size: 13px;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.1s;
-  }
+  .canvas-ctx-menu { position: fixed; z-index: 1000; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 10px; padding: 6px; min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: menuIn 0.12s ease; }
+  @keyframes menuIn { from { opacity: 0; transform: scale(0.95) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .ctx-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; background: none; border: none; border-radius: 6px; color: var(--text-dim); font-family: var(--font-ui); font-size: 13px; cursor: pointer; text-align: left; transition: all 0.1s; }
   .ctx-item:hover { background: var(--surface2); color: var(--text); }
-  .canvas-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    cursor: grab;
-    user-select: none;
-  }
-  .canvas-svg.panning { cursor: grabbing; }
 </style>
