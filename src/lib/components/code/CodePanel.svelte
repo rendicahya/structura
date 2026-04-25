@@ -12,6 +12,10 @@
   const JAVA_KW   = new Set(['class','new','int','double','String','void','null','this','Node','return','head','tail','walk']);
   const PYTHON_KW = new Set(['class','def','self','None','True','False','return','import','from','if','else','elif','and','or','not','in']);
 
+  /**
+   * @param {string} raw
+   * @param {string} language
+   */
   function highlight(raw, language) {
     const KW = language === 'java' ? JAVA_KW : PYTHON_KW;
     const commentChar = language === 'java' ? '//' : '#';
@@ -83,14 +87,14 @@
 <div class="code-panel">
   <div class="code-header">
     <div class="lang-tabs">
-      <button class="lang-tab" class:active={lang === 'java'} on:click={() => lang = 'java'}>
+      <button class="lang-tab" class:active={lang === 'java'} onclick={() => lang = 'java'}>
         <span class="dot java-dot"></span>Java
       </button>
-      <button class="lang-tab" class:active={lang === 'python'} on:click={() => lang = 'python'}>
+      <button class="lang-tab" class:active={lang === 'python'} onclick={() => lang = 'python'}>
         <span class="dot python-dot"></span>Python
       </button>
     </div>
-    <button class="copy-btn" class:copied on:click={handleCopy}>
+    <button class="copy-btn" class:copied onclick={handleCopy}>
       {#if copied}
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M2 7L5 10L11 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
