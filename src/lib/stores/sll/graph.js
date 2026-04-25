@@ -1,4 +1,8 @@
 /**
+ * @typedef {{ id: string, varName: string, data: string, x: number, y: number, nextId: string|null }} SLLNode
+ */
+
+/**
  * @typedef {{ nodes: SLLNode[], edges: {from: string, to: string}[], headId: string|null, tailId: string|null, walkId: string|null, counter: number, codeLog: any[] }} SLLSnapshot
  */
 
@@ -29,6 +33,10 @@ export function createNode(x = 200, y = 200) {
   return { id, varName, data: '', x, y, nextId: null };
 }
 
+/**
+ * @param {SLLNode} node
+ * @param {boolean} [silent]
+ */
 export function addNode(node, silent = false) {
   nodes.update(ns => [...ns, node]);
   if (!silent) logOp(
@@ -37,6 +45,9 @@ export function addNode(node, silent = false) {
   );
 }
 
+/**
+ * @param {string|null} nodeId
+ */
 export function setWalk(nodeId) {
   walkId.set(nodeId);
   const ns = get(nodes);
@@ -48,6 +59,9 @@ export function setWalk(nodeId) {
   else logOp(`// walk unset`, `# walk unset`);
 }
 
+/**
+ * @param {string} nodeId
+ */
 export function removeNodeFromList(nodeId) {
   const ns = get(nodes);
   const predecessor = ns.find(n => n.nextId === nodeId);
@@ -80,6 +94,11 @@ export function removeNodeFromList(nodeId) {
   if (javaOps.length > 0) logOp(javaOps, pyOps);
 }
 
+/**
+ * @param {string} nodeId
+ * @param {Partial<SLLNode>} patch
+ * @param {boolean} [silent]
+ */
 export function updateNode(nodeId, patch, silent = false) {
   const ns = get(nodes);
   const old = ns.find(n => n.id === nodeId);
@@ -94,6 +113,7 @@ export function updateNode(nodeId, patch, silent = false) {
     }
     if (patch.data !== undefined && patch.data !== old.data) {
       const updated = get(nodes).find(n => n.id === nodeId);
+      if (!updated) return; // ← early return kalau undefined
       const val = formatValue(patch.data);
       const pyVal = formatPythonValue(patch.data);
       logOp(
@@ -104,6 +124,11 @@ export function updateNode(nodeId, patch, silent = false) {
   }
 }
 
+/**
+ * @param {string} fromId
+ * @param {string} toId
+ * @param {boolean} [silent]
+ */
 export function connectNodes(fromId, toId, silent = false) {
   edges.update(es => es.filter(e => e.from !== fromId));
   nodes.update(ns => ns.map(n => n.id === fromId ? { ...n, nextId: toId } : n));
@@ -120,6 +145,10 @@ export function connectNodes(fromId, toId, silent = false) {
   }
 }
 
+/**
+ * @param {string} nodeId
+ * @param {boolean} [silent]
+ */
 export function disconnectNode(nodeId, silent = false) {
   const ns = get(nodes);
   const node = ns.find(n => n.id === nodeId);
@@ -131,6 +160,9 @@ export function disconnectNode(nodeId, silent = false) {
   );
 }
 
+/**
+ * @param {string|null} nodeId
+ */
 export function setHead(nodeId) {
   headId.set(nodeId);
   const ns = get(nodes);
@@ -142,6 +174,9 @@ export function setHead(nodeId) {
   else logOp(`// head unset`, `# head unset`);
 }
 
+/**
+ * @param {string|null} nodeId
+ */
 export function setTail(nodeId) {
   tailId.set(nodeId);
   const ns = get(nodes);
