@@ -27,7 +27,7 @@
 ## 🚀 Getting Started
 
 ### Online Version
-You can access the live version at: [structura.pages.dev](https://structura.pages.dev) *(Replace with actual URL if different)*
+You can access the live version at: [rendicahya.github.io/structura](https://rendicahya.github.io/structura/)
 
 ### Local Development
 1. **Clone the repository**:
