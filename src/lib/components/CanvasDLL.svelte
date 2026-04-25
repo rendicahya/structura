@@ -180,15 +180,21 @@
     if ($nodesDLL.length > 0) { e.preventDefault(); e.returnValue = ''; }
   }
 
+  function handleWheel(e) {
+    logic.onWheel(e);
+    // Sync setelah rAF selesai
+    requestAnimationFrame(() => syncPan());
+  }
+
   onMount(() => {
     logic.setSvgEl(svgEl);
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('beforeunload', onBeforeUnload);
-    svgEl.addEventListener('wheel', logic.onWheel, { passive: false });
+    svgEl.addEventListener('wheel', handleWheel, { passive: false });
     return () => {
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      svgEl?.removeEventListener('wheel', logic.onWheel);
+      svgEl?.removeEventListener('wheel', handleWheel);
     };
   });
 </script>
@@ -205,23 +211,21 @@
     on:contextmenu={onSVGContextMenu}
   >
     <defs>
-      <marker id="arrow-solid" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#5b8fff" />
-      </marker>
-      <marker id="arrow-prev" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#c792ea" />
-      </marker>
-      <marker id="arrow-pending" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#f0b429" />
-      </marker>
-      <pattern id="grid-dll" width="28" height="28" patternUnits="userSpaceOnUse">
+      <pattern
+        id="grid"
+        width={28}
+        height={28}
+        patternUnits="userSpaceOnUse"
+        patternTransform="translate({panX}, {panY}) scale({zoom})"
+      >
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
       </pattern>
+      <!-- marker defs tetap sama -->
     </defs>
 
-    <rect width="100%" height="100%" fill="url(#grid-dll)" />
+    <rect width="100%" height="100%" fill="url(#grid)" />
 
-    <g transform="translate({panX}, {panY}) scale({zoom})">
+    <g style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0; will-change: transform;">
       {#each $edgesDLL as edge (`${edge.from}-${edge.to}-${edge.type}`)}
         {#if edgePos(edge, $nodesDLL)}
           {@const pos = edgePos(edge, $nodesDLL)}

@@ -12,6 +12,7 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
   let panStartX = 0;
   let panStartY = 0;
   let dragging = null;
+  let wheelFrame = null;
 
   function setSvgEl(el) { svgEl = el; }
 
@@ -25,15 +26,19 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
 
   function onWheel(e) {
     e.preventDefault();
-    const rect = svgEl.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-    const zoom = getZoom();
-    const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)));
-    panX = mouseX - (mouseX - panX) * (newZoom / zoom);
-    panY = mouseY - (mouseY - panY) * (newZoom / zoom);
-    setZoom(newZoom);
+    if (wheelFrame) return;
+    wheelFrame = requestAnimationFrame(() => {
+      wheelFrame = null;
+      const rect = svgEl.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      const zoom = getZoom();
+      const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)));
+      panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+      panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+      setZoom(newZoom);
+    });
   }
 
   function startPan(clientX, clientY) {

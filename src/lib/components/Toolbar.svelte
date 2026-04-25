@@ -129,17 +129,15 @@
   </div>
 
   <div class="actions">
-    <Tooltip text="Add Node">
-      <button class="btn btn-primary" on:click={handleAddNode}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        Add Node
-      </button>
-    </Tooltip>
+    <button class="btn btn-primary" on:click={handleAddNode}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Add Node
+    </button>
 
-    <Tooltip text="Run Garbage Collection">
+    <Tooltip text={gcCount > 0 ? `Run garbage collector (${gcCount} collectable node${gcCount > 1 ? 's' : ''})` : 'Run garbage collector (nothing to collect)'}>
       <button class="btn btn-gc" on:click={handleGC}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
