@@ -1,8 +1,7 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-  const dispatch = createEventDispatcher();
-
-  function close() { dispatch('close'); }
+  const { onclose } = $props();
+  
+  function close() { onclose?.(); }
 
   function onKeydown(e) {
     if (e.key === 'Escape') close();
@@ -28,13 +27,13 @@
 
 <svelte:window on:keydown={onKeydown} />
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="overlay" on:mousedown={close}>
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="guide" on:mousedown|stopPropagation>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="overlay" onmousedown={close}>
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="guide" onmousedown={(e) => e.stopPropagation()}>
     <div class="guide-header">
       <span class="guide-title">Keyboard Shortcuts</span>
-      <button class="close-btn" on:click={close}>
+      <button class="close-btn" aria-label="Close" onclick={close}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>

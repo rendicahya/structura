@@ -71,7 +71,7 @@
   let badgeCenterX = W / 2;
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <g
   class="node-group"
   class:selected
@@ -135,7 +135,7 @@
   >{node.data || 'null'}</text>
 
   <!-- Next port (right) -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <circle
     cx={W-8} cy={H/2} r="5"
     fill={hasNext ? 'var(--accent)' : 'var(--node-border)'}
@@ -147,7 +147,7 @@
 
   <!-- Prev port (left) — only for doubly -->
   {#if doubly}
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <circle
       cx={8} cy={H/2} r="5"
       fill={hasPrev ? '#c792ea' : 'var(--node-border)'}

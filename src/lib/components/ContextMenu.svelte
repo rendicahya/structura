@@ -22,18 +22,16 @@
   } = $props();
 
   let menuEl;
-  let varNameInput;
-  let dataInput;
-  let editingVarName = false;
-  let editingData = false;
-  let tmpVarName = $state(node?.varName ?? '');
-  let tmpData = $state(node?.data ?? '');
+  let varNameInput = $state();
+  let dataInput = $state();
+  let editingVarName = $state(false);
+  let editingData = $state(false);
+  let tmpVarName = $state('');
+  let tmpData = $state('');
 
   $effect(() => {
-    if (node) {
-      tmpVarName = node.varName;
-      tmpData = node.data;
-    }
+    tmpVarName = node?.varName ?? '';
+    tmpData = node?.data ?? '';
   });
 
   function close() { onclose?.(); }

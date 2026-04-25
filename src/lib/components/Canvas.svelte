@@ -421,10 +421,7 @@
     padding: 2px 6px;
     color: var(--text-dim);
   }
-  .empty-icon  { font-size: 40px; color: var(--border-bright); margin-bottom: 12px; }
   .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
-  .empty-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
-  .empty-sub strong { color: var(--accent); }
   .canvas-ctx-menu { position: fixed; z-index: 1000; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 10px; padding: 6px; min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: menuIn 0.12s ease; }
   @keyframes menuIn { from { opacity: 0; transform: scale(0.95) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
   .ctx-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; background: none; border: none; border-radius: 6px; color: var(--text-dim); font-family: var(--font-ui); font-size: 13px; cursor: pointer; text-align: left; transition: all 0.1s; }

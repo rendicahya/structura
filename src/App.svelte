@@ -116,7 +116,7 @@
 </div>
 
 {#if showShortcuts}
-  <ShortcutGuide on:close={() => showShortcuts = false} />
+  <ShortcutGuide onclose={() => showShortcuts = false} />
 {/if}
 
 <ToastContainer />
