@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import Toolbar from './lib/components/toolbar/Toolbar.svelte';
-  import Canvas from './lib/components/Canvas.svelte';
-  import CanvasDLL from './lib/components/CanvasDLL.svelte';
+  import Canvas from './lib/components/canvas/Canvas.svelte';
+  import CanvasDLL from './lib/components/canvas/CanvasDLL.svelte';
   import CodePanel from './lib/components/code/CodePanel.svelte';
   import { codeLog } from './lib/stores/sll/sllLog.js';
   import { codeLogDLL } from './lib/stores/dll/dllLog.js';

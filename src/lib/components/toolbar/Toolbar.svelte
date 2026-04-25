@@ -134,7 +134,7 @@
       Add Node
     </button>
 
-    <Tooltip text={gcCount > 0 ? `Run garbage collector (${gcCount} collectable node${gcCount > 1 ? 's' : ''})` : 'Run garbage collector (nothing to collect)'}>
+    <Tooltip text={gcCount > 0 ? `Run Garbage Collector (${gcCount} Collectable Node${gcCount > 1 ? 's' : ''})` : 'Run Garbage Collector (Nothing to Collect)'}>
       <button class="btn btn-gc" onclick={handleGC}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
