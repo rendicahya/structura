@@ -90,8 +90,8 @@
     mode={isSLL ? 'sll' : 'dll'}
     {zoom} {zoomIn} {zoomOut} {zoomReset}
     {codeHidden}
-    on:toggleCode={() => codeHidden = !codeHidden}
-    on:openShortcuts={() => showShortcuts = true}
+    ontoggleCode={() => codeHidden = !codeHidden}
+    onopenShortcuts={() => showShortcuts = true}
   />
 
   <div class="workspace" bind:this={containerEl}>

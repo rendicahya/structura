@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
 
   import { unreachableCount } from '../stores/graph.js';
@@ -14,26 +13,26 @@
   // DLL imports
   import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../stores/graphDLL.js';
   import { nodesDLL } from '../stores/graphDLL.js';
-  
+
   import Tooltip from './Tooltip.svelte';
-
   import { toast } from '../stores/toast.js';
-  import ShortcutGuide from './ShortcutGuide.svelte'; // tidak perlu, trigger dari App
 
-  export let mode = 'sll'; // 'sll' | 'dll'
-  export let zoom = 1;
-  export let zoomIn;
-  export let zoomOut;
-  export let zoomReset;
-  export let codeHidden = false;
+  const {
+    mode = 'sll',
+    zoom = 1,
+    zoomIn,
+    zoomOut,
+    zoomReset,
+    codeHidden = false,
+    ontoggleCode,
+    onopenShortcuts,
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  $: isSLL = mode === 'sll';
-  $: isDLL = mode === 'dll';
-  $: currentNodes = isSLL ? $nodes : $nodesDLL;
-  $: modeLabel = isSLL ? 'Linked List' : 'Doubly Linked List';
-  $: gcCount = isSLL ? $unreachableCount : $unreachableCountDLL;
+  let isSLL = $derived(mode === 'sll');
+  let currentNodes = $derived(isSLL ? $nodes : $nodesDLL);
+  let modeLabel = $derived(isSLL ? 'Linked List' : 'Doubly Linked List');
+  let gcCount = $derived(isSLL ? $unreachableCount : $unreachableCountDLL);
+  let zoomPct = $derived(Math.round(zoom * 100) + '%');
 
   function handleAddNode() {
     pushHistory();
@@ -106,8 +105,6 @@
     };
     input.click();
   }
-
-  $: zoomPct = Math.round(zoom * 100) + '%';
 </script>
 
 <div class="toolbar">
@@ -129,7 +126,7 @@
   </div>
 
   <div class="actions">
-    <button class="btn btn-primary" on:click={handleAddNode}>
+    <button class="btn btn-primary" onclick={handleAddNode}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
         <path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -138,7 +135,7 @@
     </button>
 
     <Tooltip text={gcCount > 0 ? `Run garbage collector (${gcCount} collectable node${gcCount > 1 ? 's' : ''})` : 'Run garbage collector (nothing to collect)'}>
-      <button class="btn btn-gc" on:click={handleGC}>
+      <button class="btn btn-gc" onclick={handleGC}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 2C4.2 2 2 4.2 2 7s2.2 5 5 5 5-2.2 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
           <path d="M9 2h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -155,7 +152,7 @@
     <div class="separator"></div>
 
     <Tooltip text="Zoom Out" shortcut="Scroll ↓">
-      <button class="btn btn-icon" on:click={zoomOut}>
+      <button class="btn btn-icon" aria-label="Zoom out" onclick={zoomOut}>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
           <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
           <path d="M4.5 6.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -165,11 +162,11 @@
     </Tooltip>
 
     <Tooltip text="Reset Zoom">
-      <button class="zoom-label" on:click={zoomReset}>{zoomPct}</button>
+      <button class="zoom-label" aria-label="Reset zoom" onclick={zoomReset}>{zoomPct}</button>
     </Tooltip>
 
     <Tooltip text="Zoom In" shortcut="Scroll ↑">
-      <button class="btn btn-icon" on:click={zoomIn}>
+      <button class="btn btn-icon" aria-label="Zoom in" onclick={zoomIn}>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
           <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/>
           <path d="M4.5 6.5h4M6.5 4.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -181,7 +178,7 @@
     <div class="separator"></div>
 
     <Tooltip text="Undo" shortcut="Ctrl+Z">
-      <button class="btn btn-icon" on:click={undo} disabled={!$canUndo}>
+      <button class="btn btn-icon" aria-label="Undo" onclick={undo} disabled={!$canUndo}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M3 6H10C12.2 6 14 7.8 14 10C14 12.2 12.2 14 10 14H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           <path d="M5.5 3.5L3 6L5.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -190,7 +187,7 @@
     </Tooltip>
 
     <Tooltip text="Redo" shortcut="Ctrl+Y">
-      <button class="btn btn-icon" on:click={redo} disabled={!$canRedo}>
+      <button class="btn btn-icon" aria-label="Redo" onclick={redo} disabled={!$canRedo}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M13 6H6C3.8 6 2 7.8 2 10C2 12.2 3.8 14 6 14H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           <path d="M10.5 3.5L13 6L10.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -201,7 +198,7 @@
     <div class="separator"></div>
 
     <Tooltip text="New Canvas">
-      <button class="btn btn-secondary" on:click={handleNewCanvas}>
+      <button class="btn btn-secondary" onclick={handleNewCanvas}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
           <path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -211,7 +208,7 @@
     </Tooltip>
 
     <Tooltip text="Save to file">
-      <button class="btn btn-secondary" on:click={handleSave}>
+      <button class="btn btn-secondary" onclick={handleSave}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           <path d="M7 2V9M4.5 6.5L7 9L9.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -221,7 +218,7 @@
     </Tooltip>
 
     <Tooltip text="Load from file">
-      <button class="btn btn-secondary" on:click={handleLoad}>
+      <button class="btn btn-secondary" onclick={handleLoad}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 10V12H12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           <path d="M7 9V2M4.5 4.5L7 2L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -233,11 +230,7 @@
     <div class="separator"></div>
 
     <Tooltip text={codeHidden ? 'Show Code Panel' : 'Hide Code Panel'}>
-      <button
-        class="btn btn-icon"
-        class:active={codeHidden}
-        on:click={() => dispatch('toggleCode')}
-      >
+      <button class="btn btn-icon" aria-label={codeHidden ? 'Show code panel' : 'Hide code panel'} class:active={codeHidden} onclick={() => ontoggleCode?.()}>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
           <rect x="1" y="2" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/>
           <line x1="9" y1="2" x2="9" y2="13" stroke="currentColor" stroke-width="1.4"/>
@@ -251,7 +244,7 @@
     </Tooltip>
 
     <Tooltip text="Keyboard Shortcuts" shortcut="?">
-      <button class="btn btn-icon" on:click={() => dispatch('openShortcuts')}>
+      <button class="btn btn-icon" aria-label="Keyboard shortcuts" onclick={() => onopenShortcuts?.()}>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
           <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.4"/>
           <path d="M5.5 6C5.5 4.9 6.3 4 7.5 4S9.5 4.9 9.5 6C9.5 7 8.5 7.5 7.5 8v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
