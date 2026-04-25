@@ -1,11 +1,18 @@
 import { writable } from 'svelte/store';
 import { getSnapshot, applySnapshot } from '../sll/graph.js';
 
+/** @type {import('svelte/store').Writable<any[]>} */
 const past = writable([]);
+
+/** @type {import('svelte/store').Writable<any[]>} */
 const future = writable([]);
 
+/** @type {any[]} */
 let _past = [];
+
+/** @type {any[]} */
 let _future = [];
+
 past.subscribe(v => _past = v);
 future.subscribe(v => _future = v);
 

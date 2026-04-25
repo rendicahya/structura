@@ -1,27 +1,45 @@
+/**
+ * @typedef {{ nodes: DLLNode[], edges: {from: string, to: string, type: string}[], headId: string|null, tailId: string|null, walkId: string|null, counter: number, codeLog: any[] }} DLLSnapshot
+ */
+
 import { writable, get, derived } from 'svelte/store';
 import { logOpDLL as logOp, codeLogDLL as codeLog } from './dllLog.js';
 import { formatValue, formatPythonValue } from '../../utils/formatters.js';
 
+/** @type {import('svelte/store').Writable<DLLNode[]>} */
 export const nodesDLL = writable([]);
+
+/** @type {import('svelte/store').Writable<{from: string, to: string, type: string}[]>} */
 export const edgesDLL = writable([]);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const headIdDLL = writable(null);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const tailIdDLL = writable(null);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const walkIdDLL = writable(null);
 
 let nodeCounter = 0;
 
+/**
+ * @typedef {{ id: string, varName: string, data: string, x: number, y: number, nextId: string|null, prevId: string|null }} DLLNode
+ */
 export const unreachableCountDLL = derived(
-  [nodesDLL, edgesDLL, headIdDLL, tailIdDLL, walkIdDLL],
-  ([$nodesDLL, $edgesDLL, $headIdDLL, $tailIdDLL, $walkIdDLL]) => {
+  [nodesDLL, headIdDLL, tailIdDLL, walkIdDLL],
+  ([$nodesDLL, $headIdDLL, $tailIdDLL, $walkIdDLL]) => {
     const reachable = new Set();
-    $nodesDLL.forEach(n => {
+    /** @type {DLLNode[]} */
+    const ns = $nodesDLL;
+    ns.forEach(n => {
       if (n.nextId) { reachable.add(n.nextId); reachable.add(n.id); }
       if (n.prevId) { reachable.add(n.prevId); reachable.add(n.id); }
     });
     if ($headIdDLL) reachable.add($headIdDLL);
     if ($tailIdDLL) reachable.add($tailIdDLL);
     if ($walkIdDLL) reachable.add($walkIdDLL);
-    return $nodesDLL.filter(n => !reachable.has(n.id)).length;
+    return ns.filter(n => !reachable.has(n.id)).length;
   }
 );
 
@@ -31,6 +49,10 @@ export function createNodeDLL(x = 200, y = 200) {
   return { id, varName, data: '', x, y, nextId: null, prevId: null };
 }
 
+/**
+ * @param {DLLNode} node
+ * @param {boolean} [silent]
+ */
 export function addNodeDLL(node, silent = false) {
   nodesDLL.update(ns => [...ns, node]);
   if (!silent) logOp(
@@ -39,6 +61,11 @@ export function addNodeDLL(node, silent = false) {
   );
 }
 
+/**
+ * @param {string} nodeId
+ * @param {Partial<DLLNode>} patch
+ * @param {boolean} [silent]
+ */
 export function updateNodeDLL(nodeId, patch, silent = false) {
   const ns = get(nodesDLL);
   const old = ns.find(n => n.id === nodeId);
@@ -53,6 +80,7 @@ export function updateNodeDLL(nodeId, patch, silent = false) {
     }
     if (patch.data !== undefined && patch.data !== old.data) {
       const updated = get(nodesDLL).find(n => n.id === nodeId);
+      if (!updated) return; // ← early return kalau undefined
       const val = formatValue(patch.data);
       const pyVal = formatPythonValue(patch.data);
       logOp(
@@ -63,6 +91,11 @@ export function updateNodeDLL(nodeId, patch, silent = false) {
   }
 }
 
+/**
+ * @param {string} fromId
+ * @param {string} toId
+ * @param {boolean} [silent]
+ */
 export function connectNextDLL(fromId, toId, silent = false) {
   // Remove old next edge from fromId
   edgesDLL.update(es => es.filter(e => !(e.from === fromId && e.type === 'next')));
@@ -90,6 +123,11 @@ export function connectNextDLL(fromId, toId, silent = false) {
   }
 }
 
+/**
+ * @param {string} fromId
+ * @param {string} toId
+ * @param {boolean} [silent]
+ */
 export function connectPrevDLL(fromId, toId, silent = false) {
   // fromId.prev = toId
   edgesDLL.update(es => es.filter(e => !(e.from === fromId && e.type === 'prev')));
@@ -113,6 +151,10 @@ export function connectPrevDLL(fromId, toId, silent = false) {
   }
 }
 
+/**
+ * @param {string} nodeId
+ * @param {boolean} [silent]
+ */
 export function disconnectNextDLL(nodeId, silent = false) {
   const ns = get(nodesDLL);
   const node = ns.find(n => n.id === nodeId);
@@ -137,6 +179,10 @@ export function disconnectNextDLL(nodeId, silent = false) {
   }
 }
 
+/**
+ * @param {string} nodeId
+ * @param {boolean} [silent]
+ */
 export function disconnectPrevDLL(nodeId, silent = false) {
   const ns = get(nodesDLL);
   const node = ns.find(n => n.id === nodeId);
@@ -161,6 +207,9 @@ export function disconnectPrevDLL(nodeId, silent = false) {
   }
 }
 
+/**
+ * @param {string} nodeId
+ */
 export function removeNodeFromListDLL(nodeId) {
   const ns = get(nodesDLL);
   const target = ns.find(n => n.id === nodeId);
@@ -227,6 +276,9 @@ export function removeNodeFromListDLL(nodeId) {
   if (javaOps.length > 0) logOp(javaOps, pyOps);
 }
 
+/**
+ * @param {string} nodeId
+ */
 export function setHeadDLL(nodeId) {
   headIdDLL.set(nodeId);
   const ns = get(nodesDLL);
@@ -235,6 +287,9 @@ export function setHeadDLL(nodeId) {
   else logOp(`// head unset`, `# head unset`);
 }
 
+/**
+ * @param {string} nodeId
+ */
 export function setTailDLL(nodeId) {
   tailIdDLL.set(nodeId);
   const ns = get(nodesDLL);
@@ -243,6 +298,9 @@ export function setTailDLL(nodeId) {
   else logOp(`// tail unset`, `# tail unset`);
 }
 
+/**
+ * @param {string} nodeId
+ */
 export function setWalkDLL(nodeId) {
   walkIdDLL.set(nodeId);
   const ns = get(nodesDLL);
@@ -293,6 +351,9 @@ export function getSnapshotDLL() {
   };
 }
 
+/**
+ * @param {DLLSnapshot} snapshot
+ */
 export function applySnapshotDLL(snapshot) {
   nodeCounter = snapshot.counter ?? 0;
   nodesDLL.set(snapshot.nodes ?? []);

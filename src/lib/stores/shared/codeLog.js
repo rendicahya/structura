@@ -1,9 +1,14 @@
 import { writable } from 'svelte/store';
 
 export function createCodeLog() {
+  /** @type {import('svelte/store').Writable<any[]>} */
   const log = writable([]);
   let opCounter = 0;
 
+  /**
+   * @param {string|string[]} java
+   * @param {string|string[]} [python]
+   */
   function logOp(java, python) {
     const id = `op_${++opCounter}`;
     const javaLines   = Array.isArray(java)   ? java   : [java];

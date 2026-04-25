@@ -1,11 +1,24 @@
+/**
+ * @typedef {{ nodes: SLLNode[], edges: {from: string, to: string}[], headId: string|null, tailId: string|null, walkId: string|null, counter: number, codeLog: any[] }} SLLSnapshot
+ */
+
 import { writable, get, derived } from 'svelte/store';
 import { logOp, codeLog } from './sllLog.js';
 import { formatValue, formatPythonValue } from '../../utils/formatters.js';
 
+/** @type {import('svelte/store').Writable<SLLNode[]>} */
 export const nodes = writable([]);
+
+/** @type {import('svelte/store').Writable<{from: string, to: string}[]>} */
 export const edges = writable([]);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const headId = writable(null);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const tailId = writable(null);
+
+/** @type {import('svelte/store').Writable<string|null>} */
 export const walkId = writable(null);
 
 let nodeCounter = 0;
@@ -192,6 +205,9 @@ export function getSnapshot() {
   };
 }
 
+/**
+ * @param {SLLSnapshot} snapshot
+ */
 export function applySnapshot(snapshot) {
   nodeCounter = snapshot.counter ?? 0;
   nodes.set(snapshot.nodes ?? []);

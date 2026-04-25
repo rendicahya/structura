@@ -1,3 +1,6 @@
 import { createCodeLog } from '../shared/codeLog.js';
 
-export const { log: codeLogDLL, logOp: logOpDLL, clearLog: clearLogDLL } = createCodeLog();
+const { log: codeLogDLL, logOp: logOpDLL, clearLog: clearLogDLL } = createCodeLog();
+
+/** @type {import('svelte/store').Writable<any[]>} */
+export { codeLogDLL, logOpDLL, clearLogDLL };
