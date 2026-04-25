@@ -319,14 +319,14 @@
     isWalk={$walkId === contextMenu.node.id}
     hasNext={!!($nodes.find(n => n.id === contextMenu.node.id)?.nextId)}
     hasPrev={false}
-    on:close={onMenuClose}
-    on:rename={({ detail }) => onMenuRename(detail)}
-    on:editData={({ detail }) => onMenuEditData(detail)}
-    on:disconnectNext={onMenuDisconnect}
-    on:setHead={onMenuSetHead}
-    on:setTail={onMenuSetTail}
-    on:setWalk={onMenuSetWalk}
-    on:unlink={onMenuUnlink}
+    onclose={onMenuClose}
+    onrename={onMenuRename}
+    oneditData={onMenuEditData}
+    ondisconnectNext={onMenuDisconnect}
+    onsetHead={onMenuSetHead}
+    onsetTail={onMenuSetTail}
+    onsetWalk={onMenuSetWalk}
+    onunlink={onMenuUnlink}
   />
 {/if}
 
