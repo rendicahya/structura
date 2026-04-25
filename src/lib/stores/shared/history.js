@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { getSnapshot, applySnapshot } from './graph.js';
+import { getSnapshot, applySnapshot } from '../sll/graph.js';
 
 const past = writable([]);
 const future = writable([]);

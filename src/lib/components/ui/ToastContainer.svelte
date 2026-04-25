@@ -1,5 +1,5 @@
 <script>
-  import { toasts, removeToast } from '../stores/toast.js';
+  import { toasts, removeToast } from '../../stores/shared/toast.js';
   import Toast from './Toast.svelte';
 </script>
 

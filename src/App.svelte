@@ -1,14 +1,14 @@
 <script>
   import { onMount } from 'svelte';
-  import Toolbar from './lib/components/Toolbar.svelte';
+  import Toolbar from './lib/components/toolbar/Toolbar.svelte';
   import Canvas from './lib/components/Canvas.svelte';
   import CanvasDLL from './lib/components/CanvasDLL.svelte';
-  import CodePanel from './lib/components/CodePanel.svelte';
-  import { codeLog } from './lib/stores/sllLog.js';
-  import { codeLogDLL } from './lib/stores/dllLog.js';
-  import { initHistory } from './lib/stores/history.js';
-  import ToastContainer from './lib/components/ToastContainer.svelte';
-  import ShortcutGuide from './lib/components/ShortcutGuide.svelte';
+  import CodePanel from './lib/components/code/CodePanel.svelte';
+  import { codeLog } from './lib/stores/sll/sllLog.js';
+  import { codeLogDLL } from './lib/stores/dll/dllLog.js';
+  import { initHistory } from './lib/stores/shared/history.js';
+  import ToastContainer from './lib/components/ui/ToastContainer.svelte';
+  import ShortcutGuide from './lib/components/ui/ShortcutGuide.svelte';
 
   onMount(() => {
     initHistory();

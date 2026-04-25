@@ -1,6 +1,6 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpDLL as logOp, codeLogDLL as codeLog } from './dllLog.js';
-import { formatValue, formatPythonValue } from '../utils/formatters.js';
+import { formatValue, formatPythonValue } from '../../utils/formatters.js';
 
 export const nodesDLL = writable([]);
 export const edgesDLL = writable([]);

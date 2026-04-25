@@ -1,21 +1,21 @@
 <script>
-  import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
+  import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../../stores/shared/history.js';
 
-  import { unreachableCount } from '../stores/graph.js';
-  import { unreachableCountDLL } from '../stores/graphDLL.js';
+  import { unreachableCount } from '../../stores/sll/graph.js';
+  import { unreachableCountDLL } from '../../stores/dll/graphDLL.js';
 
   // SLL imports
-  import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
-  import { nodes } from '../stores/graph.js';
-  import { clearLog } from '../stores/sllLog.js';
-  import { clearLogDLL } from '../stores/dllLog.js';
+  import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../../stores/sll/graph.js';
+  import { nodes } from '../../stores/sll/graph.js';
+  import { clearLog } from '../../stores/sll/sllLog.js';
+  import { clearLogDLL } from '../../stores/dll/dllLog.js';
 
   // DLL imports
-  import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../stores/graphDLL.js';
-  import { nodesDLL } from '../stores/graphDLL.js';
+  import { createNodeDLL, addNodeDLL, getSnapshotDLL, applySnapshotDLL, garbageCollectDLL } from '../../stores/dll/graphDLL.js';
+  import { nodesDLL } from '../../stores/dll/graphDLL.js';
 
-  import Tooltip from './Tooltip.svelte';
-  import { toast } from '../stores/toast.js';
+  import Tooltip from '../ui/Tooltip.svelte';
+  import { toast } from '../../stores/shared/toast.js';
 
   const {
     mode = 'sll',

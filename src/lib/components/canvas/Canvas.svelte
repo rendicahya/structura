@@ -1,11 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, walkId, setHead, setTail, setWalk, createNode, addNode } from '../stores/graph.js';
-  import { pushHistory, undo, redo } from '../stores/history.js';
-  import { createCanvasLogic } from '../utils/canvasLogic.js';
-  import NodeComponent from './NodeComponent.svelte';
-  import EdgeComponent from './EdgeComponent.svelte';
-  import ContextMenu from './ContextMenu.svelte';
+  import { nodes, edges, updateNode, removeNodeFromList, connectNodes, disconnectNode, headId, tailId, walkId, setHead, setTail, setWalk, createNode, addNode } from '../../stores/sll/graph.js';
+  import { pushHistory, undo, redo } from '../../stores/shared/history.js';
+  import { createCanvasLogic } from '../../utils/canvasLogic.js';
+  import NodeComponent from '../node/NodeComponent.svelte';
+  import EdgeComponent from '../node/EdgeComponent.svelte';
+  import ContextMenu from '../ui/ContextMenu.svelte';
 
   const NODE_W = 130;
   const NODE_H = 64;

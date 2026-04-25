@@ -1,4 +1,4 @@
-import { updateNode } from '../stores/graph.js';
+import { updateNode } from '../stores/sll/graph.js';
 
 export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) {
   const ZOOM_STEP = 0.1;

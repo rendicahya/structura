@@ -5,12 +5,12 @@
     connectNextDLL, connectPrevDLL, disconnectNextDLL, disconnectPrevDLL,
     headIdDLL, tailIdDLL, walkIdDLL, setHeadDLL, setTailDLL, setWalkDLL,
     createNodeDLL, addNodeDLL
-  } from '../stores/graphDLL.js';
-  import { pushHistory, undo, redo } from '../stores/history.js';
+  } from '../stores/dll/graphDLL.js';
+  import { pushHistory, undo, redo } from '../stores/shared/history.js';
   import { createCanvasLogic } from '../utils/canvasLogic.js';
-  import NodeComponent from './NodeComponent.svelte';
-  import EdgeComponent from './EdgeComponent.svelte';
-  import ContextMenu from './ContextMenu.svelte';
+  import NodeComponent from './node/NodeComponent.svelte';
+  import EdgeComponent from './node/EdgeComponent.svelte';
+  import ContextMenu from './ui/ContextMenu.svelte';
 
   const NODE_W = 130;
   const NODE_H = 64;
