@@ -1,29 +1,81 @@
-# Structura
+# Structura 🏗️
 
-Structura is an interactive web application for visualizing and generating code for data structures, particularly linked lists. This application allows users to create data structure diagrams visually and generate corresponding Java or Python code.
+**Structura** is a powerful, interactive web application designed to help students and educators visualize data structures and generate corresponding code in real-time. Built with a focus on simplicity and educational value, it allows you to build complex diagrams visually and see the implementation logic instantly.
 
-## Key Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Svelte](https://img.shields.io/badge/Svelte-5-ff3e00?logo=svelte)](https://svelte.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646cff?logo=vite)](https://vitejs.dev/)
 
-- **Interactive Canvas**: Drag and drop nodes to create data structures
-- **Edge Connections**: Connect nodes to form linked lists
-- **Code Generation**: Automatically generates Java or Python code from the diagram
-- **Undo/Redo**: History feature to undo or redo changes
-- **Context Menu**: Context menu for quick operations on nodes
-- **Code Panel**: Separate panel to view generated code
-- **Responsive**: Resizable interface with splitter
+---
 
-## How to Use the Application
+## ✨ Features
 
-1. **Add Node**: Right-click on the canvas and select "Add Node"
-2. **Edit Node**: Double-click on a node to edit its data
-3. **Connect Nodes**: Click on the first node, then click on the second node to create a connection
-4. **Select Language**: Choose Java or Python in the code panel
-5. **Generate Code**: Code will automatically update as you modify the diagram
+- **Interactive Canvas**: Seamlessly drag and drop nodes to build your data structures.
+- **Dual Support**: Full support for both **Singly Linked Lists** and **Doubly Linked Lists**.
+- **Live Code Generation**: Instantly view and copy code in **Java** and **Python** as you modify your diagram.
+- **State Management**:
+  - **Undo/Redo**: Never worry about mistakes with a robust history system.
+  - **Save/Load**: Export your work to JSON and resume later.
+- **Smart Tools**:
+  - **Auto GC (Garbage Collection)**: Clean up orphaned nodes with one click.
+  - **Zoom & Pan**: Navigate through large structures with ease.
+- **User Experience**:
+  - **Keyboard Shortcuts**: Power-user friendly with a built-in shortcut guide.
+  - **Toast Notifications**: Real-time feedback for all your actions.
+  - **Responsive Splitter**: Customizable workspace for coding and designing.
 
-## Contributing
+## 🚀 Getting Started
 
-Contributions are welcome! Please create an issue or pull request for fixes and new features.
+### Online Version
+You can access the live version at: [structura.pages.dev](https://structura.pages.dev) *(Replace with actual URL if different)*
 
-## License
+### Local Development
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/rendicahya/structura.git
+   cd structura
+   ```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+3. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-This project uses the MIT license.
+## 🛠️ Tech Stack
+
+- **Framework**: [Svelte 5](https://svelte.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: Vanilla CSS
+- **Icons**: Custom SVG
+
+## 📖 How to Use
+
+1. **Add Nodes**: Right-click anywhere on the canvas.
+2. **Connect**: Click a source node, then click a target node to create a link.
+3. **Edit Data**: Double-click any node to change its value.
+4. **Delete**: Use the context menu (right-click) or keyboard shortcuts.
+5. **Shortcuts**: Press `?` to open the Keyboard Shortcut Guide.
+
+## 🤝 Contributing
+
+Contributions make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## ⚖️ License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+Developed with ❤️ by [Randy Cahya Wihandika](https://github.com/rendicahya)
