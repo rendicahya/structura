@@ -1,12 +1,11 @@
 <script>
-  import { afterUpdate } from 'svelte';
+  const { log } = $props();
 
-  export let log; // store: codeLog atau codeLogDLL
-
-  let lang = 'java';
+  let lang = $state('java');
   let codeBodyEl;
 
-  afterUpdate(() => {
+  $effect(() => {
+    $log; // track perubahan log
     if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
   });
 
@@ -55,7 +54,7 @@
     }).join('');
   }
 
-  $: flatLines = (() => {
+  let flatLines = $derived((() => {
     let lineNum = 1;
     const result = [];
     for (const entry of $log) {
@@ -65,13 +64,13 @@
       }
     }
     return result;
-  })();
+  })());
 
-  $: fullCode = $log
-    .flatMap(e => lang === 'java' ? e.java : (e.python ?? e.java))
-    .join('\n');
+  let fullCode = $derived(
+    $log.flatMap(e => lang === 'java' ? e.java : (e.python ?? e.java)).join('\n')
+  );
 
-  let copied = false;
+  let copied = $state(false);
   let copyTimer;
   function handleCopy() {
     navigator.clipboard.writeText(fullCode);
