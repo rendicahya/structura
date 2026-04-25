@@ -6,8 +6,6 @@
 [![Svelte](https://img.shields.io/badge/Svelte-5-ff3e00?logo=svelte)](https://svelte.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff?logo=vite)](https://vitejs.dev/)
 
----
-
 ## ✨ Features
 
 - **Interactive Canvas**: Seamlessly drag and drop nodes to build your data structures.
@@ -62,6 +60,13 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 3. **Edit Data**: Double-click any node to change its value.
 4. **Delete**: Use the context menu (right-click) or keyboard shortcuts.
 5. **Shortcuts**: Press `?` to open the Keyboard Shortcut Guide.
+
+## 🗺️ Roadmap
+
+Future plans for **Structura** include supporting more data structures:
+- [ ] **Stack** visualization and code generation.
+- [ ] **Queue** visualization and code generation.
+- [ ] **Tree** (Binary Search Tree, AVL, etc.) visualization.
 
 ## 🤝 Contributing
 
