@@ -7,6 +7,8 @@
   import { codeLog } from './lib/stores/sllLog.js';
   import { codeLogDLL } from './lib/stores/dllLog.js';
   import { initHistory } from './lib/stores/history.js';
+  import ToastContainer from './lib/components/ToastContainer.svelte';
+  import ShortcutGuide from './lib/components/ShortcutGuide.svelte';
 
   onMount(() => {
     initHistory();
@@ -19,6 +21,7 @@
   });
 
   let page = '#/linked-list';
+  let showShortcuts = false;
 
   $: isSLL = page === '#/linked-list';
   $: isDLL = page === '#/doubly-linked-list';
@@ -54,9 +57,19 @@
     // Reset zoom saat ganti halaman
     zoom = 1;
   }
+
+  function onKeydown(e) {
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+      showShortcuts = !showShortcuts;
+    }
+  }
 </script>
 
-<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
+<svelte:window
+  on:mousemove={onWindowMousemove}
+  on:mouseup={onWindowMouseup}
+  on:keydown={onKeydown}
+/>
 
 <div id="app">
   <!-- Nav tabs -->
@@ -74,6 +87,7 @@
     {zoom} {zoomIn} {zoomOut} {zoomReset}
     {codeHidden}
     on:toggleCode={() => codeHidden = !codeHidden}
+    on:openShortcuts={() => showShortcuts = true}
   />
 
   <div class="workspace" bind:this={containerEl}>
@@ -96,6 +110,12 @@
     {/if}
   </div>
 </div>
+
+{#if showShortcuts}
+  <ShortcutGuide on:close={() => showShortcuts = false} />
+{/if}
+
+<ToastContainer />
 
 <style>
   #app { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; }

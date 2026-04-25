@@ -14,6 +14,9 @@
   
   import Tooltip from './Tooltip.svelte';
 
+  import { toast } from '../stores/toast.js';
+  import ShortcutGuide from './ShortcutGuide.svelte'; // tidak perlu, trigger dari App
+
   export let mode = 'sll'; // 'sll' | 'dll'
   export let zoom = 1;
   export let zoomIn;
@@ -53,6 +56,7 @@
       clearLogDLL();
     }
     initHistory();
+    toast.success('Canvas cleared');
   }
 
   function handleGC() {
@@ -72,6 +76,7 @@
     a.download = `structura-${mode}-save.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success('Saved successfully');
   }
 
   function handleLoad() {
@@ -88,7 +93,10 @@
           pushHistory();
           if (isSLL) applySnapshot(snap);
           else applySnapshotDLL(snap);
-        } catch { alert('Invalid save file.'); }
+          toast.success('Loaded successfully');
+        } catch {
+          toast.error('Invalid save file');
+        }
       };
       reader.readAsText(file);
     };
@@ -233,6 +241,16 @@
           {:else}
             <path d="M11 6l2 1.5-2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
           {/if}
+        </svg>
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Keyboard Shortcuts" shortcut="?">
+      <button class="btn btn-icon" on:click={() => dispatch('openShortcuts')}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5.5 6C5.5 4.9 6.3 4 7.5 4S9.5 4.9 9.5 6C9.5 7 8.5 7.5 7.5 8v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <circle cx="7.5" cy="10.5" r="0.6" fill="currentColor"/>
         </svg>
       </button>
     </Tooltip>
