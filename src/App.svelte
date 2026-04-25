@@ -1,8 +1,11 @@
 <script>
   import { onMount } from 'svelte';
   import Toolbar from './lib/components/toolbar/Toolbar.svelte';
+  import ToolbarStack from './lib/components/toolbar/ToolbarStack.svelte';
   import Canvas from './lib/components/canvas/Canvas.svelte';
+  import CanvasStack from './lib/components/canvas/CanvasStack.svelte';
   import CanvasDLL from './lib/components/canvas/CanvasDLL.svelte';
+  import { stackLog } from './lib/stores/shared/stackLog.js';
   import CodePanel from './lib/components/code/CodePanel.svelte';
   import { codeLog } from './lib/stores/sll/sllLog.js';
   import { codeLogDLL } from './lib/stores/dll/dllLog.js';
@@ -78,38 +81,56 @@
 <div id="app">
   <!-- Nav tabs -->
   <nav class="page-nav">
-    <button class="nav-tab" class:active={isSLL} on:click={() => navigate('#/linked-list')}>
+    <button class="nav-tab" class:active={isSLL} onclick={() => navigate('#/linked-list')}>
       Linked List
     </button>
-    <button class="nav-tab" class:active={isDLL} on:click={() => navigate('#/doubly-linked-list')}>
+    <button class="nav-tab" class:active={isDLL} onclick={() => navigate('#/doubly-linked-list')}>
       Doubly Linked List
+    </button>
+    <button class="nav-tab" class:active={page === '#/stack'} onclick={() => navigate('#/stack')}>
+      Stack
     </button>
   </nav>
 
-  <Toolbar
-    mode={isSLL ? 'sll' : 'dll'}
-    {zoom} {zoomIn} {zoomOut} {zoomReset}
-    {codeHidden}
-    ontoggleCode={() => codeHidden = !codeHidden}
-    onopenShortcuts={() => showShortcuts = true}
-  />
+  {#if page === '#/linked-list' || page === '#/doubly-linked-list'}
+    <Toolbar
+      mode={page === '#/linked-list' ? 'sll' : 'dll'}
+      {zoom} {zoomIn} {zoomOut} {zoomReset}
+      {codeHidden}
+      ontoggleCode={() => codeHidden = !codeHidden}
+      onopenShortcuts={() => showShortcuts = true}
+    />
+  {:else if page === '#/stack'}
+    <ToolbarStack
+      {zoom} {zoomIn} {zoomOut} {zoomReset}
+      {codeHidden}
+      ontoggleCode={() => codeHidden = !codeHidden}
+      onopenShortcuts={() => showShortcuts = true}
+    />
+  {/if}
 
+  <!-- workspace -->
   <div class="workspace" bind:this={containerEl}>
     <div class="panel canvas-panel" style={codeHidden ? 'width:100%' : `width:${splitPos}%`}>
-      {#if isSLL}
+      {#if page === '#/linked-list'}
         <Canvas bind:zoom />
-      {:else}
+      {:else if page === '#/doubly-linked-list'}
         <CanvasDLL bind:zoom />
+      {:else if page === '#/stack'}
+        <CanvasStack />
       {/if}
     </div>
 
     {#if !codeHidden}
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <div class="splitter" class:active={draggingSplitter} on:mousedown={onSplitterMousedown}>
+      <div class="splitter" class:active={draggingSplitter} onmousedown={onSplitterMousedown}>
         <div class="splitter-handle"></div>
       </div>
       <div class="panel code-panel-wrap" style="width:{100 - splitPos}%">
-        <CodePanel log={isSLL ? codeLog : codeLogDLL} />
+        <CodePanel log={
+          page === '#/linked-list' ? codeLog :
+          page === '#/doubly-linked-list' ? codeLogDLL :
+          stackLog
+        } />
       </div>
     {/if}
   </div>
