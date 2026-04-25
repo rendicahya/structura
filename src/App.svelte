@@ -22,18 +22,22 @@
 
   let page = '#/linked-list';
   let showShortcuts = false;
+  let splitPos = parseFloat(localStorage.getItem('structura-split') ?? '62');
+  let codeHidden = localStorage.getItem('structura-code-hidden') === 'true';
 
   $: isSLL = page === '#/linked-list';
   $: isDLL = page === '#/doubly-linked-list';
 
   // Resizable splitter
-  let splitPos = 62;
   let draggingSplitter = false;
   let containerEl;
-  let codeHidden = false;
   let zoom = 1;
 
   const ZOOM_STEP = 0.1;
+
+  $: localStorage.setItem('structura-split', splitPos);
+  $: localStorage.setItem('structura-code-hidden', String(codeHidden));
+  
   function zoomIn()    { zoom = Math.min(2,   +(zoom + ZOOM_STEP).toFixed(2)); }
   function zoomOut()   { zoom = Math.max(0.3, +(zoom - ZOOM_STEP).toFixed(2)); }
   function zoomReset() { zoom = 1; }

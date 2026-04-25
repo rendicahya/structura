@@ -2,6 +2,9 @@
   import { createEventDispatcher } from 'svelte';
   import { pushHistory, initHistory, undo, redo, canUndo, canRedo } from '../stores/history.js';
 
+  import { unreachableCount } from '../stores/graph.js';
+  import { unreachableCountDLL } from '../stores/graphDLL.js';
+
   // SLL imports
   import { createNode, addNode, getSnapshot, applySnapshot, garbageCollect } from '../stores/graph.js';
   import { nodes } from '../stores/graph.js';
@@ -30,6 +33,7 @@
   $: isDLL = mode === 'dll';
   $: currentNodes = isSLL ? $nodes : $nodesDLL;
   $: modeLabel = isSLL ? 'Linked List' : 'Doubly Linked List';
+  $: gcCount = isSLL ? $unreachableCount : $unreachableCountDLL;
 
   function handleAddNode() {
     pushHistory();
@@ -144,6 +148,9 @@
           <path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Run GC
+        {#if gcCount > 0}
+          <span class="gc-badge">{gcCount}</span>
+        {/if}
       </button>
     </Tooltip>
 
@@ -278,4 +285,14 @@
   .btn-icon.active { background: var(--accent-dim); color: #fff; border-color: var(--accent-dim); }
   .zoom-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 4px 7px; cursor: pointer; min-width: 42px; text-align: center; transition: all 0.15s; }
   .zoom-label:hover { background: var(--border); color: var(--text); }
+  .gc-badge {
+    background: rgba(78,204,163,0.25);
+    color: var(--success);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    border: 1px solid rgba(78,204,163,0.4);
+  }
 </style>

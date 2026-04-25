@@ -1,4 +1,4 @@
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import { logOp, codeLog } from './sllLog.js';
 import { formatValue, formatPythonValue } from '../utils/formatters.js';
 
@@ -167,6 +167,18 @@ export function garbageCollect() {
     reachable.has(e.from) && reachable.has(e.to)
   ));
 }
+
+export const unreachableCount = derived(
+  [nodes, edges, headId, tailId, walkId],
+  ([$nodes, $edges, $headId, $tailId, $walkId]) => {
+    const reachable = new Set();
+    $nodes.forEach(n => { if (n.nextId) { reachable.add(n.nextId); reachable.add(n.id); } });
+    if ($headId) reachable.add($headId);
+    if ($tailId) reachable.add($tailId);
+    if ($walkId) reachable.add($walkId);
+    return $nodes.filter(n => !reachable.has(n.id)).length;
+  }
+);
 
 export function getSnapshot() {
   return {

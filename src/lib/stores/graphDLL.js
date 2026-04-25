@@ -1,4 +1,4 @@
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import { logOpDLL as logOp, codeLogDLL as codeLog } from './dllLog.js';
 import { formatValue, formatPythonValue } from '../utils/formatters.js';
 
@@ -9,6 +9,21 @@ export const tailIdDLL = writable(null);
 export const walkIdDLL = writable(null);
 
 let nodeCounter = 0;
+
+export const unreachableCountDLL = derived(
+  [nodesDLL, edgesDLL, headIdDLL, tailIdDLL, walkIdDLL],
+  ([$nodesDLL, $edgesDLL, $headIdDLL, $tailIdDLL, $walkIdDLL]) => {
+    const reachable = new Set();
+    $nodesDLL.forEach(n => {
+      if (n.nextId) { reachable.add(n.nextId); reachable.add(n.id); }
+      if (n.prevId) { reachable.add(n.prevId); reachable.add(n.id); }
+    });
+    if ($headIdDLL) reachable.add($headIdDLL);
+    if ($tailIdDLL) reachable.add($tailIdDLL);
+    if ($walkIdDLL) reachable.add($walkIdDLL);
+    return $nodesDLL.filter(n => !reachable.has(n.id)).length;
+  }
+);
 
 export function createNodeDLL(x = 200, y = 200) {
   const id = `dll_${++nodeCounter}`;
