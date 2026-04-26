@@ -26,7 +26,7 @@ export const isFull = derived(
 );
 
 /** @type {import('svelte/store').Readable<boolean>} */
-export const isEmpty = derived(
+export const stackIsEmpty = derived(
   stackItems,
   ($stackItems) => $stackItems.length === 0
 );

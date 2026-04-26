@@ -3,6 +3,7 @@
     stackItems,
     stackCapacity,
     isFull,
+    stackIsEmpty,
   } from "../../stores/stack/graphStack.js";
 
   const NODE_W = 160;
@@ -13,8 +14,12 @@
   const { zoom = 1 } = $props();
 
   /** @type {SVGSVGElement} */
-  let svgEl;
+  let svgEl = $state();
   let wrapperEl;
+
+  /** @type {{ x: number, y: number, type: 'canvas' | 'item', itemId?: string } | null} */
+  let contextMenu = $state(null);
+  let peekingId = $state(null);
 
   /** @type {string|null} */
   let animatingInId = $state(null);
@@ -47,6 +52,40 @@
     if ($stackCapacity === 0) initialized = false;
   });
 
+  function onSVGContextMenu(e) {
+    e.preventDefault();
+    contextMenu = { x: e.clientX, y: e.clientY, type: "canvas" };
+  }
+
+  function onItemContextMenu(e, itemId) {
+    e.preventDefault();
+    e.stopPropagation();
+    contextMenu = { x: e.clientX, y: e.clientY, type: "item", itemId };
+  }
+
+  function closeContextMenu() {
+    contextMenu = null;
+  }
+
+  function handlePeek(itemId) {
+    peekingId = itemId;
+    setTimeout(() => {
+      peekingId = null;
+    }, 1500);
+    closeContextMenu();
+  }
+
+  function handlePushFromMenu() {
+    closeContextMenu();
+    // trigger push modal di toolbar — pakai custom event
+    window.dispatchEvent(new CustomEvent("stack:push"));
+  }
+
+  function handlePopFromMenu() {
+    closeContextMenu();
+    window.dispatchEvent(new CustomEvent("stack:pop"));
+  }
+
   function centerStack() {
     const rect = svgEl.getBoundingClientRect();
     const stackHeight = $stackCapacity * (NODE_H + NODE_GAP) + CANVAS_PAD_Y * 2;
@@ -58,6 +97,7 @@
   }
 
   function onSVGMousedown(e) {
+    contextMenu = null;
     if (e.button !== 0) return;
     panning = true;
     panStartX = e.clientX - panX;
@@ -110,6 +150,7 @@
       class="stack-svg"
       class:panning
       onmousedown={onSVGMousedown}
+      oncontextmenu={onSVGContextMenu}
     >
       <defs>
         <pattern
@@ -192,8 +233,15 @@
           {@const y = getItemY(item.index)}
           {@const isTop = item.index === $stackItems.length - 1}
           {@const isAnimIn = animatingInId === item.id}
+          {@const isPeeking = peekingId === item.id}
 
-          <g class="stack-item" class:anim-in={isAnimIn}>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <g
+            class="stack-item"
+            class:anim-in={isAnimIn}
+            class:peeking={isPeeking}
+            oncontextmenu={(e) => onItemContextMenu(e, item.id)}
+          >
             <rect
               x={STACK_X}
               {y}
@@ -201,10 +249,14 @@
               height={NODE_H}
               rx="6"
               fill="var(--node-bg)"
-              stroke={isTop ? "var(--accent)" : "var(--node-border)"}
-              stroke-width={isTop ? 1.8 : 1}
+              stroke={isPeeking
+                ? "var(--warning)"
+                : isTop
+                  ? "var(--accent)"
+                  : "var(--node-border)"}
+              stroke-width={isPeeking || isTop ? 1.8 : 1}
             />
-            {#if isTop}
+            {#if isTop && !isPeeking}
               <rect
                 x={STACK_X + 1}
                 y={y + 1}
@@ -212,6 +264,17 @@
                 height="3"
                 rx="2"
                 fill="var(--accent)"
+                opacity="0.8"
+              />
+            {/if}
+            {#if isPeeking}
+              <rect
+                x={STACK_X + 1}
+                y={y + 1}
+                width={NODE_W - 2}
+                height="3"
+                rx="2"
+                fill="var(--warning)"
                 opacity="0.8"
               />
             {/if}
@@ -286,6 +349,101 @@
         {/if}
       </g>
     </svg>
+
+    {#if contextMenu}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="ctx-menu"
+        style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+        onmousedown={(e) => e.stopPropagation()}
+      >
+        {#if contextMenu.type === "canvas"}
+          <button class="ctx-item" onclick={handlePushFromMenu}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path
+                d="M6.5 9V4M4 6.5l2.5 2.5 2.5-2.5"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Push
+          </button>
+          <button
+            class="ctx-item"
+            onclick={handlePopFromMenu}
+            disabled={$stackIsEmpty}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path
+                d="M6.5 4v5M4 6.5l2.5-2.5 2.5 2.5"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Pop
+          </button>
+          <div class="ctx-divider"></div>
+          <button
+            class="ctx-item"
+            onclick={() => handlePeek(contextMenu?.itemId ?? "")}
+            disabled={$stackIsEmpty}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <circle
+                cx="6.5"
+                cy="6.5"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.3"
+              />
+              <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" />
+            </svg>
+            Peek
+          </button>
+        {:else}
+          {@const ctxItem = $stackItems.find(
+            (i) => i.id === contextMenu?.itemId,
+          )}
+          {@const isTop = ctxItem?.index === $stackItems.length - 1}
+          <button
+            class="ctx-item"
+            onclick={handlePopFromMenu}
+            disabled={!isTop}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path
+                d="M6.5 4v5M4 6.5l2.5-2.5 2.5 2.5"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Pop {!isTop ? "(top only)" : ""}
+          </button>
+          <button
+            class="ctx-item"
+            onclick={() => handlePeek(contextMenu?.itemId ?? "")}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <circle
+                cx="6.5"
+                cy="6.5"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.3"
+              />
+              <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" />
+            </svg>
+            Peek
+          </button>
+        {/if}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -344,5 +502,58 @@
   }
   .empty-sub strong {
     color: var(--accent);
+  }
+  .ctx-menu {
+    position: fixed;
+    z-index: 1000;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 150px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: menuIn 0.12s ease;
+  }
+  @keyframes menuIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s;
+  }
+  .ctx-item:hover:not(:disabled) {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .ctx-item:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .ctx-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+  .peeking {
+    filter: drop-shadow(0 0 6px rgba(240, 180, 41, 0.5));
   }
 </style>

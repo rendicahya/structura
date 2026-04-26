@@ -522,6 +522,7 @@
     onrename={onMenuRename}
     oneditData={onMenuEditData}
     ondisconnectNext={onMenuDisconnect}
+    ondisconnectPrev={() => {}}
     onsetHead={onMenuSetHead}
     onsetTail={onMenuSetTail}
     onsetWalk={onMenuSetWalk}
