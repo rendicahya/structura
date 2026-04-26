@@ -20,7 +20,7 @@ export const stackType = writable('int');
 let itemCounter = 0;
 
 /** @type {import('svelte/store').Readable<boolean>} */
-export const isFull = derived(
+export const stackIsFull = derived(
   [stackItems, stackCapacity],
   ([$stackItems, $stackCapacity]) => $stackItems.length >= $stackCapacity
 );

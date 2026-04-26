@@ -1,16 +1,23 @@
 <script>
+  import { logOpStack } from "../../stores/shared/stackLog.js";
   import {
+    stackVarName,
+    stackType,
     stackItems,
+  } from "../../stores/stack/graphStack.js";
+  import { get } from "svelte/store";
+  import {
     stackCapacity,
-    isFull,
+    stackIsFull,
     stackIsEmpty,
   } from "../../stores/stack/graphStack.js";
+  import { derived } from "svelte/store";
 
   const NODE_W = 160;
   const NODE_H = 50;
   const NODE_GAP = 4;
   const CANVAS_PAD_Y = 60;
-
+  const capacity = derived(stackCapacity, ($s) => $s);
   const { zoom = 1 } = $props();
 
   /** @type {SVGSVGElement} */
@@ -69,6 +76,18 @@
 
   function handlePeek(itemId) {
     peekingId = itemId;
+
+    const varName = get(stackVarName);
+    const type = get(stackType);
+    const items = get(stackItems);
+
+    if (items.length > 0) {
+      logOpStack(
+        `${type} peeked = ${varName}[top - 1]; // peek`,
+        `peeked = ${varName}[top - 1]  # peek`,
+      );
+    }
+
     setTimeout(() => {
       peekingId = null;
     }, 1500);
@@ -336,7 +355,7 @@
           {/if}
         {/each}
 
-        {#if $isFull}
+        {#if $stackIsFull}
           <text
             x={STACK_X + NODE_W / 2}
             y={CANVAS_PAD_Y - 16}

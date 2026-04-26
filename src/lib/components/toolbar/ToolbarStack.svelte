@@ -14,7 +14,7 @@
   import {
     stackItems,
     stackCapacity,
-    isFull,
+    stackIsFull,
     stackIsEmpty,
     pushStack,
     popStack,
@@ -64,7 +64,7 @@
   }
 
   function handlePush() {
-    if ($isFull) {
+    if ($stackIsFull) {
       toast.error("Stack overflow — stack is full");
       return;
     }
@@ -259,11 +259,11 @@
 
     <div class="separator"></div>
 
-    <Tooltip text={$isFull ? "Stack is full" : "Push value onto stack"}>
+    <Tooltip text={$stackIsFull ? "Stack is full" : "Push value onto stack"}>
       <button
         class="btn btn-primary"
         onclick={handlePush}
-        disabled={$stackCapacity === 0 || $isFull}
+        disabled={$stackCapacity === 0 || $stackIsFull}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
