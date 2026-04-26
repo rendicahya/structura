@@ -40,17 +40,16 @@ export function pushStack(value) {
   const varName = get(stackVarName);
   const type = get(stackType);
 
-  if (items.length >= capacity) return false; // overflow handled by caller
+  if (items.length >= capacity) return false;
 
   const id = `stack_${++itemCounter}`;
   const newItem = { id, value, index: items.length };
-
   stackItems.update(s => [...s, newItem]);
 
   const formattedVal = formatStackValue(value, type);
   logOpStack(
-    `${varName}[${newItem.index}] = ${formattedVal}; // push`,
-    `${varName}[${newItem.index}] = ${formattedVal}  # push`
+    `${varName}[top++] = ${formattedVal};`,
+    `${varName}[top] = ${formattedVal}\ntop += 1`
   );
 
   return true;
@@ -58,15 +57,14 @@ export function pushStack(value) {
 
 export function popStack() {
   const items = get(stackItems);
-  if (items.length === 0) return false; // underflow handled by caller
+  if (items.length === 0) return false;
 
-  const top = items[items.length - 1];
   const varName = get(stackVarName);
   const type = get(stackType);
 
   logOpStack(
-    `${type} popped = ${varName}[${top.index}]; // pop\n${varName}[${top.index}] = 0;`,
-    `popped = ${varName}[${top.index}]  # pop\n${varName}[${top.index}] = None`
+    `${type} popped = ${varName}[--top];`,
+    `top -= 1\npopped = ${varName}[top]`
   );
 
   stackItems.update(s => s.slice(0, -1));
@@ -86,8 +84,8 @@ export function initStack(capacity, varName, type) {
   itemCounter = 0;
 
   logOpStack(
-    `${type}[] ${varName} = new ${type}[${capacity}];`,
-    `${varName} = [None] * ${capacity}`
+    `${type}[] ${varName} = new ${type}[${capacity}];\nint top = 0;`,
+    `${varName} = [None] * ${capacity}\ntop = 0`
   );
 }
 
