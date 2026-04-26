@@ -3,28 +3,32 @@
     stackItems,
     stackCapacity,
     isFull,
-    isEmpty,
   } from "../../stores/stack/graphStack.js";
 
   const NODE_W = 160;
   const NODE_H = 50;
   const NODE_GAP = 4;
-  const CANVAS_PAD_X = 100;
   const CANVAS_PAD_Y = 60;
-  let { zoom = 1, onzoomchange } = $props();
 
-  // Animasi — track item baru dan item yang di-pop
+  const { zoom = 1 } = $props();
+
+  /** @type {SVGSVGElement} */
+  let svgEl;
+  let wrapperEl;
+
   /** @type {string|null} */
   let animatingInId = $state(null);
-  /** @type {string|null} */
-  let animatingOutId = $state(null);
+  let panX = $state(0);
+  let panY = $state(0);
+  let panning = $state(false);
+  let panStartX = 0;
+  let panStartY = 0;
+  let initialized = $state(false);
 
-  // Watch untuk animasi push
   let prevLength = 0;
   $effect(() => {
     const items = $stackItems;
     if (items.length > prevLength) {
-      // Push — animasi item teratas
       const newItem = items[items.length - 1];
       animatingInId = newItem.id;
       setTimeout(() => {
@@ -34,31 +38,42 @@
     prevLength = items.length;
   });
 
-  let totalHeight = $derived(
-    $stackCapacity * (NODE_H + NODE_GAP) + CANVAS_PAD_Y * 2,
-  );
-  let svgHeight = $derived(Math.max(400, totalHeight));
-  let svgEl;
+  // Center stack saat kapasitas pertama kali di-set
+  $effect(() => {
+    if ($stackCapacity > 0 && !initialized && svgEl) {
+      centerStack();
+      initialized = true;
+    }
+    if ($stackCapacity === 0) initialized = false;
+  });
 
-  function onWheel(e) {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.1 : -0.1;
-    const newZoom = Math.min(2, Math.max(0.3, +(zoom + delta).toFixed(2)));
-    onzoomchange?.(newZoom);
+  function centerStack() {
+    const rect = svgEl.getBoundingClientRect();
+    const stackHeight = $stackCapacity * (NODE_H + NODE_GAP) + CANVAS_PAD_Y * 2;
+    const stackWidth = NODE_W + 200; // NODE_W + ruang badge TOP + bracket
+
+    // Offset agar stack muncul di tengah canvas
+    panX = rect.width / 2 - stackWidth / 2 - 20;
+    panY = rect.height / 2 - stackHeight / 2;
   }
 
-  // Posisi Y setiap item — index 0 di bawah, top di atas
-  /**
-   * @param {number} index
-   */
-  function getItemY(index) {
-    const stackHeight = $stackCapacity * (NODE_H + NODE_GAP);
-    const startY =
-      CANVAS_PAD_Y + stackHeight - (index + 1) * (NODE_H + NODE_GAP);
-    return startY;
+  function onSVGMousedown(e) {
+    if (e.button !== 0) return;
+    panning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
   }
 
-  // Slot kosong
+  function onWindowMousemove(e) {
+    if (!panning) return;
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+  }
+
+  function onWindowMouseup() {
+    panning = false;
+  }
+
   let emptySlots = $derived(
     Array.from(
       { length: $stackCapacity - $stackItems.length },
@@ -66,14 +81,22 @@
     ),
   );
 
-  $effect(() => {
-    if (!svgEl) return;
-    svgEl.addEventListener('wheel', onWheel, { passive: false });
-    return () => svgEl?.removeEventListener('wheel', onWheel);
-  });
+  /**
+   * @param {number} index
+   */
+  function getItemY(index) {
+    const stackHeight = $stackCapacity * (NODE_H + NODE_GAP);
+    return CANVAS_PAD_Y + stackHeight - (index + 1) * (NODE_H + NODE_GAP);
+  }
+
+  // Konstanta posisi X untuk stack (selalu di x=0 dalam koordinat lokal)
+  const STACK_X = 60; // ruang untuk bracket kiri + index label
 </script>
 
-<div class="stack-canvas">
+<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="stack-canvas" bind:this={wrapperEl}>
   {#if $stackCapacity === 0}
     <div class="empty-hint">
       <div class="empty-title">Stack not initialized</div>
@@ -85,20 +108,34 @@
     <svg
       bind:this={svgEl}
       class="stack-svg"
-      width="100%"
-      height={svgHeight}
-      viewBox="0 0 400 {svgHeight}"
+      class:panning
+      onmousedown={onSVGMousedown}
     >
-      <g transform="scale({zoom})" style="transform-origin: 0 0;">
+      <defs>
+        <pattern
+          id="grid-stack"
+          width="28"
+          height="28"
+          patternUnits="userSpaceOnUse"
+        >
+          <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
+        </pattern>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#grid-stack)" />
+
+      <g
+        style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
+      >
         <!-- Array bracket kiri -->
         <path
-          d="M {CANVAS_PAD_X - 16} {CANVAS_PAD_Y - 4}
-            L {CANVAS_PAD_X - 24} {CANVAS_PAD_Y - 4}
-            L {CANVAS_PAD_X - 24} {CANVAS_PAD_Y +
+          d="M {STACK_X - 16} {CANVAS_PAD_Y - 4}
+             L {STACK_X - 24} {CANVAS_PAD_Y - 4}
+             L {STACK_X - 24} {CANVAS_PAD_Y +
             $stackCapacity * (NODE_H + NODE_GAP) -
             NODE_GAP +
             4}
-            L {CANVAS_PAD_X - 16} {CANVAS_PAD_Y +
+             L {STACK_X - 16} {CANVAS_PAD_Y +
             $stackCapacity * (NODE_H + NODE_GAP) -
             NODE_GAP +
             4}"
@@ -110,13 +147,13 @@
 
         <!-- Array bracket kanan -->
         <path
-          d="M {CANVAS_PAD_X + NODE_W + 16} {CANVAS_PAD_Y - 4}
-            L {CANVAS_PAD_X + NODE_W + 24} {CANVAS_PAD_Y - 4}
-            L {CANVAS_PAD_X + NODE_W + 24} {CANVAS_PAD_Y +
+          d="M {STACK_X + NODE_W + 16} {CANVAS_PAD_Y - 4}
+             L {STACK_X + NODE_W + 24} {CANVAS_PAD_Y - 4}
+             L {STACK_X + NODE_W + 24} {CANVAS_PAD_Y +
             $stackCapacity * (NODE_H + NODE_GAP) -
             NODE_GAP +
             4}
-            L {CANVAS_PAD_X + NODE_W + 16} {CANVAS_PAD_Y +
+             L {STACK_X + NODE_W + 16} {CANVAS_PAD_Y +
             $stackCapacity * (NODE_H + NODE_GAP) -
             NODE_GAP +
             4}"
@@ -130,7 +167,7 @@
         {#each emptySlots as slotIndex}
           {@const y = getItemY(slotIndex)}
           <rect
-            x={CANVAS_PAD_X}
+            x={STACK_X}
             {y}
             width={NODE_W}
             height={NODE_H}
@@ -140,14 +177,13 @@
             stroke-width="1"
             stroke-dasharray="4 3"
           />
-          <!-- Index label -->
           <text
-            x={CANVAS_PAD_X - 8}
+            x={STACK_X - 8}
             y={y + NODE_H / 2 + 4}
             text-anchor="end"
             font-family="var(--font-mono)"
             font-size="10"
-            fill="var(--text-muted)">[{slotIndex}]</text
+            fill="var(--text-muted)">{slotIndex}</text
           >
         {/each}
 
@@ -157,14 +193,9 @@
           {@const isTop = item.index === $stackItems.length - 1}
           {@const isAnimIn = animatingInId === item.id}
 
-          <!-- Node box -->
-          <g
-            class="stack-item"
-            class:anim-in={isAnimIn}
-            style="--item-y: {y}px"
-          >
+          <g class="stack-item" class:anim-in={isAnimIn}>
             <rect
-              x={CANVAS_PAD_X}
+              x={STACK_X}
               {y}
               width={NODE_W}
               height={NODE_H}
@@ -173,11 +204,9 @@
               stroke={isTop ? "var(--accent)" : "var(--node-border)"}
               stroke-width={isTop ? 1.8 : 1}
             />
-
-            <!-- Top accent -->
             {#if isTop}
               <rect
-                x={CANVAS_PAD_X + 1}
+                x={STACK_X + 1}
                 y={y + 1}
                 width={NODE_W - 2}
                 height="3"
@@ -186,10 +215,8 @@
                 opacity="0.8"
               />
             {/if}
-
-            <!-- Value -->
             <text
-              x={CANVAS_PAD_X + NODE_W / 2}
+              x={STACK_X + NODE_W / 2}
               y={y + NODE_H / 2 + 5}
               text-anchor="middle"
               font-family="var(--font-mono)"
@@ -197,40 +224,34 @@
               fill={item.value ? "#e8ecf5" : "var(--text-muted)"}
               font-weight="500">{item.value || "0"}</text
             >
-
-            <!-- Index label -->
             <text
-              x={CANVAS_PAD_X - 8}
+              x={STACK_X - 8}
               y={y + NODE_H / 2 + 4}
               text-anchor="end"
               font-family="var(--font-mono)"
               font-size="10"
-              fill="var(--text-muted)">[{item.index}]</text
+              fill="var(--text-muted)">{item.index}</text
             >
           </g>
 
           <!-- TOP badge -->
           {#if isTop}
-            <!-- Arrow -->
             <line
-              x1={CANVAS_PAD_X + NODE_W + 50}
+              x1={STACK_X + NODE_W + 50}
               y1={y + NODE_H / 2}
-              x2={CANVAS_PAD_X + NODE_W + 2}
+              x2={STACK_X + NODE_W + 2}
               y2={y + NODE_H / 2}
               stroke="var(--success)"
               stroke-width="1.5"
             />
             <polygon
-              points="
-                {CANVAS_PAD_X + NODE_W + 8},{y + NODE_H / 2 - 4}
-                {CANVAS_PAD_X + NODE_W + 2},{y + NODE_H / 2}
-                {CANVAS_PAD_X + NODE_W + 8},{y + NODE_H / 2 + 4}
-              "
+              points="{STACK_X + NODE_W + 8},{y + NODE_H / 2 - 4} {STACK_X +
+                NODE_W +
+                2},{y + NODE_H / 2} {STACK_X + NODE_W + 8},{y + NODE_H / 2 + 4}"
               fill="var(--success)"
             />
-            <!-- Badge box -->
             <rect
-              x={CANVAS_PAD_X + NODE_W + 50}
+              x={STACK_X + NODE_W + 50}
               y={y + NODE_H / 2 - 12}
               width="40"
               height="20"
@@ -240,7 +261,7 @@
               stroke-width="1.2"
             />
             <text
-              x={CANVAS_PAD_X + NODE_W + 70}
+              x={STACK_X + NODE_W + 70}
               y={y + NODE_H / 2 + 4}
               text-anchor="middle"
               font-family="var(--font-mono)"
@@ -252,10 +273,9 @@
           {/if}
         {/each}
 
-        <!-- Stack full indicator -->
         {#if $isFull}
           <text
-            x={CANVAS_PAD_X + NODE_W / 2}
+            x={STACK_X + NODE_W / 2}
             y={CANVAS_PAD_Y - 16}
             text-anchor="middle"
             font-family="var(--font-mono)"
@@ -271,28 +291,28 @@
 
 <style>
   .stack-canvas {
+    position: relative;
     width: 100%;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
     background: var(--bg);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    overflow: hidden;
   }
-
   .stack-svg {
     display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    user-select: none;
   }
-
+  .stack-svg.panning {
+    cursor: grabbing;
+  }
   .stack-item {
     transition: transform 0.3s ease;
   }
-
   .stack-item.anim-in {
     animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-
   @keyframes slideDown {
     from {
       opacity: 0;
@@ -303,7 +323,6 @@
       transform: translateY(0);
     }
   }
-
   .empty-hint {
     position: absolute;
     top: 50%;
@@ -312,7 +331,6 @@
     text-align: center;
     pointer-events: none;
   }
-
   .empty-title {
     font-family: var(--font-ui);
     font-size: 16px;
@@ -320,12 +338,10 @@
     color: var(--text-muted);
     margin-bottom: 8px;
   }
-
   .empty-sub {
     font-size: 13px;
     color: var(--text-muted);
   }
-
   .empty-sub strong {
     color: var(--accent);
   }

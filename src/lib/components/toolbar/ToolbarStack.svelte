@@ -158,7 +158,7 @@
     <Tooltip text={$isFull ? 'Stack is full' : 'Push value onto stack'}>
       <button class="btn btn-primary" onclick={handlePush} disabled={$stackCapacity === 0 || $isFull}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M7 10V4M4 7l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 4v6M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Push
       </button>
@@ -167,7 +167,7 @@
     <Tooltip text={$isEmpty ? 'Stack is empty' : 'Pop top element from stack'}>
       <button class="btn btn-danger" onclick={handlePop} disabled={$stackCapacity === 0 || $isEmpty}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M7 4v6M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 10V4M4 7l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Pop
       </button>
