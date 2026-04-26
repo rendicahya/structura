@@ -1,5 +1,7 @@
 <script>
   import Tooltip from "../ui/Tooltip.svelte";
+  import { onMount } from "svelte";
+
   import {
     pushHistory,
     undo,
@@ -8,11 +10,12 @@
     canRedo,
     initHistory,
   } from "../../stores/shared/history.js";
+
   import {
     stackItems,
     stackCapacity,
     isFull,
-    isEmpty,
+    stackIsEmpty,
     pushStack,
     popStack,
     initStack,
@@ -20,6 +23,7 @@
     applySnapshotStack,
     clearStack,
   } from "../../stores/stack/graphStack.js";
+
   import { clearLogStack } from "../../stores/shared/stackLog.js";
   import { toast } from "../../stores/shared/toast.js";
 
@@ -36,11 +40,7 @@
   let showNewStack = $state(false);
   let showPush = $state(false);
   let pushValue = $state("");
-
-  // New stack form
   let newCapacity = $state(5);
-  let newVarName = $state("stack");
-  let newType = $state("int");
 
   function handleNewStack() {
     if ($stackItems.length > 0) {
@@ -55,16 +55,12 @@
       toast.error("Capacity must be between 1 and 20");
       return;
     }
-    if (!newVarName.trim()) {
-      toast.error("Variable name cannot be empty");
-      return;
-    }
     clearStack();
     clearLogStack();
     initHistory();
-    initStack(newCapacity, newVarName.trim(), newType);
+    initStack(newCapacity, "stack", "String");
     showNewStack = false;
-    toast.success(`Stack "${newVarName}" created with capacity ${newCapacity}`);
+    toast.success(`Stack created with capacity ${newCapacity}`);
   }
 
   function handlePush() {
@@ -93,10 +89,11 @@
   }
 
   function handlePop() {
-    if ($isEmpty) {
+    if ($stackIsEmpty) {
       toast.error("Stack underflow — stack is empty");
       return;
     }
+
     pushHistory();
     popStack();
     pushHistory();
@@ -142,6 +139,17 @@
 
   let pushInputEl = $state();
   let zoomPct = $derived(Math.round(zoom * 100) + "%");
+
+  onMount(() => {
+    const onPush = () => handlePush();
+    const onPop = () => handlePop();
+    window.addEventListener("stack:push", onPush);
+    window.addEventListener("stack:pop", onPop);
+    return () => {
+      window.removeEventListener("stack:push", onPush);
+      window.removeEventListener("stack:pop", onPop);
+    };
+  });
 </script>
 
 <div class="toolbar">
@@ -270,11 +278,12 @@
       </button>
     </Tooltip>
 
-    <Tooltip text={$isEmpty ? "Stack is empty" : "Pop top element from stack"}>
+    <Tooltip text={$stackIsEmpty ? "Stack is empty" : "Pop top element from stack"}>
+      <!-- Di tombol Pop -->
       <button
         class="btn btn-danger"
         onclick={handlePop}
-        disabled={$stackCapacity === 0 || $isEmpty}
+        disabled={$stackCapacity === 0 || $stackIsEmpty}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
@@ -544,23 +553,6 @@
         </button>
       </div>
       <div class="modal-body">
-        <div class="field">
-          <label>Variable name</label>
-          <input
-            bind:value={newVarName}
-            placeholder="stack"
-            spellcheck="false"
-          />
-        </div>
-        <div class="field">
-          <label>Data type</label>
-          <select bind:value={newType}>
-            <option value="int">int</option>
-            <option value="double">double</option>
-            <option value="String">String</option>
-            <option value="char">char</option>
-          </select>
-        </div>
         <div class="field">
           <label>Capacity (1–20)</label>
           <input type="number" bind:value={newCapacity} min="1" max="20" />
@@ -837,8 +829,7 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  .field input,
-  .field select {
+  .field input {
     background: var(--surface2);
     border: 1px solid var(--border-bright);
     border-radius: 7px;
@@ -849,13 +840,9 @@
     outline: none;
     width: 100%;
   }
-  .field input:focus,
-  .field select:focus {
+  .field input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-glow);
-  }
-  .field select {
-    cursor: pointer;
   }
   .modal-footer {
     display: flex;
