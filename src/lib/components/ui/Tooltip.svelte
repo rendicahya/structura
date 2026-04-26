@@ -22,10 +22,11 @@
 <div
   class="tooltip-wrapper"
   bind:this={triggerEl}
-  on:mouseenter={show}
-  on:mouseleave={hide}
-  on:focusin={show}
-  on:focusout={hide}
+  role="group"
+  onmouseenter={show}
+  onmouseleave={hide}
+  onfocusin={show}
+  onfocusout={hide}
 >
   <slot />
 </div>
