@@ -1,6 +1,6 @@
 <script>
-  import { toasts, removeToast } from '../../stores/shared/toast.js';
-  import Toast from './Toast.svelte';
+  import { toasts, removeToast } from "../../stores/shared/toast.js";
+  import Toast from "./Toast.svelte";
 </script>
 
 <div class="toast-container">

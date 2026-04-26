@@ -23,7 +23,7 @@ export function removeToast(id) {
 // Shorthand helpers
 export const toast = {
   /** @param {string} msg @param {number} [duration] */
-  info:    (msg, duration) => addToast(msg, 'info',    duration),
+  info: (msg, duration) => addToast(msg, 'info', duration),
 
   /** @param {string} msg @param {number} [duration] */
   success: (msg, duration) => addToast(msg, 'success', duration),
@@ -32,5 +32,5 @@ export const toast = {
   warning: (msg, duration) => addToast(msg, 'warning', duration),
 
   /** @param {string} msg @param {number} [duration] */
-  error:   (msg, duration) => addToast(msg, 'error',   duration),
+  error: (msg, duration) => addToast(msg, 'error', duration),
 };

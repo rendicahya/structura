@@ -69,7 +69,7 @@ export function removeNodeFromList(nodeId) {
   if (!target) return;
 
   const javaOps = [];
-  const pyOps   = [];
+  const pyOps = [];
 
   if (predecessor && target.nextId) {
     const successor = ns.find(n => n.id === target.nextId);
@@ -137,7 +137,7 @@ export function connectNodes(fromId, toId, silent = false) {
   if (!silent) {
     const ns = get(nodes);
     const from = ns.find(n => n.id === fromId);
-    const to   = ns.find(n => n.id === toId);
+    const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
       `${from.varName}.next = ${to.varName};`,
       `${from.varName}.next = ${to.varName}`
@@ -207,7 +207,7 @@ export function garbageCollect() {
   }
 
   const javaOps = toRemove.map(n => `// GC: ${n.varName} collected`);
-  const pyOps   = toRemove.map(n => `# GC: ${n.varName} collected`);
+  const pyOps = toRemove.map(n => `# GC: ${n.varName} collected`);
   logOp(javaOps, pyOps);
 
   nodes.update(ns => ns.filter(n => reachable.has(n.id)));

@@ -11,7 +11,7 @@ export function createCodeLog() {
    */
   function logOp(java, python) {
     const id = `op_${++opCounter}`;
-    const javaLines   = Array.isArray(java)   ? java   : [java];
+    const javaLines = Array.isArray(java) ? java : [java];
     const pythonLines = Array.isArray(python) ? python : [python ?? java];
     log.update(entries => [
       ...entries.map(e => ({ ...e, fresh: false })),

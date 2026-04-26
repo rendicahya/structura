@@ -1,27 +1,29 @@
 <script>
   const { onclose } = $props();
-  
-  function close() { onclose?.(); }
+
+  function close() {
+    onclose?.();
+  }
 
   function onKeydown(e) {
-    if (e.key === 'Escape') close();
+    if (e.key === "Escape") close();
   }
 
   const shortcuts = [
-    { category: 'Canvas' },
-    { key: 'Drag canvas',     desc: 'Pan around' },
-    { key: 'Scroll',          desc: 'Zoom in / out' },
-    { key: 'Right click',     desc: 'Add node at position' },
-    { category: 'Nodes' },
-    { key: 'Drag node',       desc: 'Move node' },
-    { key: 'Double click',    desc: 'Edit data value' },
-    { key: 'Right click',     desc: 'Open node menu' },
-    { key: 'Drag port →',     desc: 'Connect next pointer' },
-    { key: 'Drag port ←',     desc: 'Connect prev pointer (DLL)' },
-    { category: 'Keyboard' },
-    { key: 'Ctrl + Z',        desc: 'Undo' },
-    { key: 'Ctrl + Y',        desc: 'Redo' },
-    { key: 'Escape',          desc: 'Close menu / cancel edit' },
+    { category: "Canvas" },
+    { key: "Drag canvas", desc: "Pan around" },
+    { key: "Scroll", desc: "Zoom in / out" },
+    { key: "Right click", desc: "Add node at position" },
+    { category: "Nodes" },
+    { key: "Drag node", desc: "Move node" },
+    { key: "Double click", desc: "Edit data value" },
+    { key: "Right click", desc: "Open node menu" },
+    { key: "Drag port →", desc: "Connect next pointer" },
+    { key: "Drag port ←", desc: "Connect prev pointer (DLL)" },
+    { category: "Keyboard" },
+    { key: "Ctrl + Z", desc: "Undo" },
+    { key: "Ctrl + Y", desc: "Redo" },
+    { key: "Escape", desc: "Close menu / cancel edit" },
   ];
 </script>
 
@@ -35,7 +37,12 @@
       <span class="guide-title">Keyboard Shortcuts</span>
       <button class="close-btn" aria-label="Close" onclick={close}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path
+            d="M2 2l10 10M12 2L2 12"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
         </svg>
       </button>
     </div>
@@ -60,7 +67,7 @@
     position: fixed;
     inset: 0;
     z-index: 2000;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,8 +75,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .guide {
@@ -77,14 +88,20 @@
     border: 1px solid var(--border-bright);
     border-radius: 14px;
     width: 360px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
     animation: slideIn 0.15s ease;
     overflow: hidden;
   }
 
   @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-12px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .guide-header {
@@ -114,7 +131,10 @@
     justify-content: center;
     transition: all 0.1s;
   }
-  .close-btn:hover { background: var(--surface2); color: var(--text); }
+  .close-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
 
   .guide-body {
     padding: 12px 20px 20px;

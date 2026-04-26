@@ -115,7 +115,7 @@ export function connectNextDLL(fromId, toId, silent = false) {
   if (!silent) {
     const ns = get(nodesDLL);
     const from = ns.find(n => n.id === fromId);
-    const to   = ns.find(n => n.id === toId);
+    const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
       `${from.varName}.next = ${to.varName};\n${to.varName}.prev = ${from.varName};`,
       `${from.varName}.next = ${to.varName}\n${to.varName}.prev = ${from.varName}`
@@ -143,7 +143,7 @@ export function connectPrevDLL(fromId, toId, silent = false) {
   if (!silent) {
     const ns = get(nodesDLL);
     const from = ns.find(n => n.id === fromId);
-    const to   = ns.find(n => n.id === toId);
+    const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
       `${from.varName}.prev = ${to.varName};\n${to.varName}.next = ${from.varName};`,
       `${from.varName}.prev = ${to.varName}\n${to.varName}.next = ${from.varName}`
@@ -216,10 +216,10 @@ export function removeNodeFromListDLL(nodeId) {
   if (!target) return;
 
   const predecessor = ns.find(n => n.id === target.prevId);
-  const successor   = ns.find(n => n.id === target.nextId);
+  const successor = ns.find(n => n.id === target.nextId);
 
   const javaOps = [];
-  const pyOps   = [];
+  const pyOps = [];
 
   if (predecessor && successor) {
     // Skip over target: pred.next = succ, succ.prev = pred
@@ -235,8 +235,8 @@ export function removeNodeFromListDLL(nodeId) {
 
     nodesDLL.update(ns => ns.map(n => {
       if (n.id === predecessor.id) return { ...n, nextId: successor.id };
-      if (n.id === successor.id)   return { ...n, prevId: predecessor.id };
-      if (n.id === nodeId)         return { ...n, nextId: null, prevId: null };
+      if (n.id === successor.id) return { ...n, prevId: predecessor.id };
+      if (n.id === nodeId) return { ...n, nextId: null, prevId: null };
       return n;
     }));
     edgesDLL.update(es => es.filter(e => e.from !== nodeId && e.to !== nodeId));
@@ -252,7 +252,7 @@ export function removeNodeFromListDLL(nodeId) {
     pyOps.push(`${target.varName}.prev = None`);
     nodesDLL.update(ns => ns.map(n => {
       if (n.id === predecessor.id) return { ...n, nextId: null };
-      if (n.id === nodeId)         return { ...n, prevId: null };
+      if (n.id === nodeId) return { ...n, prevId: null };
       return n;
     }));
     edgesDLL.update(es => es.filter(e => e.from !== nodeId && e.to !== nodeId));
@@ -263,7 +263,7 @@ export function removeNodeFromListDLL(nodeId) {
     pyOps.push(`${target.varName}.next = None`);
     nodesDLL.update(ns => ns.map(n => {
       if (n.id === successor.id) return { ...n, prevId: null };
-      if (n.id === nodeId)       return { ...n, nextId: null };
+      if (n.id === nodeId) return { ...n, nextId: null };
       return n;
     }));
     edgesDLL.update(es => es.filter(e => e.from !== nodeId && e.to !== nodeId));
@@ -332,7 +332,7 @@ export function garbageCollectDLL() {
   }
 
   const javaOps = toRemove.map(n => `// GC: ${n.varName} collected`);
-  const pyOps   = toRemove.map(n => `# GC: ${n.varName} collected`);
+  const pyOps = toRemove.map(n => `# GC: ${n.varName} collected`);
   logOp(javaOps, pyOps);
 
   nodesDLL.update(ns => ns.filter(n => reachable.has(n.id)));

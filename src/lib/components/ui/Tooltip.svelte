@@ -1,6 +1,6 @@
 <script>
-  export let text = '';
-  export let shortcut = '';
+  export let text = "";
+  export let shortcut = "";
 
   let visible = false;
   let x = 0;
@@ -14,7 +14,9 @@
     visible = true;
   }
 
-  function hide() { visible = false; }
+  function hide() {
+    visible = false;
+  }
 </script>
 
 <div
@@ -55,13 +57,19 @@
     gap: 7px;
     white-space: nowrap;
     pointer-events: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     animation: tipIn 0.1s ease;
   }
 
   @keyframes tipIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-3px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   }
 
   .tooltip-text {

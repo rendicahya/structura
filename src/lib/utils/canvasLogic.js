@@ -2,8 +2,8 @@ import { updateNode } from '../stores/sll/graph.js';
 
 export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) {
   const ZOOM_STEP = 0.1;
-  const ZOOM_MIN  = 0.3;
-  const ZOOM_MAX  = 2;
+  const ZOOM_MIN = 0.3;
+  const ZOOM_MAX = 2;
 
   let svgEl = null;
   let panX = 0;
@@ -20,7 +20,7 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
     const rect = svgEl.getBoundingClientRect();
     return {
       x: (clientX - rect.left - panX) / getZoom(),
-      y: (clientY - rect.top  - panY) / getZoom(),
+      y: (clientY - rect.top - panY) / getZoom(),
     };
   }
 
@@ -93,7 +93,7 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
     const svgRect = svgEl.getBoundingClientRect();
     return {
       x: svgRect.left + node.x * getZoom() + panX,
-      y: svgRect.top  + node.y * getZoom() + panY + 32 * getZoom(),
+      y: svgRect.top + node.y * getZoom() + panY + 32 * getZoom(),
     };
   }
 
