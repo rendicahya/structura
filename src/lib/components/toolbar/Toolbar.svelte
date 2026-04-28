@@ -130,12 +130,14 @@
     input.type = "file";
     input.accept = ".json";
     input.onchange = (e) => {
-      const file = e.target.files[0];
+      const target = /** @type {HTMLInputElement} */ (e.target);
+      const file = target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const snap = JSON.parse(ev.target.result);
+          const result = /** @type {string} */ (ev.target?.result);
+          const snap = JSON.parse(result);
           pushHistory();
           if (isSLL) applySnapshot(snap);
           else applySnapshotDLL(snap);

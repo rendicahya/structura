@@ -5,7 +5,7 @@
   let codeBodyEl;
 
   $effect(() => {
-    $log; // track perubahan log
+    $log;
     if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
   });
 
@@ -205,7 +205,6 @@
   <div class="code-body" bind:this={codeBodyEl}>
     {#if flatLines.length === 0}
       <div class="empty-code">
-        // Perform actions on the canvas to generate code
       </div>
     {:else}
       <table class="code-table">
