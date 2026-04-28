@@ -12,6 +12,9 @@
   import { initHistory } from "./lib/stores/shared/history.js";
   import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
   import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
+  import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
+  import CanvasLinkedStack from "./lib/components/canvas/CanvasLinkedStack.svelte";
+  import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
 
   onMount(() => {
     initHistory();
@@ -137,6 +140,13 @@
     >
       Array Stack
     </button>
+    <button
+      class="nav-tab"
+      class:active={page === "#/linked-stack"}
+      onclick={() => navigate("#/linked-stack")}
+    >
+      Linked-List Stack
+    </button>
   </nav>
 
   {#if page === "#/linked-list" || page === "#/doubly-linked-list"}
@@ -160,6 +170,16 @@
       ontoggleCode={() => (codeHidden = !codeHidden)}
       onopenShortcuts={() => (showShortcuts = true)}
     />
+  {:else if page === "#/linked-stack"}
+    <ToolbarLinkedStack
+      {zoom}
+      {zoomIn}
+      {zoomOut}
+      {zoomReset}
+      {codeHidden}
+      ontoggleCode={() => (codeHidden = !codeHidden)}
+      onopenShortcuts={() => (showShortcuts = true)}
+    />
   {/if}
 
   <!-- workspace -->
@@ -174,6 +194,8 @@
         <CanvasDLL bind:zoom />
       {:else if page === "#/stack"}
         <CanvasStack {zoom} onzoomchange={(z) => (zoom = z)} />
+      {:else if page === "#/linked-stack"}
+        <CanvasLinkedStack {zoom} />
       {/if}
     </div>
 
@@ -191,7 +213,9 @@
             ? codeLog
             : page === "#/doubly-linked-list"
               ? codeLogDLL
-              : stackLog}
+              : page === "#/stack"
+                ? stackLog
+                : linkedStackLog}
         />
       </div>
     {/if}
