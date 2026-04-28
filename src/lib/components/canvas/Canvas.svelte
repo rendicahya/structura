@@ -28,15 +28,12 @@
   export let zoom = 1;
 
   let svgEl;
-  let wrapperEl;
   let panX = 0;
   let panY = 0;
   let panning = false;
-
   let pendingFrom = null;
   let pendingX = 0;
   let pendingY = 0;
-
   let contextMenu = null;
   let canvasContextMenu = null;
   let selectedNodeId = null;
@@ -49,7 +46,12 @@
       zoom = z;
     },
     getNodes: () => $nodes,
-    updateNodeFn: (id, patch, silent) => updateNode(id, patch, silent),
+    updateNodeFn:
+      /** @param {string} id @param {any} patch @param {boolean} [silent] */ (
+        id,
+        patch,
+        silent,
+      ) => updateNode(id, patch, silent),
   });
 
   function syncPan() {
@@ -58,6 +60,7 @@
     panning = logic.isPanning();
   }
 
+  /** @param {MouseEvent} e */
   function onWindowMousemove(e) {
     logic.onMousemove(e.clientX, e.clientY);
     syncPan();
@@ -76,6 +79,7 @@
     }
   }
 
+  /** @param {MouseEvent} e */
   function onSVGMousedown(e) {
     canvasContextMenu = null;
     if (e.button !== 0) return;
@@ -88,6 +92,7 @@
     }
   }
 
+  /** @param {MouseEvent} e */
   function onSVGContextMenu(e) {
     e.preventDefault();
     contextMenu = null;
@@ -111,6 +116,7 @@
     canvasContextMenu = null;
   }
 
+  /** @param {{e: MouseEvent, nodeId: string}} param0 */
   function onNodeDragstart({ e, nodeId }) {
     e.stopPropagation();
     contextMenu = null;
@@ -119,6 +125,7 @@
     logic.startDrag(nodeId, e.clientX, e.clientY);
   }
 
+  /** @param {{e: MouseEvent, nodeId: string}} param0 */
   function onPortDragstart({ e, nodeId }) {
     e.stopPropagation();
     const pt = logic.getSVGPoint(e.clientX, e.clientY);
@@ -127,6 +134,7 @@
     pendingY = pt.y;
   }
 
+  /** @param {{nodeId: string}} param0 */
   function onConnectTarget({ nodeId }) {
     if (pendingFrom !== null && pendingFrom !== nodeId) {
       pushHistory();
@@ -136,6 +144,7 @@
     pendingFrom = null;
   }
 
+  /** @param {{e: MouseEvent, node: any}} param0 */
   function onContextMenu({ e, node }) {
     e.preventDefault();
     commitInlineEdit();
@@ -144,6 +153,7 @@
     selectedNodeId = node.id;
   }
 
+  /** @param {{node: any}} param0 */
   function onNodeDblClick({ node }) {
     commitInlineEdit();
     contextMenu = null;
@@ -168,6 +178,7 @@
     inlineEdit = null;
   }
 
+  /** @param {KeyboardEvent} e */
   function onInlineKeydown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -182,42 +193,51 @@
   function onMenuClose() {
     contextMenu = null;
   }
+
+  /** @param {{varName: string}} param0 */
   function onMenuRename({ varName }) {
     pushHistory();
     updateNode(contextMenu.node.id, { varName });
     pushHistory();
     contextMenu = null;
   }
+
+  /** @param {{data: any}} param0 */
   function onMenuEditData({ data }) {
     pushHistory();
     updateNode(contextMenu.node.id, { data });
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuDisconnect() {
     pushHistory();
     disconnectNode(contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetHead() {
     pushHistory();
     setHead($headId === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetTail() {
     pushHistory();
     setTail($tailId === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetWalk() {
     pushHistory();
     setWalk($walkId === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuUnlink() {
     pushHistory();
     removeNodeFromList(contextMenu.node.id);
@@ -225,6 +245,7 @@
     contextMenu = null;
   }
 
+  /** @param {any} edge @param {any[]} ns */
   function edgePos(edge, ns) {
     const from = ns.find((n) => n.id === edge.from);
     const to = ns.find((n) => n.id === edge.to);
@@ -237,6 +258,7 @@
     };
   }
 
+  /** @param {KeyboardEvent} e */
   function onKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
       e.preventDefault();
@@ -251,6 +273,7 @@
     }
   }
 
+  /** @param {BeforeUnloadEvent} e */
   function onBeforeUnload(e) {
     if ($nodes.length > 0) {
       e.preventDefault();
@@ -258,9 +281,9 @@
     }
   }
 
+  /** @param {WheelEvent} e */
   function handleWheel(e) {
     logic.onWheel(e);
-    // Sync setelah rAF selesai
     requestAnimationFrame(() => syncPan());
   }
 
@@ -280,7 +303,7 @@
 <svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="canvas-wrapper" bind:this={wrapperEl}>
+<div class="canvas-wrapper">
   <svg
     bind:this={svgEl}
     class="canvas-svg"

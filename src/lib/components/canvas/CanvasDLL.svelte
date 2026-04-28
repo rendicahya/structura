@@ -26,9 +26,8 @@
 
   const NODE_W = 130;
   const NODE_H = 64;
-  const { zoom: zoomProp = 1 } = $props();
+  let { zoom = $bindable(1) } = $props();
 
-  let zoom = $state(zoomProp);
   let svgEl = $state();
   let panX = $state(0);
   let panY = $state(0);
@@ -43,17 +42,18 @@
   let inlineEdit = $state(null);
   let inlineInputEl = $state();
 
-  $effect(() => {
-    zoom = zoomProp;
-  });
-
   const logic = createCanvasLogic({
     getZoom: () => zoom,
     setZoom: (z) => {
       zoom = z;
     },
     getNodes: () => $nodesDLL,
-    updateNodeFn: (id, patch, silent) => updateNodeDLL(id, patch, silent),
+    updateNodeFn:
+      /** @param {string} id @param {any} patch @param {boolean} [silent] */ (
+        id,
+        patch,
+        silent,
+      ) => updateNodeDLL(id, patch, silent),
   });
 
   function syncPan() {
@@ -62,6 +62,7 @@
     panning = logic.isPanning();
   }
 
+  /** @param {MouseEvent} e */
   function onWindowMousemove(e) {
     logic.onMousemove(e.clientX, e.clientY);
     syncPan();
@@ -80,6 +81,7 @@
     }
   }
 
+  /** @param {MouseEvent} e */
   function onSVGMousedown(e) {
     canvasContextMenu = null;
     if (e.button !== 0) return;
@@ -92,6 +94,7 @@
     }
   }
 
+  /** @param {MouseEvent} e */
   function onSVGContextMenu(e) {
     e.preventDefault();
     contextMenu = null;
@@ -115,6 +118,7 @@
     canvasContextMenu = null;
   }
 
+  /** @param {{e: MouseEvent, nodeId: string}} param0 */
   function onNodeDragstart({ e, nodeId }) {
     e.stopPropagation();
     contextMenu = null;
@@ -123,6 +127,7 @@
     logic.startDrag(nodeId, e.clientX, e.clientY);
   }
 
+  /** @param {{e: MouseEvent, nodeId: string, portType: string}} param0 */
   function onPortDragstart({ e, nodeId, portType }) {
     e.stopPropagation();
     const pt = logic.getSVGPoint(e.clientX, e.clientY);
@@ -132,6 +137,7 @@
     pendingY = pt.y;
   }
 
+  /** @param {{nodeId: string}} param0 */
   function onConnectTarget({ nodeId }) {
     if (pendingFrom !== null && pendingFrom !== nodeId) {
       pushHistory();
@@ -142,6 +148,7 @@
     pendingFrom = null;
   }
 
+  /** @param {{e: MouseEvent, node: any}} param0 */
   function onContextMenu({ e, node }) {
     e.preventDefault();
     commitInlineEdit();
@@ -150,6 +157,7 @@
     selectedNodeId = node.id;
   }
 
+  /** @param {{node: any}} param0 */
   function onNodeDblClick({ node }) {
     commitInlineEdit();
     contextMenu = null;
@@ -174,6 +182,7 @@
     inlineEdit = null;
   }
 
+  /** @param {KeyboardEvent} e */
   function onInlineKeydown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -188,48 +197,58 @@
   function onMenuClose() {
     contextMenu = null;
   }
+
+  /** @param {{varName: string}} param0 */
   function onMenuRename({ varName }) {
     pushHistory();
     updateNodeDLL(contextMenu.node.id, { varName });
     pushHistory();
     contextMenu = null;
   }
+
+  /** @param {{data: any}} param0 */
   function onMenuEditData({ data }) {
     pushHistory();
     updateNodeDLL(contextMenu.node.id, { data });
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuDisconnectNext() {
     pushHistory();
     disconnectNextDLL(contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuDisconnectPrev() {
     pushHistory();
     disconnectPrevDLL(contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetHead() {
     pushHistory();
     setHeadDLL($headIdDLL === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetTail() {
     pushHistory();
     setTailDLL($tailIdDLL === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuSetWalk() {
     pushHistory();
     setWalkDLL($walkIdDLL === contextMenu.node.id ? null : contextMenu.node.id);
     pushHistory();
     contextMenu = null;
   }
+
   function onMenuUnlink() {
     pushHistory();
     removeNodeFromListDLL(contextMenu.node.id);
@@ -237,11 +256,13 @@
     contextMenu = null;
   }
 
+  /** @param {any} edge @param {any[]} ns */
   function edgePos(edge, ns) {
     const from = ns.find((n) => n.id === edge.from);
     const to = ns.find((n) => n.id === edge.to);
     if (!from || !to) return null;
     const OFFSET = 12;
+
     if (edge.type === "next") {
       return {
         fromX: from.x + NODE_W - 8,
@@ -261,6 +282,7 @@
     }
   }
 
+  /** @param {KeyboardEvent} e */
   function onKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
       e.preventDefault();
@@ -275,6 +297,7 @@
     }
   }
 
+  /** @param {BeforeUnloadEvent} e */
   function onBeforeUnload(e) {
     if ($nodesDLL.length > 0) {
       e.preventDefault();
@@ -282,6 +305,7 @@
     }
   }
 
+  /** @param {WheelEvent} e */
   function handleWheel(e) {
     logic.onWheel(e);
     // Sync setelah rAF selesai
@@ -293,6 +317,7 @@
     window.addEventListener("keydown", onKeydown);
     window.addEventListener("beforeunload", onBeforeUnload);
     svgEl.addEventListener("wheel", handleWheel, { passive: false });
+
     return () => {
       window.removeEventListener("keydown", onKeydown);
       window.removeEventListener("beforeunload", onBeforeUnload);
@@ -322,7 +347,6 @@
       >
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
       </pattern>
-      <!-- marker defs tetap sama -->
     </defs>
 
     <rect width="100%" height="100%" fill="url(#grid)" />
