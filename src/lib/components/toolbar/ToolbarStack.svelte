@@ -230,7 +230,6 @@
       />
     </svg>
     <span class="brand-name">Structura</span>
-    <span class="brand-sub">Stack</span>
   </div>
 
   <div class="actions">

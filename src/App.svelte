@@ -15,18 +15,20 @@
 
   onMount(() => {
     initHistory();
-    if (!location.hash || location.hash === '#') {
-      location.hash = '#/linked-list';
+    if (!location.hash || location.hash === "#") {
+      location.hash = "#/linked-list";
     }
     page = location.hash;
 
-    const onHashChange = () => { page = location.hash; };
-    window.addEventListener('hashchange', onHashChange);
-    window.addEventListener('wheel', onWindowWheel, { passive: false });
+    const onHashChange = () => {
+      page = location.hash;
+    };
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("wheel", onWindowWheel, { passive: false });
 
     return () => {
-      window.removeEventListener('hashchange', onHashChange);
-      window.removeEventListener('wheel', onWindowWheel);
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("wheel", onWindowWheel);
     };
   });
 
@@ -116,24 +118,24 @@
   <nav class="page-nav">
     <button
       class="nav-tab"
-      class:active={isSLL}
+      class:active={page === "#/linked-list"}
       onclick={() => navigate("#/linked-list")}
     >
-      Linked List
+      Singly-linked List
     </button>
     <button
       class="nav-tab"
-      class:active={isDLL}
+      class:active={page === "#/doubly-linked-list"}
       onclick={() => navigate("#/doubly-linked-list")}
     >
-      Doubly Linked List
+      Doubly-linked List
     </button>
     <button
       class="nav-tab"
       class:active={page === "#/stack"}
       onclick={() => navigate("#/stack")}
     >
-      Stack
+      Array Stack
     </button>
   </nav>
 
