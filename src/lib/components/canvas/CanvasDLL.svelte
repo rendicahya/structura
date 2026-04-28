@@ -26,25 +26,26 @@
 
   const NODE_W = 130;
   const NODE_H = 64;
+  const { zoom: zoomProp = 1 } = $props();
 
-  export let zoom = 1;
+  let zoom = $state(zoomProp);
+  let svgEl = $state();
+  let panX = $state(0);
+  let panY = $state(0);
+  let panning = $state(false);
+  let pendingFrom = $state(null);
+  let pendingPortType = $state("next");
+  let pendingX = $state(0);
+  let pendingY = $state(0);
+  let contextMenu = $state(null);
+  let canvasContextMenu = $state(null);
+  let selectedNodeId = $state(null);
+  let inlineEdit = $state(null);
+  let inlineInputEl = $state();
 
-  let svgEl;
-  let wrapperEl;
-  let panX = 0;
-  let panY = 0;
-  let panning = false;
-
-  let pendingFrom = null;
-  let pendingPortType = "next";
-  let pendingX = 0;
-  let pendingY = 0;
-
-  let contextMenu = null;
-  let canvasContextMenu = null;
-  let selectedNodeId = null;
-  let inlineEdit = null;
-  let inlineInputEl;
+  $effect(() => {
+    zoom = zoomProp;
+  });
 
   const logic = createCanvasLogic({
     getZoom: () => zoom,
@@ -300,16 +301,16 @@
   });
 </script>
 
-<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
+<svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="canvas-wrapper" bind:this={wrapperEl}>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="canvas-wrapper">
   <svg
     bind:this={svgEl}
     class="canvas-svg"
     class:panning
-    on:mousedown={onSVGMousedown}
-    on:contextmenu={onSVGContextMenu}
+    onmousedown={onSVGMousedown}
+    oncontextmenu={onSVGContextMenu}
   >
     <defs>
       <pattern
@@ -376,8 +377,8 @@
       bind:this={inlineInputEl}
       bind:value={inlineEdit.value}
       style="left: {inlineEdit.x}px; top: {inlineEdit.y}px;"
-      on:keydown={onInlineKeydown}
-      on:blur={commitInlineEdit}
+      onkeydown={onInlineKeydown}
+      onblur={commitInlineEdit}
       placeholder="value"
       spellcheck="false"
     />
@@ -561,7 +562,7 @@
     class="canvas-ctx-menu"
     style="left: {canvasContextMenu.clientX}px; top: {canvasContextMenu.clientY}px;"
   >
-    <button class="ctx-item" on:click={onCanvasAddNode}>
+    <button class="ctx-item" onclick={onCanvasAddNode}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
         <circle
           cx="6.5"

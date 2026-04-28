@@ -1,28 +1,24 @@
 <script>
   import { logOpStack } from "../../stores/shared/stackLog.js";
-  import {
-    stackVarName,
-    stackType,
-    stackItems,
-  } from "../../stores/stack/graphStack.js";
   import { get } from "svelte/store";
+
   import {
+    stackItems,
     stackCapacity,
     stackIsFull,
     stackIsEmpty,
+    stackVarName,
+    stackType,
   } from "../../stores/stack/graphStack.js";
-  import { derived } from "svelte/store";
 
   const NODE_W = 160;
   const NODE_H = 50;
   const NODE_GAP = 4;
   const CANVAS_PAD_Y = 60;
-  const capacity = derived(stackCapacity, ($s) => $s);
   const { zoom = 1 } = $props();
 
   /** @type {SVGSVGElement} */
   let svgEl = $state();
-  let wrapperEl;
 
   /** @type {{ x: number, y: number, type: 'canvas' | 'item', itemId?: string } | null} */
   let contextMenu = $state(null);
@@ -50,7 +46,6 @@
     prevLength = items.length;
   });
 
-  // Center stack saat kapasitas pertama kali di-set
   $effect(() => {
     if ($stackCapacity > 0 && !initialized && svgEl) {
       centerStack();
@@ -96,7 +91,6 @@
 
   function handlePushFromMenu() {
     closeContextMenu();
-    // trigger push modal di toolbar — pakai custom event
     window.dispatchEvent(new CustomEvent("stack:push"));
   }
 
@@ -110,7 +104,6 @@
     const stackHeight = $stackCapacity * (NODE_H + NODE_GAP) + CANVAS_PAD_Y * 2;
     const stackWidth = NODE_W + 200; // NODE_W + ruang badge TOP + bracket
 
-    // Offset agar stack muncul di tengah canvas
     panX = rect.width / 2 - stackWidth / 2 - 20;
     panY = rect.height / 2 - stackHeight / 2;
   }
@@ -148,14 +141,13 @@
     return CANVAS_PAD_Y + stackHeight - (index + 1) * (NODE_H + NODE_GAP);
   }
 
-  // Konstanta posisi X untuk stack (selalu di x=0 dalam koordinat lokal)
   const STACK_X = 60; // ruang untuk bracket kiri + index label
 </script>
 
-<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
+<svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="stack-canvas" bind:this={wrapperEl}>
+<div class="stack-canvas">
   {#if $stackCapacity === 0}
     <div class="empty-hint">
       <div class="empty-title">Stack not initialized</div>
