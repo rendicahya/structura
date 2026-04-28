@@ -304,6 +304,7 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="canvas-wrapper">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
     bind:this={svgEl}
     class="canvas-svg"

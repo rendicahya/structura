@@ -6,9 +6,7 @@
     garbageCollectLinkedStack,
     peekLinkedStack,
   } from "../../stores/stack/graphLinkedStack.js";
-  import { logOpLinkedStack } from "../../stores/shared/linkedStackLog.js";
   import { pushHistory } from "../../stores/shared/history.js";
-  import { toast } from "../../stores/shared/toast.js";
 
   const NODE_W = 130;
   const NODE_H = 64;
@@ -118,7 +116,6 @@
     pushHistory();
   }
 
-  // Posisi Y tiap node — top di atas
   /**
    * @param {number} index
    */
@@ -126,7 +123,6 @@
     return index * (NODE_H + NODE_GAP);
   }
 
-  // Node yang masih di stack (terhubung dari top)
   let stackNodeIds = $derived(() => {
     const nodes = $linkedStackNodes;
     const pointed = new Set(nodes.map((n) => n.nextId).filter(Boolean));
@@ -142,7 +138,6 @@
     return result;
   });
 
-  // Node unreachable (sudah di-pop, menunggu GC)
   let unreachableNodes = $derived(
     $linkedStackNodes.filter((n) => !stackNodeIds().includes(n.id)),
   );
@@ -169,6 +164,7 @@
     </div>
   {/if}
 
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
     bind:this={svgEl}
     class="canvas-svg"
