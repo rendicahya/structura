@@ -2,7 +2,7 @@
   import Tooltip from '../ui/Tooltip.svelte';
   import { pushHistory, undo, redo, canUndo, canRedo, initHistory } from '../../stores/shared/history.js';
   import { linkedStackNodes, linkedStackIsEmpty, pushLinkedStack, popLinkedStack, peekLinkedStack, garbageCollectLinkedStack, clearLinkedStack, getSnapshotLinkedStack, applySnapshotLinkedStack } from '../../stores/stack/graphLinkedStack.js';
-  import { clearLogLinkedStack, linkedStackLog } from '../../stores/shared/linkedStackLog.js';
+  import { clearLogLinkedStack } from '../../stores/shared/linkedStackLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { onMount } from 'svelte';
 
