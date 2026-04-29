@@ -1,19 +1,25 @@
 <script>
-  export let fromX = 0;
-  export let fromY = 0;
-  export let toX = 0;
-  export let toY = 0;
-  export let pending = false;
-  export let type = "next";
+  let {
+    fromX = 0,
+    fromY = 0,
+    toX = 0,
+    toY = 0,
+    pending = false,
+    type = "next",
+  } = $props();
 
-  $: cx = (fromX + toX) / 2;
-  $: cy = Math.min(fromY, toY) - 40;
-  $: color = pending ? "#f0b429" : type === "prev" ? "#c792ea" : "#5b8fff";
-  $: markerId = pending
-    ? "arrow-pending"
-    : type === "prev"
-      ? "arrow-prev"
-      : "arrow-solid";
+  let cx = $derived((fromX + toX) / 2);
+  let cy = $derived(Math.min(fromY, toY) - 40);
+  let color = $derived(
+    pending ? "#f0b429" : type === "prev" ? "#c792ea" : "#5b8fff",
+  );
+  let markerId = $derived(
+    pending
+      ? "arrow-pending"
+      : type === "prev"
+        ? "arrow-prev"
+        : "arrow-solid",
+  );
 </script>
 
 <g class="edge">

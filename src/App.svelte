@@ -15,6 +15,9 @@
   import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
   import CanvasLinkedStack from "./lib/components/canvas/CanvasLinkedStack.svelte";
   import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
+  import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
+  import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
+  import { queueLog } from "./lib/stores/shared/queueLog.js";
 
   onMount(() => {
     initHistory();
@@ -35,23 +38,27 @@
     };
   });
 
-  let page = "#/linked-list";
-  let showShortcuts = false;
-  let splitPos = parseFloat(localStorage.getItem("structura-split") ?? "62");
-  let codeHidden = localStorage.getItem("structura-code-hidden") === "true";
+  let page = $state("#/linked-list");
+  let showShortcuts = $state(false);
+  let splitPos = $state(parseFloat(localStorage.getItem("structura-split") ?? "62"));
+  let codeHidden = $state(localStorage.getItem("structura-code-hidden") === "true");
 
-  $: isSLL = page === "#/linked-list";
-  $: isDLL = page === "#/doubly-linked-list";
+  let isSLL = $derived(page === "#/linked-list");
+  let isDLL = $derived(page === "#/doubly-linked-list");
 
   // Resizable splitter
-  let draggingSplitter = false;
-  let containerEl;
-  let zoom = 1;
+  let draggingSplitter = $state(false);
+  let containerEl = $state();
+  let zoom = $state(1);
 
   const ZOOM_STEP = 0.1;
 
-  $: localStorage.setItem("structura-split", splitPos);
-  $: localStorage.setItem("structura-code-hidden", String(codeHidden));
+  $effect(() => {
+    localStorage.setItem("structura-split", splitPos.toString());
+  });
+  $effect(() => {
+    localStorage.setItem("structura-code-hidden", codeHidden.toString());
+  });
 
   function zoomIn() {
     zoom = Math.min(2, +(zoom + ZOOM_STEP).toFixed(2));
@@ -147,6 +154,13 @@
     >
       Linked-List Stack
     </button>
+    <button
+      class="nav-tab"
+      class:active={page === "#/queue"}
+      onclick={() => navigate("#/queue")}
+    >
+      Array Queue
+    </button>
   </nav>
 
   {#if page === "#/linked-list" || page === "#/doubly-linked-list"}
@@ -180,6 +194,16 @@
       ontoggleCode={() => (codeHidden = !codeHidden)}
       onopenShortcuts={() => (showShortcuts = true)}
     />
+  {:else if page === "#/queue"}
+    <ToolbarQueue
+      {zoom}
+      {zoomIn}
+      {zoomOut}
+      {zoomReset}
+      {codeHidden}
+      ontoggleCode={() => (codeHidden = !codeHidden)}
+      onopenShortcuts={() => (showShortcuts = true)}
+    />
   {/if}
 
   <!-- workspace -->
@@ -196,6 +220,8 @@
         <CanvasStack {zoom} onzoomchange={(z) => (zoom = z)} />
       {:else if page === "#/linked-stack"}
         <CanvasLinkedStack {zoom} />
+      {:else if page === "#/queue"}
+        <CanvasQueue {zoom} />
       {/if}
     </div>
 
@@ -215,7 +241,9 @@
               ? codeLogDLL
               : page === "#/stack"
                 ? stackLog
-                : linkedStackLog}
+                : page === "#/linked-stack"
+                  ? linkedStackLog
+                  : queueLog}
         />
       </div>
     {/if}

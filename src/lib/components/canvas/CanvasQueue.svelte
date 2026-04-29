@@ -1,0 +1,553 @@
+<script>
+    import {
+        queueSlots,
+        queueCapacity,
+        frontPtr,
+        rearPtr,
+        queueIsFull,
+        queueIsEmpty,
+        queueSize,
+        enqueue,
+        dequeue,
+        peekQueue,
+    } from "../../stores/queue/graphQueue.js";
+    import { pushHistory } from "../../stores/shared/history.js";
+    import { toast } from "../../stores/shared/toast.js";
+
+    const NODE_W = 80;
+    const NODE_H = 70;
+    const NODE_GAP = 4;
+    const CANVAS_PAD_X = 60;
+    const CANVAS_PAD_Y = 80;
+
+    const props = $props();
+    let zoom = $state(props.zoom ?? 1);
+    $effect(() => {
+        zoom = props.zoom ?? 1;
+    });
+
+    /** @type {SVGSVGElement} */
+    let svgEl = $state();
+
+    let panX = $state(0);
+    let panY = $state(0);
+    let panning = $state(false);
+    let panStartX = 0;
+    let panStartY = 0;
+    let initialized = $state(false);
+    let peekingIndex = $state(null);
+
+    // Animasi
+    let animatingInId = $state(null);
+    let animatingOutIndex = $state(null);
+
+    let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
+
+    // Center saat pertama init
+    $effect(() => {
+        if ($queueCapacity > 0 && !initialized && svgEl) {
+            centerQueue();
+            initialized = true;
+        }
+        if ($queueCapacity === 0) initialized = false;
+    });
+
+    function centerQueue() {
+        const rect = svgEl.getBoundingClientRect();
+        const totalW = $queueCapacity * (NODE_W + NODE_GAP) + CANVAS_PAD_X * 2;
+        panX = (rect.width - totalW) / 2;
+        panY = (rect.height - NODE_H) / 2 - CANVAS_PAD_Y / 2;
+    }
+
+    function onSVGMousedown(e) {
+        contextMenu = null;
+        if (e.button !== 0) return;
+        panning = true;
+        panStartX = e.clientX - panX;
+        panStartY = e.clientY - panY;
+    }
+
+    function onWindowMousemove(e) {
+        if (!panning) return;
+        panX = e.clientX - panStartX;
+        panY = e.clientY - panStartY;
+    }
+
+    function onWindowMouseup() {
+        panning = false;
+    }
+
+    /** @type {{ x: number, y: number, type: 'canvas'|'slot', slotIndex?: number }|null} */
+    let contextMenu = $state(null);
+
+    function onSVGContextMenu(e) {
+        e.preventDefault();
+        contextMenu = { x: e.clientX, y: e.clientY, type: "canvas" };
+    }
+
+    function onSlotContextMenu(e, index) {
+        e.preventDefault();
+        e.stopPropagation();
+        contextMenu = {
+            x: e.clientX,
+            y: e.clientY,
+            type: "slot",
+            slotIndex: index,
+        };
+    }
+
+    function closeContextMenu() {
+        contextMenu = null;
+    }
+
+    function handleEnqueueFromMenu() {
+        closeContextMenu();
+        window.dispatchEvent(new CustomEvent("queue:enqueue"));
+    }
+
+    function handleDequeueFromMenu() {
+        closeContextMenu();
+        window.dispatchEvent(new CustomEvent("queue:dequeue"));
+    }
+
+    function handlePeekFromMenu() {
+        peekingIndex = $frontPtr;
+        peekQueue();
+        setTimeout(() => {
+            peekingIndex = null;
+        }, 1500);
+        closeContextMenu();
+    }
+
+    function getSlotX(index) {
+        return CANVAS_PAD_X + index * (NODE_W + NODE_GAP);
+    }
+
+    const SLOT_Y = CANVAS_PAD_Y;
+
+    let isFrontSlot = $derived(
+        (index) => index === $frontPtr && $queueSize > 0,
+    );
+    let isRearSlot = $derived(
+        (index) =>
+            index === ($rearPtr === 0 ? $queueCapacity - 1 : $rearPtr - 1) &&
+            $queueSize > 0,
+    );
+</script>
+
+<svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="canvas-wrapper">
+    {#if $queueCapacity === 0}
+        <div class="empty-hint">
+            <div class="empty-title">Queue not initialized</div>
+            <div class="empty-sub">
+                Click <strong>New Queue</strong> to get started
+            </div>
+        </div>
+    {:else}
+        <svg
+            bind:this={svgEl}
+            class="canvas-svg"
+            class:panning
+            role="application"
+            onmousedown={onSVGMousedown}
+            oncontextmenu={onSVGContextMenu}
+        >
+            <defs>
+                <pattern
+                    id="grid-queue"
+                    width="28"
+                    height="28"
+                    patternUnits="userSpaceOnUse"
+                >
+                    <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
+                </pattern>
+            </defs>
+
+            <rect width="100%" height="100%" fill="url(#grid-queue)" />
+
+            <g
+                style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
+            >
+                <!-- Array bracket kiri -->
+                <path
+                    d="M {CANVAS_PAD_X - 16} {SLOT_Y - 4}
+             L {CANVAS_PAD_X - 24} {SLOT_Y - 4}
+             L {CANVAS_PAD_X - 24} {SLOT_Y + NODE_H + 4}
+             L {CANVAS_PAD_X - 16} {SLOT_Y + NODE_H + 4}"
+                    fill="none"
+                    stroke="var(--border-bright)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+
+                <!-- Array bracket kanan -->
+                <path
+                    d="M {CANVAS_PAD_X + totalW + 16} {SLOT_Y - 4}
+             L {CANVAS_PAD_X + totalW + 24} {SLOT_Y - 4}
+             L {CANVAS_PAD_X + totalW + 24} {SLOT_Y + NODE_H + 4}
+             L {CANVAS_PAD_X + totalW + 16} {SLOT_Y + NODE_H + 4}"
+                    fill="none"
+                    stroke="var(--border-bright)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+
+                <!-- Slots -->
+                {#each $queueSlots as slot, index}
+                    {@const x = getSlotX(index)}
+                    {@const isFront = index === $frontPtr && $queueSize > 0}
+                    {@const isRear =
+                        index ===
+                            ($rearPtr === 0
+                                ? $queueCapacity - 1
+                                : $rearPtr - 1) && $queueSize > 0}
+                    {@const isPeeking = peekingIndex === index}
+                    {@const isEmpty = slot === null}
+
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <g oncontextmenu={(e) => onSlotContextMenu(e, index)}>
+                        <!-- Slot box -->
+                        <rect
+                            {x}
+                            y={SLOT_Y}
+                            width={NODE_W}
+                            height={NODE_H}
+                            rx="6"
+                            fill={isEmpty ? "var(--surface)" : "var(--node-bg)"}
+                            stroke={isPeeking
+                                ? "var(--warning)"
+                                : isFront
+                                  ? "var(--success)"
+                                  : isRear
+                                    ? "#c084fc"
+                                    : isEmpty
+                                      ? "var(--border)"
+                                      : "var(--node-border)"}
+                            stroke-width={isPeeking || isFront || isRear
+                                ? 1.8
+                                : 1}
+                            stroke-dasharray={isEmpty ? "4 3" : "none"}
+                        />
+
+                        {#if !isEmpty && (isFront || isRear)}
+                            <rect
+                                x={x + 1}
+                                y={SLOT_Y + 1}
+                                width={NODE_W - 2}
+                                height="3"
+                                rx="2"
+                                fill={isFront ? "var(--success)" : "#c084fc"}
+                                opacity="0.8"
+                            />
+                        {/if}
+
+                        {#if isPeeking}
+                            <rect
+                                x={x + 1}
+                                y={SLOT_Y + 1}
+                                width={NODE_W - 2}
+                                height="3"
+                                rx="2"
+                                fill="var(--warning)"
+                                opacity="0.8"
+                            />
+                        {/if}
+
+                        <!-- Value -->
+                        <text
+                            x={x + NODE_W / 2}
+                            y={SLOT_Y + NODE_H / 2 + 5}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="14"
+                            fill={isEmpty ? "var(--text-muted)" : "#e8ecf5"}
+                            font-weight={isEmpty ? "400" : "500"}
+                            >{isEmpty ? "null" : slot.value}</text
+                        >
+
+                        <!-- Index label -->
+                        <text
+                            x={x + NODE_W / 2}
+                            y={SLOT_Y + NODE_H + 16}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="10"
+                            fill="var(--text-muted)">{index}</text
+                        >
+
+                        <!-- FRONT badge -->
+                        {#if isFront}
+                            <rect
+                                x={x + NODE_W / 2 - 20}
+                                y={SLOT_Y - 28}
+                                width="40"
+                                height="20"
+                                rx="5"
+                                fill="rgba(78,204,163,0.15)"
+                                stroke="var(--success)"
+                                stroke-width="1.2"
+                            />
+                            <text
+                                x={x + NODE_W / 2}
+                                y={SLOT_Y - 13}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="9"
+                                font-weight="700"
+                                fill="var(--success)"
+                                letter-spacing="0.8">FRONT</text
+                            >
+                            <line
+                                x1={x + NODE_W / 2}
+                                y1={SLOT_Y - 8}
+                                x2={x + NODE_W / 2}
+                                y2={SLOT_Y - 2}
+                                stroke="var(--success)"
+                                stroke-width="1.5"
+                            />
+                            <polygon
+                                points="{x + NODE_W / 2 - 4},{SLOT_Y - 4} {x +
+                                    NODE_W / 2 +
+                                    4},{SLOT_Y - 4} {x + NODE_W / 2},{SLOT_Y}"
+                                fill="var(--success)"
+                            />
+                        {/if}
+
+                        <!-- REAR badge -->
+                        {#if isRear && !isFront}
+                            <rect
+                                x={x + NODE_W / 2 - 20}
+                                y={SLOT_Y - 28}
+                                width="40"
+                                height="20"
+                                rx="5"
+                                fill="rgba(192,132,252,0.15)"
+                                stroke="#c084fc"
+                                stroke-width="1.2"
+                            />
+                            <text
+                                x={x + NODE_W / 2}
+                                y={SLOT_Y - 13}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="9"
+                                font-weight="700"
+                                fill="#c084fc"
+                                letter-spacing="0.8">REAR</text
+                            >
+                            <line
+                                x1={x + NODE_W / 2}
+                                y1={SLOT_Y - 8}
+                                x2={x + NODE_W / 2}
+                                y2={SLOT_Y - 2}
+                                stroke="#c084fc"
+                                stroke-width="1.5"
+                            />
+                            <polygon
+                                points="{x + NODE_W / 2 - 4},{SLOT_Y - 4} {x +
+                                    NODE_W / 2 +
+                                    4},{SLOT_Y - 4} {x + NODE_W / 2},{SLOT_Y}"
+                                fill="#c084fc"
+                            />
+                        {/if}
+
+                        <!-- FRONT+REAR badge kalau sama -->
+                        {#if isFront && isRear}
+                            <rect
+                                x={x + NODE_W / 2 - 20}
+                                y={SLOT_Y - 28}
+                                width="40"
+                                height="20"
+                                rx="5"
+                                fill="rgba(78,204,163,0.15)"
+                                stroke="var(--success)"
+                                stroke-width="1.2"
+                            />
+                            <text
+                                x={x + NODE_W / 2}
+                                y={SLOT_Y - 13}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="7"
+                                font-weight="700"
+                                fill="var(--success)"
+                                letter-spacing="0.5">F/R</text
+                            >
+                        {/if}
+                    </g>
+                {/each}
+
+                <!-- Full indicator -->
+                {#if $queueIsFull}
+                    {@const totalW =
+                        $queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP}
+                    <text
+                        x={CANVAS_PAD_X + totalW / 2}
+                        y={SLOT_Y - 40}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="10"
+                        fill="var(--danger)"
+                        font-weight="600">FULL</text
+                    >
+                {/if}
+            </g>
+        </svg>
+
+        <!-- Context menu -->
+        {#if contextMenu}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+                class="ctx-menu"
+                style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+                onmousedown={(e) => e.stopPropagation()}
+            >
+                <button
+                    class="ctx-item"
+                    onclick={handleEnqueueFromMenu}
+                    disabled={$queueIsFull}
+                >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path
+                            d="M9 6.5H4M6.5 4l2.5 2.5-2.5 2.5"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    Enqueue
+                </button>
+                <button
+                    class="ctx-item"
+                    onclick={handleDequeueFromMenu}
+                    disabled={$queueIsEmpty}
+                >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path
+                            d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    Dequeue
+                </button>
+                <div class="ctx-divider"></div>
+                <button
+                    class="ctx-item"
+                    onclick={handlePeekFromMenu}
+                    disabled={$queueIsEmpty}
+                >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <circle
+                            cx="6.5"
+                            cy="6.5"
+                            r="4"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                        />
+                        <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" />
+                    </svg>
+                    Peek
+                </button>
+            </div>
+        {/if}
+    {/if}
+</div>
+
+<style>
+    .canvas-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+    }
+    .canvas-svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        user-select: none;
+    }
+    .canvas-svg.panning {
+        cursor: grabbing;
+    }
+    .empty-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+    }
+    .empty-title {
+        font-family: var(--font-ui);
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    .empty-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    .empty-sub strong {
+        color: var(--accent);
+    }
+    .ctx-menu {
+        position: fixed;
+        z-index: 1000;
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 10px;
+        padding: 6px;
+        min-width: 150px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: menuIn 0.12s ease;
+    }
+    @keyframes menuIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    .ctx-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 7px 10px;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.1s;
+    }
+    .ctx-item:hover:not(:disabled) {
+        background: var(--surface2);
+        color: var(--text);
+    }
+    .ctx-item:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+    .ctx-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 4px 0;
+    }
+</style>
