@@ -19,6 +19,8 @@
     const NODE_GAP = 4;
     const CANVAS_PAD_X = 60;
     const CANVAS_PAD_Y = 80;
+    const ARROW_SIZE = 40;
+    const ARROW_OFFSET = 16;
 
     const props = $props();
     let zoom = $state(props.zoom ?? 1);
@@ -36,20 +38,59 @@
     let panStartY = 0;
     let initialized = $state(false);
     let peekingIndex = $state(null);
-
-    // Animasi
-    let animatingInId = $state(null);
-    let animatingOutIndex = $state(null);
-
+    let animatingEnqueueIndex = $state(null);
+    let animatingDequeueIndex = $state(null);
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
+    let prevRear = 0;
+    let prevFront = 0;
+    let prevSize = 0;
+    let animatingRearFrom = $state(null);
+    let animatingRearTo = $state(null);
+    let rearAnimProgress = $state(0);
+    let rearAnimFrame = null;
 
-    // Center saat pertama init
+    let animatedRearX = $derived(() => {
+        if (animatingRearFrom === null || animatingRearTo === null) return null;
+        const fromX = getSlotX(animatingRearFrom) + NODE_W / 2;
+        const toX = getSlotX(animatingRearTo) + NODE_W / 2;
+        // Easing: ease-out cubic
+        const t = 1 - Math.pow(1 - rearAnimProgress, 3);
+        return fromX + (toX - fromX) * t;
+    });
+
     $effect(() => {
-        if ($queueCapacity > 0 && !initialized && svgEl) {
-            centerQueue();
-            initialized = true;
+        const size = $queueSize;
+        const rear = $rearPtr;
+
+        if (size > prevSize) {
+            // Enqueue — animasi REAR bergeser
+            const fromIndex = (rear - 1 + $queueCapacity) % $queueCapacity;
+            const toIndex = rear;
+
+            animatingRearFrom = fromIndex;
+            animatingRearTo = toIndex;
+            rearAnimProgress = 0;
+
+            const start = performance.now();
+            const duration = 400;
+
+            function animate(now) {
+                const elapsed = now - start;
+                rearAnimProgress = Math.min(elapsed / duration, 1);
+                if (rearAnimProgress < 1) {
+                    rearAnimFrame = requestAnimationFrame(animate);
+                } else {
+                    animatingRearFrom = null;
+                    animatingRearTo = null;
+                    rearAnimProgress = 0;
+                }
+            }
+
+            if (rearAnimFrame) cancelAnimationFrame(rearAnimFrame);
+            rearAnimFrame = requestAnimationFrame(animate);
         }
-        if ($queueCapacity === 0) initialized = false;
+
+        prevSize = size;
     });
 
     function centerQueue() {
@@ -123,16 +164,18 @@
         return CANVAS_PAD_X + index * (NODE_W + NODE_GAP);
     }
 
-    const SLOT_Y = CANVAS_PAD_Y;
+    function isFrontSlot(index) {
+        return index === $frontPtr && $queueSize > 0;
+    }
 
-    let isFrontSlot = $derived(
-        (index) => index === $frontPtr && $queueSize > 0,
-    );
-    let isRearSlot = $derived(
-        (index) =>
+    function isRearSlot(index) {
+        return (
             index === ($rearPtr === 0 ? $queueCapacity - 1 : $rearPtr - 1) &&
-            $queueSize > 0,
-    );
+            $queueSize > 0
+        );
+    }
+
+    const SLOT_Y = CANVAS_PAD_Y;
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
@@ -171,24 +214,43 @@
             <g
                 style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
             >
+                <!-- Panah DEQUEUE di kiri (elemen keluar dari FRONT) -->
+                <g>
+                    <text
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
+                        y={SLOT_Y + NODE_H / 2 - 8}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        fill="var(--danger)"
+                        font-weight="600">dequeue</text
+                    >
+                    <!-- Garis dari bracket kiri ke ujung kiri -->
+                    <line
+                        x1={CANVAS_PAD_X - 24 - ARROW_OFFSET}
+                        y1={SLOT_Y + NODE_H / 2}
+                        x2={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE}
+                        y2={SLOT_Y + NODE_H / 2}
+                        stroke="var(--danger)"
+                        stroke-width="1.8"
+                    />
+                    <!-- Arrowhead mengarah ke kiri -->
+                    <polygon
+                        points="
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 4}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 + 4}
+    "
+                        fill="var(--danger)"
+                    />
+                </g>
+
                 <!-- Array bracket kiri -->
                 <path
                     d="M {CANVAS_PAD_X - 16} {SLOT_Y - 4}
-             L {CANVAS_PAD_X - 24} {SLOT_Y - 4}
-             L {CANVAS_PAD_X - 24} {SLOT_Y + NODE_H + 4}
-             L {CANVAS_PAD_X - 16} {SLOT_Y + NODE_H + 4}"
-                    fill="none"
-                    stroke="var(--border-bright)"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                />
-
-                <!-- Array bracket kanan -->
-                <path
-                    d="M {CANVAS_PAD_X + totalW + 16} {SLOT_Y - 4}
-             L {CANVAS_PAD_X + totalW + 24} {SLOT_Y - 4}
-             L {CANVAS_PAD_X + totalW + 24} {SLOT_Y + NODE_H + 4}
-             L {CANVAS_PAD_X + totalW + 16} {SLOT_Y + NODE_H + 4}"
+       L {CANVAS_PAD_X - 24} {SLOT_Y - 4}
+       L {CANVAS_PAD_X - 24} {SLOT_Y + NODE_H + 4}
+       L {CANVAS_PAD_X - 16} {SLOT_Y + NODE_H + 4}"
                     fill="none"
                     stroke="var(--border-bright)"
                     stroke-width="2"
@@ -198,18 +260,21 @@
                 <!-- Slots -->
                 {#each $queueSlots as slot, index}
                     {@const x = getSlotX(index)}
-                    {@const isFront = index === $frontPtr && $queueSize > 0}
+                    {@const isFront = isFrontSlot(index)}
                     {@const isRear =
-                        index ===
-                            ($rearPtr === 0
-                                ? $queueCapacity - 1
-                                : $rearPtr - 1) && $queueSize > 0}
+                        isRearSlot(index) && animatingRearTo !== index}
                     {@const isPeeking = peekingIndex === index}
                     {@const isEmpty = slot === null}
+                    {@const isAnimIn = animatingEnqueueIndex === index}
+                    {@const isAnimOut = animatingDequeueIndex === index}
 
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <g oncontextmenu={(e) => onSlotContextMenu(e, index)}>
-                        <!-- Slot box -->
+                    <g
+                        class="slot-group"
+                        class:anim-in={isAnimIn}
+                        class:anim-out={isAnimOut}
+                        oncontextmenu={(e) => onSlotContextMenu(e, index)}
+                    >
                         <rect
                             {x}
                             y={SLOT_Y}
@@ -232,7 +297,7 @@
                             stroke-dasharray={isEmpty ? "4 3" : "none"}
                         />
 
-                        {#if !isEmpty && (isFront || isRear)}
+                        {#if !isEmpty && (isFront || isRear) && !isPeeking}
                             <rect
                                 x={x + 1}
                                 y={SLOT_Y + 1}
@@ -256,7 +321,6 @@
                             />
                         {/if}
 
-                        <!-- Value -->
                         <text
                             x={x + NODE_W / 2}
                             y={SLOT_Y + NODE_H / 2 + 5}
@@ -268,7 +332,6 @@
                             >{isEmpty ? "null" : slot.value}</text
                         >
 
-                        <!-- Index label -->
                         <text
                             x={x + NODE_W / 2}
                             y={SLOT_Y + NODE_H + 16}
@@ -279,11 +342,11 @@
                         >
 
                         <!-- FRONT badge -->
-                        {#if isFront}
+                        {#if isFront && !isRear}
                             <rect
-                                x={x + NODE_W / 2 - 20}
+                                x={x + NODE_W / 2 - 22}
                                 y={SLOT_Y - 28}
-                                width="40"
+                                width="44"
                                 height="20"
                                 rx="5"
                                 fill="rgba(78,204,163,0.15)"
@@ -354,12 +417,12 @@
                             />
                         {/if}
 
-                        <!-- FRONT+REAR badge kalau sama -->
+                        <!-- F/R badge kalau sama -->
                         {#if isFront && isRear}
                             <rect
-                                x={x + NODE_W / 2 - 20}
+                                x={x + NODE_W / 2 - 16}
                                 y={SLOT_Y - 28}
-                                width="40"
+                                width="32"
                                 height="20"
                                 rx="5"
                                 fill="rgba(78,204,163,0.15)"
@@ -371,22 +434,122 @@
                                 y={SLOT_Y - 13}
                                 text-anchor="middle"
                                 font-family="var(--font-mono)"
-                                font-size="7"
+                                font-size="8"
                                 font-weight="700"
                                 fill="var(--success)"
                                 letter-spacing="0.5">F/R</text
                             >
+                            <line
+                                x1={x + NODE_W / 2}
+                                y1={SLOT_Y - 8}
+                                x2={x + NODE_W / 2}
+                                y2={SLOT_Y - 2}
+                                stroke="var(--success)"
+                                stroke-width="1.5"
+                            />
+                            <polygon
+                                points="{x + NODE_W / 2 - 4},{SLOT_Y - 4} {x +
+                                    NODE_W / 2 +
+                                    4},{SLOT_Y - 4} {x + NODE_W / 2},{SLOT_Y}"
+                                fill="var(--success)"
+                            />
                         {/if}
                     </g>
                 {/each}
 
+                <!-- Animated REAR pointer -->
+                {#if animatingRearFrom !== null && animatingRearTo !== null}
+                    {@const ax = animatedRearX()}
+                    <!-- Badge REAR bergerak -->
+                    <rect
+                        x={ax - 20}
+                        y={SLOT_Y - 28}
+                        width="40"
+                        height="20"
+                        rx="5"
+                        fill="rgba(192,132,252,0.15)"
+                        stroke="#c084fc"
+                        stroke-width="1.2"
+                    />
+                    <text
+                        x={ax}
+                        y={SLOT_Y - 13}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        font-weight="700"
+                        fill="#c084fc"
+                        letter-spacing="0.8">REAR</text
+                    >
+                    <line
+                        x1={ax}
+                        y1={SLOT_Y - 8}
+                        x2={ax}
+                        y2={SLOT_Y - 2}
+                        stroke="#c084fc"
+                        stroke-width="1.5"
+                    />
+                    <polygon
+                        points="{ax - 4},{SLOT_Y - 4} {ax + 4},{SLOT_Y -
+                            4} {ax},{SLOT_Y}"
+                        fill="#c084fc"
+                    />
+                {/if}
+
+                <!-- Array bracket kanan -->
+                <path
+                    d="M {CANVAS_PAD_X + totalW + 16} {SLOT_Y - 4}
+       L {CANVAS_PAD_X + totalW + 24} {SLOT_Y - 4}
+       L {CANVAS_PAD_X + totalW + 24} {SLOT_Y + NODE_H + 4}
+       L {CANVAS_PAD_X + totalW + 16} {SLOT_Y + NODE_H + 4}"
+                    fill="none"
+                    stroke="var(--border-bright)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+
+                <!-- Panah ENQUEUE di kanan (elemen masuk dari REAR) -->
+                <g>
+                    <text
+                        x={CANVAS_PAD_X +
+                            totalW +
+                            24 +
+                            ARROW_OFFSET +
+                            ARROW_SIZE / 2}
+                        y={SLOT_Y + NODE_H / 2 - 8}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        fill="var(--accent)"
+                        font-weight="600">enqueue</text
+                    >
+                    <line
+                        x1={CANVAS_PAD_X +
+                            totalW +
+                            24 +
+                            ARROW_OFFSET +
+                            ARROW_SIZE}
+                        y1={SLOT_Y + NODE_H / 2}
+                        x2={CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET}
+                        y2={SLOT_Y + NODE_H / 2}
+                        stroke="var(--accent)"
+                        stroke-width="1.8"
+                    />
+                    <polygon
+                        points="
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 - 4}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET},{SLOT_Y + NODE_H / 2}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 + 4}
+    "
+                        fill="var(--accent)"
+                    />
+                </g>
+
                 <!-- Full indicator -->
                 {#if $queueIsFull}
-                    {@const totalW =
-                        $queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP}
                     <text
                         x={CANVAS_PAD_X + totalW / 2}
-                        y={SLOT_Y - 40}
+                        y={SLOT_Y - 44}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="10"

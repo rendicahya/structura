@@ -38,7 +38,7 @@
     let showEnqueue = $state(false);
     let enqueueValue = $state("");
     let enqueueInputEl = $state();
-    let newCapacity = $state(6);
+    let newCapacity = $state(5);
     let newVarName = $state("queue");
 
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
@@ -274,7 +274,7 @@
             >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
-                        d="M10 7H4M7.5 4.5L10 7l-2.5 2.5"
+                        d="M10 7H4M6.5 4.5L4 7l2.5 2.5"
                         stroke="currentColor"
                         stroke-width="1.5"
                         stroke-linecap="round"
@@ -289,7 +289,7 @@
             text={$queueIsEmpty ? "Queue is empty" : "Dequeue front element"}
         >
             <button
-                class="btn btn-danger"
+                class="btn btn-secondary"
                 onclick={handleDequeue}
                 disabled={$queueSlots.length === 0 || $queueIsEmpty}
             >

@@ -49,8 +49,8 @@ export function initQueue(capacity, varName) {
     itemCounter = 0;
 
     logOpQueue(
-        `String[] ${varName} = new String[${capacity}];\nint front = 0, rear = 0;`,
-        `${varName} = [None] * ${capacity}\nfront = 0\nrear = 0`
+        `int length = ${capacity};\nString[] ${varName} = new String[length];\nint front = 0, rear = 0;`,
+        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = 0`
     );
 }
 
@@ -77,8 +77,8 @@ export function enqueue(value) {
     queueSize.update(s => s + 1);
 
     logOpQueue(
-        `${varName}[rear] = "${value}";\nrear = (rear + 1) % ${capacity};`,
-        `${varName}[rear] = "${value}"\nrear = (rear + 1) % ${capacity}`
+        `${varName}[rear] = "${value}";\nrear = (rear + 1) % length;`,
+        `${varName}[rear] = "${value}"\nrear = (rear + 1) % length`
     );
 
     return true;
@@ -94,8 +94,8 @@ export function dequeue() {
     const slot = get(queueSlots)[front];
 
     logOpQueue(
-        `String dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = null;\nfront = (front + 1) % ${capacity};`,
-        `dequeued = ${varName}[front]  # "${slot?.value}"\n${varName}[front] = None\nfront = (front + 1) % ${capacity}`
+        `String dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = null;\nfront = (front + 1) % length;`,
+        `dequeued = ${varName}[front]  # "${slot?.value}"\n${varName}[front] = None\nfront = (front + 1) % length`
     );
 
     queueSlots.update(slots => {

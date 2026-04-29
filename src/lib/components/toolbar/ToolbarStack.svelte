@@ -277,16 +277,18 @@
       </button>
     </Tooltip>
 
-    <Tooltip text={$stackIsEmpty ? "Stack is empty" : "Pop top element from stack"}>
+    <Tooltip
+      text={$stackIsEmpty ? "Stack is empty" : "Pop top element from stack"}
+    >
       <!-- Di tombol Pop -->
       <button
-        class="btn btn-danger"
+        class="btn btn-secondary"
         onclick={handlePop}
         disabled={$stackCapacity === 0 || $stackIsEmpty}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
-            d="M7 10V4M4 7l3-3 3 3"
+            d="M7 4v6M4 7l3-3 3 3"
             stroke="currentColor"
             stroke-width="1.5"
             stroke-linecap="round"
