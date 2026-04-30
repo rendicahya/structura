@@ -282,7 +282,7 @@
     >
       <!-- Di tombol Pop -->
       <button
-        class="btn btn-secondary"
+        class="btn btn-primary"
         onclick={handlePop}
         disabled={$stackCapacity === 0 || $stackIsEmpty}
       >
@@ -594,14 +594,16 @@
       </div>
       <div class="modal-body">
         <div class="field">
-          <label>Value</label>
-          <input
-            bind:this={pushInputEl}
-            bind:value={pushValue}
-            onkeydown={(e) => e.key === "Enter" && confirmPush()}
-            placeholder="Enter value..."
-            spellcheck="false"
-          />
+          <label>
+            Value
+            <input
+              bind:this={pushInputEl}
+              bind:value={pushValue}
+              onkeydown={(e) => e.key === "Enter" && confirmPush()}
+              placeholder="Enter value..."
+              spellcheck="false"
+            />
+          </label>
         </div>
       </div>
       <div class="modal-footer">
@@ -642,17 +644,6 @@
     font-size: 18px;
     letter-spacing: -0.5px;
     color: var(--text);
-  }
-  .brand-sub {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 7px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
   }
   .actions {
     display: flex;

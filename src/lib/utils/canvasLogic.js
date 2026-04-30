@@ -1,5 +1,3 @@
-import { updateNode } from '../stores/sll/graph.js';
-
 export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) {
   const ZOOM_STEP = 0.1;
   const ZOOM_MIN = 0.3;
@@ -17,6 +15,7 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
   function setSvgEl(el) { svgEl = el; }
 
   function getSVGPoint(clientX, clientY) {
+    if (!svgEl) return { x: 0, y: 0 };
     const rect = svgEl.getBoundingClientRect();
     return {
       x: (clientX - rect.left - panX) / getZoom(),
@@ -25,10 +24,12 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
   }
 
   function onWheel(e) {
+    if (!svgEl) return;
     e.preventDefault();
     if (wheelFrame) return;
     wheelFrame = requestAnimationFrame(() => {
       wheelFrame = null;
+      if (!svgEl) return;
       const rect = svgEl.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
@@ -81,24 +82,24 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
   function stopDrag() { dragging = null; }
 
   function isBackground(target) {
+    if (!svgEl) return false;
     return target === svgEl
       || (target.tagName === 'rect' && (
         target.getAttribute('fill') === 'url(#grid)' ||
-        target.getAttribute('fill') === 'url(#grid-dll)'
+        target.getAttribute('fill') === 'url(#grid-dll)' ||
+        target.getAttribute('fill') === 'url(#grid-stack)' ||
+        target.getAttribute('fill') === 'url(#grid-ls)'
       ))
       || (target.tagName === 'circle' && !target.classList.contains('port'));
   }
 
   function getInlineEditPos(node) {
+    if (!svgEl) return { x: 0, y: 0 };
     const svgRect = svgEl.getBoundingClientRect();
     return {
       x: svgRect.left + node.x * getZoom() + panX,
       y: svgRect.top + node.y * getZoom() + panY + 32 * getZoom(),
     };
-  }
-
-  function getPendingSVGPoint(clientX, clientY) {
-    return getSVGPoint(clientX, clientY);
   }
 
   return {
@@ -113,7 +114,6 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
     stopDrag,
     isBackground,
     getInlineEditPos,
-    getPendingSVGPoint,
     getPanX: () => panX,
     getPanY: () => panY,
     isPanning: () => panning,

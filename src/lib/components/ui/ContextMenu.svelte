@@ -123,26 +123,30 @@
 
   {#if editingVarName}
     <div class="menu-input-row">
-      <label>Variable name</label>
-      <input
-        bind:this={varNameInput}
-        bind:value={tmpVarName}
-        onkeydown={(e) => e.key === "Enter" && commitVarName()}
-        placeholder="varName"
-        spellcheck="false"
-      />
+      <label>
+        Variable name
+        <input
+          bind:this={varNameInput}
+          bind:value={tmpVarName}
+          onkeydown={(e) => e.key === "Enter" && commitVarName()}
+          placeholder="varName"
+          spellcheck="false"
+        />
+      </label>
       <button class="btn-confirm" onclick={commitVarName}>Apply</button>
     </div>
   {:else if editingData}
     <div class="menu-input-row">
-      <label>Data value</label>
-      <input
-        bind:this={dataInput}
-        bind:value={tmpData}
-        onkeydown={(e) => e.key === "Enter" && commitData()}
-        placeholder="value"
-        spellcheck="false"
-      />
+      <label>
+        Data value
+        <input
+          bind:this={dataInput}
+          bind:value={tmpData}
+          onkeydown={(e) => e.key === "Enter" && commitData()}
+          placeholder="value"
+          spellcheck="false"
+        />
+      </label>
       <button class="btn-confirm" onclick={commitData}>Apply</button>
     </div>
   {:else}

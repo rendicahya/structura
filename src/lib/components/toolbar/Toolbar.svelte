@@ -571,17 +571,6 @@
     letter-spacing: -0.5px;
     color: var(--text);
   }
-  .brand-sub {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 7px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
   .actions {
     display: flex;
     align-items: center;

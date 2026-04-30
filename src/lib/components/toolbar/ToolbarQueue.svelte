@@ -20,7 +20,7 @@
         getSnapshotQueue,
         applySnapshotQueue,
     } from "../../stores/queue/graphQueue.js";
-    import { clearLogQueue, queueLog } from "../../stores/shared/queueLog.js";
+    import { clearLogQueue } from "../../stores/shared/queueLog.js";
     import { toast } from "../../stores/shared/toast.js";
     import { onMount } from "svelte";
 
@@ -287,9 +287,8 @@
 
         <Tooltip
             text={$queueIsEmpty ? "Queue is empty" : "Dequeue front element"}
-        >
-            <button
-                class="btn btn-secondary"
+            ><button
+                class="btn btn-primary"
                 onclick={handleDequeue}
                 disabled={$queueSlots.length === 0 || $queueIsEmpty}
             >
@@ -584,13 +583,15 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>Capacity (1–20)</label>
-                    <input
-                        type="number"
-                        bind:value={newCapacity}
-                        min="1"
-                        max="20"
-                    />
+                    <label>
+                        Capacity (1–20)
+                        <input
+                            type="number"
+                            bind:value={newCapacity}
+                            min="1"
+                            max="20"
+                        />
+                    </label>
                 </div>
             </div>
             <div class="modal-footer">
@@ -717,14 +718,6 @@
     .btn-primary:hover:not(:disabled) {
         background: #6f9fff;
         box-shadow: 0 0 16px var(--accent-glow);
-    }
-    .btn-danger {
-        background: rgba(255, 91, 110, 0.15);
-        color: var(--danger);
-        border: 1px solid rgba(255, 91, 110, 0.3);
-    }
-    .btn-danger:hover:not(:disabled) {
-        background: rgba(255, 91, 110, 0.25);
     }
     .btn-secondary {
         background: var(--surface2);

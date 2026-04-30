@@ -37,12 +37,6 @@
     let animatingEnqueueIndex = $state(null);
     let animatingDequeueIndex = $state(null);
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
-    let prevRear = 0;
-    let prevFront = 0;
-    let animatingRearFrom = $state(null);
-    let animatingRearTo = $state(null);
-    let rearAnimProgress = $state(0);
-    let rearAnimFrame = null;
 
     let rearBadgeX = $state(null);
     let rearAnimating = $state(false);
@@ -193,6 +187,7 @@
             </div>
         </div>
     {:else}
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <svg
             bind:this={svgEl}
             class="canvas-svg"

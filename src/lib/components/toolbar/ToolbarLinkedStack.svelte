@@ -269,11 +269,7 @@
     <Tooltip
       text={$linkedStackIsEmpty ? "Stack is empty" : "Pop top node from stack"}
     >
-      <button
-        class="btn btn-secondary"
-        onclick={handlePop}
-        disabled={$linkedStackIsEmpty}
-      >
+      <button class="btn btn-primary" disabled={$linkedStackIsEmpty}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
             d="M7 4v6M4 7l3-3 3 3"
@@ -586,14 +582,16 @@
       </div>
       <div class="modal-body">
         <div class="field">
-          <label>Value</label>
-          <input
-            bind:this={pushInputEl}
-            bind:value={pushValue}
-            onkeydown={(e) => e.key === "Enter" && confirmPush()}
-            placeholder="Enter value..."
-            spellcheck="false"
-          />
+          <label>
+            Value
+            <input
+              bind:this={pushInputEl}
+              bind:value={pushValue}
+              onkeydown={(e) => e.key === "Enter" && confirmPush()}
+              placeholder="Enter value..."
+              spellcheck="false"
+            />
+          </label>
         </div>
       </div>
       <div class="modal-footer">
@@ -670,14 +668,6 @@
   .btn-primary:hover:not(:disabled) {
     background: #6f9fff;
     box-shadow: 0 0 16px var(--accent-glow);
-  }
-  .btn-danger {
-    background: rgba(255, 91, 110, 0.15);
-    color: var(--danger);
-    border: 1px solid rgba(255, 91, 110, 0.3);
-  }
-  .btn-danger:hover:not(:disabled) {
-    background: rgba(255, 91, 110, 0.25);
   }
   .btn-gc {
     background: rgba(78, 204, 163, 0.12);

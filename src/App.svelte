@@ -40,11 +40,12 @@
 
   let page = $state("#/linked-list");
   let showShortcuts = $state(false);
-  let splitPos = $state(parseFloat(localStorage.getItem("structura-split") ?? "62"));
-  let codeHidden = $state(localStorage.getItem("structura-code-hidden") === "true");
-
-  let isSLL = $derived(page === "#/linked-list");
-  let isDLL = $derived(page === "#/doubly-linked-list");
+  let splitPos = $state(
+    parseFloat(localStorage.getItem("structura-split") ?? "62"),
+  );
+  let codeHidden = $state(
+    localStorage.getItem("structura-code-hidden") === "true",
+  );
 
   // Resizable splitter
   let draggingSplitter = $state(false);
@@ -226,6 +227,7 @@
     </div>
 
     {#if !codeHidden}
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="splitter"
         role="separator"
