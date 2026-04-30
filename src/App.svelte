@@ -228,6 +228,9 @@
     {#if !codeHidden}
       <div
         class="splitter"
+        role="separator"
+        aria-orientation="vertical"
+        aria-valuenow={splitPos}
         class:active={draggingSplitter}
         onmousedown={onSplitterMousedown}
       >

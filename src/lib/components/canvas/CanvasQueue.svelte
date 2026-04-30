@@ -22,11 +22,7 @@
     const ARROW_SIZE = 40;
     const ARROW_OFFSET = 16;
 
-    const props = $props();
-    let zoom = $state(props.zoom ?? 1);
-    $effect(() => {
-        zoom = props.zoom ?? 1;
-    });
+    const { zoom = 1 } = $props();
 
     /** @type {SVGSVGElement} */
     let svgEl = $state();
@@ -43,54 +39,61 @@
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
     let prevRear = 0;
     let prevFront = 0;
-    let prevSize = 0;
     let animatingRearFrom = $state(null);
     let animatingRearTo = $state(null);
     let rearAnimProgress = $state(0);
     let rearAnimFrame = null;
 
-    let animatedRearX = $derived(() => {
-        if (animatingRearFrom === null || animatingRearTo === null) return null;
-        const fromX = getSlotX(animatingRearFrom) + NODE_W / 2;
-        const toX = getSlotX(animatingRearTo) + NODE_W / 2;
-        // Easing: ease-out cubic
-        const t = 1 - Math.pow(1 - rearAnimProgress, 3);
-        return fromX + (toX - fromX) * t;
-    });
+    let rearBadgeX = $state(null);
+    let rearAnimating = $state(false);
+
+    let prevRearPtr = $state(0);
+    let prevSize = $state(0);
 
     $effect(() => {
-        const size = $queueSize;
-        const rear = $rearPtr;
+        const currentRear = $rearPtr;
+        const currentSize = $queueSize;
+        const cap = $queueCapacity;
 
-        if (size > prevSize) {
-            // Enqueue — animasi REAR bergeser
-            const fromIndex = (rear - 1 + $queueCapacity) % $queueCapacity;
-            const toIndex = rear;
+        // Animasi REAR bergerak saat Enqueue
+        if (currentSize > prevSize && currentSize > 1 && cap > 0) {
+            const fromIndex = (prevRearPtr - 1 + cap) % cap;
+            const toIndex = (currentRear - 1 + cap) % cap;
 
-            animatingRearFrom = fromIndex;
-            animatingRearTo = toIndex;
-            rearAnimProgress = 0;
+            const fromX = getSlotX(fromIndex) + NODE_W / 2;
+            const toX = getSlotX(toIndex) + NODE_W / 2;
 
-            const start = performance.now();
-            const duration = 400;
+            // Handle wrap-around animation (jangan melompat balik kalau bisa, tapi untuk sekarang linear aja)
+            // Jika loncat jauh (wrap), matikan animasi atau buat khusus.
+            const isWrap = Math.abs(toIndex - fromIndex) > 1;
 
-            function animate(now) {
-                const elapsed = now - start;
-                rearAnimProgress = Math.min(elapsed / duration, 1);
-                if (rearAnimProgress < 1) {
-                    rearAnimFrame = requestAnimationFrame(animate);
-                } else {
-                    animatingRearFrom = null;
-                    animatingRearTo = null;
-                    rearAnimProgress = 0;
+            if (!isWrap) {
+                rearBadgeX = fromX;
+                rearAnimating = true;
+                animatingRearTo = toIndex;
+
+                const start = performance.now();
+                const duration = 350;
+
+                function step(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+                    rearBadgeX = fromX + (toX - fromX) * eased;
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        rearBadgeX = null;
+                        rearAnimating = false;
+                        animatingRearTo = null;
+                    }
                 }
+                requestAnimationFrame(step);
             }
-
-            if (rearAnimFrame) cancelAnimationFrame(rearAnimFrame);
-            rearAnimFrame = requestAnimationFrame(animate);
         }
 
-        prevSize = size;
+        prevRearPtr = currentRear;
+        prevSize = currentSize;
     });
 
     function centerQueue() {
@@ -261,8 +264,7 @@
                 {#each $queueSlots as slot, index}
                     {@const x = getSlotX(index)}
                     {@const isFront = isFrontSlot(index)}
-                    {@const isRear =
-                        isRearSlot(index) && animatingRearTo !== index}
+                    {@const isRear = isRearSlot(index) && !rearAnimating}
                     {@const isPeeking = peekingIndex === index}
                     {@const isEmpty = slot === null}
                     {@const isAnimIn = animatingEnqueueIndex === index}
@@ -458,11 +460,9 @@
                 {/each}
 
                 <!-- Animated REAR pointer -->
-                {#if animatingRearFrom !== null && animatingRearTo !== null}
-                    {@const ax = animatedRearX()}
-                    <!-- Badge REAR bergerak -->
+                {#if rearAnimating && rearBadgeX !== null}
                     <rect
-                        x={ax - 20}
+                        x={rearBadgeX - 20}
                         y={SLOT_Y - 28}
                         width="40"
                         height="20"
@@ -472,7 +472,7 @@
                         stroke-width="1.2"
                     />
                     <text
-                        x={ax}
+                        x={rearBadgeX}
                         y={SLOT_Y - 13}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
@@ -482,16 +482,16 @@
                         letter-spacing="0.8">REAR</text
                     >
                     <line
-                        x1={ax}
+                        x1={rearBadgeX}
                         y1={SLOT_Y - 8}
-                        x2={ax}
+                        x2={rearBadgeX}
                         y2={SLOT_Y - 2}
                         stroke="#c084fc"
                         stroke-width="1.5"
                     />
                     <polygon
-                        points="{ax - 4},{SLOT_Y - 4} {ax + 4},{SLOT_Y -
-                            4} {ax},{SLOT_Y}"
+                        points="{rearBadgeX - 4},{SLOT_Y - 4} {rearBadgeX +
+                            4},{SLOT_Y - 4} {rearBadgeX},{SLOT_Y}"
                         fill="#c084fc"
                     />
                 {/if}
