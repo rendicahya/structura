@@ -6,6 +6,7 @@
     toY = 0,
     pending = false,
     type = "next",
+    markerPrefix = "",
   } = $props();
 
   let cx = $derived((fromX + toX) / 2);
@@ -14,11 +15,11 @@
     pending ? "#f0b429" : type === "prev" ? "#c792ea" : "#5b8fff",
   );
   let markerId = $derived(
-    pending
+    (pending
       ? "arrow-pending"
       : type === "prev"
         ? "arrow-prev"
-        : "arrow-solid",
+        : "arrow-solid") + (markerPrefix ? `-${markerPrefix}` : ""),
   );
 </script>
 

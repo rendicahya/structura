@@ -262,12 +262,11 @@
     const to = ns.find((n) => n.id === edge.to);
     if (!from || !to) return null;
     const OFFSET = 12;
-
     if (edge.type === "next") {
       return {
         fromX: from.x + NODE_W - 8,
         fromY: from.y + NODE_H / 2 - OFFSET,
-        toX: to.x + 8,
+        toX: to.x, // ← was to.x + 8
         toY: to.y + NODE_H / 2 - OFFSET,
         type: "next",
       };
@@ -275,7 +274,7 @@
       return {
         fromX: from.x + 8,
         fromY: from.y + NODE_H / 2 + OFFSET,
-        toX: to.x + NODE_W - 8,
+        toX: to.x + NODE_W, // ← was to.x + NODE_W - 8
         toY: to.y + NODE_H / 2 + OFFSET,
         type: "prev",
       };
@@ -348,6 +347,42 @@
       >
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
       </pattern>
+
+      <marker
+        id="arrow-solid-dll"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8fff" />
+      </marker>
+
+      <marker
+        id="arrow-prev-dll"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c792ea" />
+      </marker>
+
+      <marker
+        id="arrow-pending-dll"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#f0b429" />
+      </marker>
     </defs>
 
     <rect width="100%" height="100%" fill="url(#grid)" />
@@ -358,7 +393,7 @@
       {#each $edgesDLL as edge (`${edge.from}-${edge.to}-${edge.type}`)}
         {#if edgePos(edge, $nodesDLL)}
           {@const pos = edgePos(edge, $nodesDLL)}
-          <EdgeComponent {...pos} />
+          <EdgeComponent {...pos} markerPrefix="dll" />
         {/if}
       {/each}
 
@@ -373,6 +408,7 @@
             toX={pendingX}
             toY={pendingY}
             pending={true}
+            markerPrefix="dll"
           />
         {/if}
       {/if}

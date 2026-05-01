@@ -322,7 +322,30 @@
       >
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
       </pattern>
-      <!-- marker defs tetap sama -->
+
+      <marker
+        id="arrow-solid"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8fff" />
+      </marker>
+
+      <marker
+        id="arrow-pending"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="6"
+        markerHeight="6"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#f0b429" />
+      </marker>
     </defs>
 
     <rect width="100%" height="100%" fill="url(#grid)" />
