@@ -27,6 +27,14 @@ export const walkId = writable(null);
 
 let nodeCounter = 0;
 
+export function initNodeClass() {
+    logOp(
+        `class Node {\n    String data;\n    Node next;\n}`,
+        `class Node:\n    def __init__(self):\n        self.data = None\n        self.next = None`,
+        `struct Node {\n    std::string data;\n    Node* next;\n    Node() : next(nullptr) {}\n};`
+    );
+}
+
 export function createNode(x = 200, y = 200) {
     const id = `node_${++nodeCounter}`;
     const varName = `node${nodeCounter}`;

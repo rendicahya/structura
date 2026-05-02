@@ -10,7 +10,7 @@
 
   import { unreachableCount } from "../../stores/sll/graph.js";
   import { unreachableCountDLL } from "../../stores/dll/graphDLL.js";
-  import { triggerFitToView } from '../../stores/shared/canvasControl.js';
+  import { triggerFitToView } from "../../stores/shared/canvasControl.js";
 
   // SLL imports
   import {
@@ -20,7 +20,7 @@
     applySnapshot,
     garbageCollect,
   } from "../../stores/sll/graph.js";
-  import { nodes } from "../../stores/sll/graph.js";
+  import { initNodeClass, nodes } from "../../stores/sll/graph.js";
   import { clearLog } from "../../stores/sll/sllLog.js";
   import { clearLogDLL } from "../../stores/dll/dllLog.js";
 
@@ -88,6 +88,8 @@
         codeLog: [],
       });
       clearLog();
+      initHistory();
+      initNodeClass();
     } else {
       applySnapshotDLL({
         nodes: [],
@@ -99,9 +101,8 @@
         codeLog: [],
       });
       clearLogDLL();
+      initHistory();
     }
-    initHistory();
-    toast.success("Canvas cleared");
   }
 
   function handleGC() {

@@ -18,18 +18,23 @@
   import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
   import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
   import { queueLog } from "./lib/stores/shared/queueLog.js";
-  import { triggerFitToView } from './lib/stores/shared/canvasControl.js';
+  import { triggerFitToView } from "./lib/stores/shared/canvasControl.js";
+  import { initNodeClass } from "./lib/stores/sll/graph.js";
 
   onMount(() => {
     initHistory();
+    initNodeClass();
+
     if (!location.hash || location.hash === "#") {
       location.hash = "#/linked-list";
     }
+
     page = location.hash;
 
     const onHashChange = () => {
       page = location.hash;
     };
+
     window.addEventListener("hashchange", onHashChange);
     window.addEventListener("wheel", onWindowWheel, { passive: false });
 

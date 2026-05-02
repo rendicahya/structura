@@ -439,11 +439,11 @@
       bind:value={inlineEdit.value}
       style="left: {inlineEdit.x}px; top: {inlineEdit.y}px;"
       onkeydown={onInlineKeydown}
-      onblur={commitInlineEdit}
       placeholder="value"
       spellcheck="false"
     />
   {/if}
+
 
   {#if $nodesDLL.length === 0}
     <div class="empty-hint">

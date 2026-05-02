@@ -332,7 +332,7 @@
   });
 </script>
 
-<svelte:window on:mousemove={onWindowMousemove} on:mouseup={onWindowMouseup} />
+<svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="canvas-wrapper">
@@ -341,8 +341,8 @@
     bind:this={svgEl}
     class="canvas-svg"
     class:panning
-    on:mousedown={onSVGMousedown}
-    on:contextmenu={onSVGContextMenu}
+    onmousedown={onSVGMousedown}
+    oncontextmenu={onSVGContextMenu}
   >
     <defs>
       <pattern
@@ -429,8 +429,7 @@
       bind:this={inlineInputEl}
       bind:value={inlineEdit.value}
       style="left: {inlineEdit.x}px; top: {inlineEdit.y}px;"
-      on:keydown={onInlineKeydown}
-      on:blur={commitInlineEdit}
+      onkeydown={onInlineKeydown}
       placeholder="value"
       spellcheck="false"
     />
@@ -614,7 +613,7 @@
     class="canvas-ctx-menu"
     style="left: {canvasContextMenu.clientX}px; top: {canvasContextMenu.clientY}px;"
   >
-    <button class="ctx-item" on:click={onCanvasAddNode}>
+    <button class="ctx-item" onclick={onCanvasAddNode}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
         <circle
           cx="6.5"
