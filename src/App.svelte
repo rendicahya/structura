@@ -24,6 +24,10 @@
     import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
     import { queueLog } from "./lib/stores/shared/queueLog.js";
 
+    import ToolbarLinkedQueue from "./lib/components/toolbar/ToolbarLinkedQueue.svelte";
+    import CanvasLinkedQueue from "./lib/components/canvas/CanvasLinkedQueue.svelte";
+    import { linkedQueueLog } from "./lib/stores/shared/linkedQueueLog.js";
+
     onMount(() => {
         initHistory();
 
@@ -178,6 +182,13 @@
         >
             Array Queue
         </button>
+        <button
+            class="nav-tab"
+            class:active={page === "#/linked-queue"}
+            onclick={() => navigate("#/linked-queue")}
+        >
+            Linked-List Queue
+        </button>
     </nav>
 
     {#if page === "#/linked-list" || page === "#/doubly-linked-list"}
@@ -221,6 +232,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/linked-queue"}
+        <ToolbarLinkedQueue
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -239,6 +260,8 @@
                 <CanvasLinkedStack {zoom} />
             {:else if page === "#/queue"}
                 <CanvasQueue {zoom} />
+            {:else if page === "#/linked-queue"}
+                <CanvasLinkedQueue {zoom} />
             {/if}
         </div>
 
@@ -264,7 +287,9 @@
                             ? stackLog
                             : page === "#/linked-stack"
                               ? linkedStackLog
-                              : queueLog}
+                              : page === "#/queue"
+                                ? queueLog
+                                : linkedQueueLog}
                 />
             </div>
         {/if}
