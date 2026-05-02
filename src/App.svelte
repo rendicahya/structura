@@ -1,26 +1,29 @@
 <script>
     import { onMount } from "svelte";
+
+    // Components
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
+    import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
+    import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
     import Canvas from "./lib/components/canvas/Canvas.svelte";
-    import CanvasStack from "./lib/components/canvas/CanvasStack.svelte";
     import CanvasDLL from "./lib/components/canvas/CanvasDLL.svelte";
-    import { stackLog } from "./lib/stores/shared/stackLog.js";
+    import CanvasStack from "./lib/components/canvas/CanvasStack.svelte";
+    import CanvasLinkedStack from "./lib/components/canvas/CanvasLinkedStack.svelte";
+    import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
-    import { codeLog } from "./lib/stores/sll/sllLog.js";
-    import { codeLogDLL } from "./lib/stores/dll/dllLog.js";
-    import { initHistory } from "./lib/stores/shared/history.js";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
     import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
-    import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
-    import CanvasLinkedStack from "./lib/components/canvas/CanvasLinkedStack.svelte";
-    import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
-    import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
-    import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
-    import { queueLog } from "./lib/stores/shared/queueLog.js";
-    import { triggerFitToView } from "./lib/stores/shared/canvasControl.js";
+
+    // Stores
+    import { initHistory } from "./lib/stores/shared/history.js";
+    import { codeLog } from "./lib/stores/sll/sllLog.js";
     import { initNodeClass } from "./lib/stores/sll/graph.js";
+    import { codeLogDLL } from "./lib/stores/dll/dllLog.js";
     import { initNodeClassDLL } from "./lib/stores/dll/graphDLL.js";
+    import { stackLog } from "./lib/stores/shared/stackLog.js";
+    import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
+    import { queueLog } from "./lib/stores/shared/queueLog.js";
 
     onMount(() => {
         initHistory();
@@ -57,8 +60,6 @@
     let containerEl = $state();
     let zoom = $state(1);
     let canvasFitToView = $state(null);
-
-    const { onready } = $props();
 
     const ZOOM_STEP = 0.1;
     let nodeClassInitialized = $state(false);
