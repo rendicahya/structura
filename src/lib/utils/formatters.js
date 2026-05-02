@@ -3,9 +3,9 @@
  * @returns {string}
  */
 export function formatValue(val) {
-  if (!val) return 'null';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
+    if (!val) return 'null';
+    if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
+    return `"${val}"`;
 }
 
 /**
@@ -13,9 +13,9 @@ export function formatValue(val) {
  * @returns {string}
  */
 export function formatPythonValue(val) {
-  if (!val) return 'None';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
+    if (!val) return 'None';
+    if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
+    return `"${val}"`;
 }
 
 /**
@@ -23,7 +23,7 @@ export function formatPythonValue(val) {
  * @returns {string}
  */
 export function formatCppValue(val) {
-  if (!val) return 'nullptr';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
+    if (!val) return 'nullptr';
+    if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
+    return `"${val}"`;
 }
