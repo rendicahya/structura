@@ -1,5 +1,11 @@
 <script>
   import { onMount } from "svelte";
+  import { pushHistory, undo, redo } from "../../stores/shared/history.js";
+  import { createCanvasLogic } from "../../utils/canvasLogic.js";
+  import NodeComponent from "../node/NodeComponent.svelte";
+  import EdgeComponent from "../node/EdgeComponent.svelte";
+  import ContextMenu from "../ui/ContextMenu.svelte";
+  import { fitToViewTrigger } from "../../stores/shared/canvasControl.js";
   import {
     nodes,
     edges,
@@ -16,29 +22,24 @@
     createNode,
     addNode,
   } from "../../stores/sll/graph.js";
-  import { pushHistory, undo, redo } from "../../stores/shared/history.js";
-  import { createCanvasLogic } from "../../utils/canvasLogic.js";
-  import NodeComponent from "../node/NodeComponent.svelte";
-  import EdgeComponent from "../node/EdgeComponent.svelte";
-  import ContextMenu from "../ui/ContextMenu.svelte";
 
   const NODE_W = 130;
   const NODE_H = 64;
+  const props = $props();
 
-  export let zoom = 1;
-
-  let svgEl;
-  let panX = 0;
-  let panY = 0;
-  let panning = false;
-  let pendingFrom = null;
-  let pendingX = 0;
-  let pendingY = 0;
-  let contextMenu = null;
-  let canvasContextMenu = null;
-  let selectedNodeId = null;
-  let inlineEdit = null;
-  let inlineInputEl;
+  let zoom = $state(props.zoom ?? 1);
+  let svgEl = $state();
+  let panX = $state(0);
+  let panY = $state(0);
+  let panning = $state(false);
+  let pendingFrom = $state(null);
+  let pendingX = $state(0);
+  let pendingY = $state(0);
+  let contextMenu = $state(null);
+  let canvasContextMenu = $state(null);
+  let selectedNodeId = $state(null);
+  let inlineEdit = $state(null);
+  let inlineInputEl = $state();
 
   const logic = createCanvasLogic({
     getZoom: () => zoom,
@@ -285,6 +286,38 @@
   function handleWheel(e) {
     logic.onWheel(e);
     requestAnimationFrame(() => syncPan());
+  }
+
+  $effect(() => {
+    if ($fitToViewTrigger === 0) return; // skip initial
+    fitToView();
+  });
+
+  function fitToView() {
+    if ($nodes.length === 0 || !svgEl) {
+      zoom = 1;
+      panX = 0;
+      panY = 0;
+      return;
+    }
+
+    const rect = svgEl.getBoundingClientRect();
+    const padding = 80;
+
+    const minX = Math.min(...$nodes.map((n) => n.x));
+    const minY = Math.min(...$nodes.map((n) => n.y));
+    const maxX = Math.max(...$nodes.map((n) => n.x + NODE_W));
+    const maxY = Math.max(...$nodes.map((n) => n.y + NODE_H));
+
+    const contentW = maxX - minX;
+    const contentH = maxY - minY;
+
+    const scaleX = (rect.width - padding * 2) / contentW;
+    const scaleY = (rect.height - padding * 2) / contentH;
+    zoom = Math.min(Math.min(scaleX, scaleY), 1);
+
+    panX = (rect.width - contentW * zoom) / 2 - minX * zoom;
+    panY = (rect.height - contentH * zoom) / 2 - minY * zoom;
   }
 
   onMount(() => {

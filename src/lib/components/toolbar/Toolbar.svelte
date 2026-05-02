@@ -10,6 +10,7 @@
 
   import { unreachableCount } from "../../stores/sll/graph.js";
   import { unreachableCountDLL } from "../../stores/dll/graphDLL.js";
+  import { triggerFitToView } from '../../stores/shared/canvasControl.js';
 
   // SLL imports
   import {

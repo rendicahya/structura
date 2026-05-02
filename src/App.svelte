@@ -18,6 +18,7 @@
   import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
   import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
   import { queueLog } from "./lib/stores/shared/queueLog.js";
+  import { triggerFitToView } from './lib/stores/shared/canvasControl.js';
 
   onMount(() => {
     initHistory();
@@ -47,16 +48,19 @@
     localStorage.getItem("structura-code-hidden") === "true",
   );
 
-  // Resizable splitter
   let draggingSplitter = $state(false);
   let containerEl = $state();
   let zoom = $state(1);
+  let canvasFitToView = $state(null);
+
+  const { onready } = $props();
 
   const ZOOM_STEP = 0.1;
 
   $effect(() => {
     localStorage.setItem("structura-split", splitPos.toString());
   });
+
   $effect(() => {
     localStorage.setItem("structura-code-hidden", codeHidden.toString());
   });
@@ -64,11 +68,14 @@
   function zoomIn() {
     zoom = Math.min(2, +(zoom + ZOOM_STEP).toFixed(2));
   }
+
   function zoomOut() {
     zoom = Math.max(0.3, +(zoom - ZOOM_STEP).toFixed(2));
   }
+
   function zoomReset() {
     zoom = 1;
+    canvasFitToView?.();
   }
 
   function onSplitterMousedown(e) {
@@ -89,7 +96,6 @@
 
   function navigate(hash) {
     location.hash = hash;
-    // Reset zoom saat ganti halaman
     zoom = 1;
   }
 
@@ -100,7 +106,6 @@
   }
 
   function onWindowWheel(e) {
-    // Hanya aktif kalau cursor di atas canvas panel
     if (!containerEl) return;
     const canvasPanel = containerEl.querySelector(".canvas-panel");
     if (!canvasPanel) return;

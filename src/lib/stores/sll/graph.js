@@ -30,6 +30,14 @@ let nodeCounter = 0;
 export function createNode(x = 200, y = 200) {
     const id = `node_${++nodeCounter}`;
     const varName = `node${nodeCounter}`;
+
+    const ns = get(nodes);
+    if (ns.length > 0) {
+        const last = ns[ns.length - 1];
+        x = last.x + 180; // NODE_W (130) + gap (50)
+        y = last.y;
+    }
+
     return { id, varName, data: '', x, y, nextId: null };
 }
 

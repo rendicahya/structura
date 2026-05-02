@@ -46,6 +46,14 @@ export const unreachableCountDLL = derived(
 export function createNodeDLL(x = 200, y = 200) {
     const id = `dll_${++nodeCounter}`;
     const varName = `node${nodeCounter}`;
+
+    const ns = get(nodesDLL);
+    if (ns.length > 0) {
+        const last = ns[ns.length - 1];
+        x = last.x + 180;
+        y = last.y;
+    }
+
     return { id, varName, data: '', x, y, nextId: null, prevId: null };
 }
 
