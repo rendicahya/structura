@@ -41,7 +41,8 @@ export function addNode(node, silent = false) {
   nodes.update(ns => [...ns, node]);
   if (!silent) logOp(
     `Node ${node.varName} = new Node();`,
-    `${node.varName} = Node()`
+    `${node.varName} = Node()`,
+    `Node* ${node.varName} = new Node();`
   );
 }
 
@@ -54,9 +55,10 @@ export function setWalk(nodeId) {
   const node = ns.find(n => n.id === nodeId);
   if (node) logOp(
     `Node walk = ${node.varName};`,
-    `walk = ${node.varName}`
+    `walk = ${node.varName}`,
+    `Node* walk = ${node.varName};`
   );
-  else logOp(`// walk unset`, `# walk unset`);
+  else logOp(`// walk unset`, `# walk unset`, `// walk unset`);
 }
 
 /**
@@ -70,19 +72,22 @@ export function removeNodeFromList(nodeId) {
 
   const javaOps = [];
   const pyOps = [];
+  const cppOps = [];
 
   if (predecessor && target.nextId) {
     const successor = ns.find(n => n.id === target.nextId);
     connectNodes(predecessor.id, target.nextId, true);
     javaOps.push(`${predecessor.varName}.next = ${successor?.varName};`);
-    pyOps.push(`${predecessor.varName}.next = ${successor?.varName}`);
-    // Disconnect target from successor
     javaOps.push(`${target.varName}.next = null;`);
+    pyOps.push(`${predecessor.varName}.next = ${successor?.varName}`);
     pyOps.push(`${target.varName}.next = None`);
+    cppOps.push(`${predecessor.varName}->next = ${successor?.varName};`);
+    cppOps.push(`${target.varName}->next = nullptr;`);
   } else if (predecessor && !target.nextId) {
     disconnectNode(predecessor.id, true);
     javaOps.push(`${predecessor.varName}.next = null;`);
     pyOps.push(`${predecessor.varName}.next = None`);
+    cppOps.push(`${predecessor.varName}->next = nullptr;`);
   }
 
   edges.update(es => es.filter(e => e.from !== nodeId));
@@ -91,7 +96,7 @@ export function removeNodeFromList(nodeId) {
   tailId.update(id => id === nodeId ? null : id);
   walkId.update(id => id === nodeId ? null : id);
 
-  if (javaOps.length > 0) logOp(javaOps, pyOps);
+  if (javaOps.length > 0) logOp(javaOps, pyOps, cppOps);
 }
 
 /**
@@ -108,17 +113,20 @@ export function updateNode(nodeId, patch, silent = false) {
     if (patch.varName !== undefined) {
       logOp(
         `// renamed: ${old.varName} → ${patch.varName}`,
-        `# renamed: ${old.varName} → ${patch.varName}`
+        `# renamed: ${old.varName} → ${patch.varName}`,
+        `// renamed: ${old.varName} → ${patch.varName}`
       );
     }
     if (patch.data !== undefined && patch.data !== old.data) {
       const updated = get(nodes).find(n => n.id === nodeId);
-      if (!updated) return; // ← early return kalau undefined
+      if (!updated) return;
       const val = formatValue(patch.data);
       const pyVal = formatPythonValue(patch.data);
+      const cppVal = formatCppValue(patch.data);
       logOp(
         `${updated.varName}.data = ${val};`,
-        `${updated.varName}.data = ${pyVal}`
+        `${updated.varName}.data = ${pyVal}`,
+        `${updated.varName}->data = ${cppVal};`
       );
     }
   }
@@ -140,7 +148,8 @@ export function connectNodes(fromId, toId, silent = false) {
     const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
       `${from.varName}.next = ${to.varName};`,
-      `${from.varName}.next = ${to.varName}`
+      `${from.varName}.next = ${to.varName}`,
+      `${from.varName}->next = ${to.varName};`
     );
   }
 }
@@ -156,7 +165,8 @@ export function disconnectNode(nodeId, silent = false) {
   nodes.update(ns => ns.map(n => n.id === nodeId ? { ...n, nextId: null } : n));
   if (!silent && node) logOp(
     `${node.varName}.next = null;`,
-    `${node.varName}.next = None`
+    `${node.varName}.next = None`,
+    `${node.varName}->next = nullptr;`
   );
 }
 
@@ -169,9 +179,10 @@ export function setHead(nodeId) {
   const node = ns.find(n => n.id === nodeId);
   if (node) logOp(
     `Node head = ${node.varName};`,
-    `head = ${node.varName}`
+    `head = ${node.varName}`,
+    `Node* head = ${node.varName};`
   );
-  else logOp(`// head unset`, `# head unset`);
+  else logOp(`// head unset`, `# head unset`, `// head unset`);
 }
 
 /**
@@ -183,37 +194,42 @@ export function setTail(nodeId) {
   const node = ns.find(n => n.id === nodeId);
   if (node) logOp(
     `Node tail = ${node.varName};`,
-    `tail = ${node.varName}`
+    `tail = ${node.varName}`,
+    `Node* tail = ${node.varName};`
   );
-  else logOp(`// tail unset`, `# tail unset`);
+  else logOp(`// tail unset`, `# tail unset`, `// tail unset`);
 }
 
 export function garbageCollect() {
   const ns = get(nodes);
   const hId = get(headId);
   const tId = get(tailId);
+  const wId = get(walkId);
   const reachable = new Set();
 
-  ns.forEach(n => { if (n.nextId) reachable.add(n.nextId); });
-  ns.forEach(n => { if (n.nextId) reachable.add(n.id); });
+  ns.forEach(n => { if (n.nextId) { reachable.add(n.nextId); reachable.add(n.id); } });
   if (hId) reachable.add(hId);
   if (tId) reachable.add(tId);
+  if (wId) reachable.add(wId);
 
   const toRemove = ns.filter(n => !reachable.has(n.id));
 
   if (toRemove.length === 0) {
-    logOp('// GC: no unreachable nodes found', '# GC: no unreachable nodes found');
+    logOp(
+      '// GC: no unreachable nodes found',
+      '# GC: no unreachable nodes found',
+      '// GC: no unreachable nodes found'
+    );
     return;
   }
 
   const javaOps = toRemove.map(n => `// GC: ${n.varName} collected`);
   const pyOps = toRemove.map(n => `# GC: ${n.varName} collected`);
-  logOp(javaOps, pyOps);
+  const cppOps = toRemove.map(n => `// GC: delete ${n.varName};`);
+  logOp(javaOps, pyOps, cppOps);
 
   nodes.update(ns => ns.filter(n => reachable.has(n.id)));
-  edges.update(es => es.filter(e =>
-    reachable.has(e.from) && reachable.has(e.to)
-  ));
+  edges.update(es => es.filter(e => reachable.has(e.from) && reachable.has(e.to)));
 }
 
 export const unreachableCount = derived(

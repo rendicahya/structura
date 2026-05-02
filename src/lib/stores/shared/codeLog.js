@@ -8,14 +8,16 @@ export function createCodeLog() {
   /**
    * @param {string|string[]} java
    * @param {string|string[]} [python]
+   * @param {string|string[]} [cpp]
    */
-  function logOp(java, python) {
+  function logOp(java, python, cpp) {
     const id = `op_${++opCounter}`;
     const javaLines = Array.isArray(java) ? java : [java];
     const pythonLines = Array.isArray(python) ? python : [python ?? java];
+    const cppLines = Array.isArray(cpp) ? cpp : [cpp ?? java];
     log.update(entries => [
       ...entries.map(e => ({ ...e, fresh: false })),
-      { id, java: javaLines, python: pythonLines, fresh: true }
+      { id, java: javaLines, python: pythonLines, cpp: cppLines, fresh: true }
     ]);
   }
 

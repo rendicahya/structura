@@ -57,7 +57,8 @@ export function addNodeDLL(node, silent = false) {
   nodesDLL.update(ns => [...ns, node]);
   if (!silent) logOp(
     `Node ${node.varName} = new Node();`,
-    `${node.varName} = Node()`
+    `${node.varName} = Node()`,
+    `Node* ${node.varName} = new Node();`
   );
 }
 
@@ -118,7 +119,8 @@ export function connectNextDLL(fromId, toId, silent = false) {
     const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
       `${from.varName}.next = ${to.varName};\n${to.varName}.prev = ${from.varName};`,
-      `${from.varName}.next = ${to.varName}\n${to.varName}.prev = ${from.varName}`
+      `${from.varName}.next = ${to.varName}\n${to.varName}.prev = ${from.varName}`,
+      `${from.varName}->next = ${to.varName};\n${to.varName}->prev = ${from.varName};`
     );
   }
 }
@@ -333,6 +335,8 @@ export function garbageCollectDLL() {
 
   const javaOps = toRemove.map(n => `// GC: ${n.varName} collected`);
   const pyOps = toRemove.map(n => `# GC: ${n.varName} collected`);
+  const cppOps = toRemove.map(n => `// GC: delete ${n.varName};`);
+
   logOp(javaOps, pyOps);
 
   nodesDLL.update(ns => ns.filter(n => reachable.has(n.id)));

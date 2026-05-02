@@ -50,7 +50,8 @@ export function initQueue(capacity, varName) {
 
     logOpQueue(
         `int length = ${capacity};\nString[] ${varName} = new String[length];\nint front = 0, rear = 0;`,
-        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = 0`
+        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = 0`,
+        `int length = ${capacity};\nstd::string ${varName}[length];\nint front = 0, rear = 0;`
     );
 }
 
@@ -78,7 +79,8 @@ export function enqueue(value) {
 
     logOpQueue(
         `${varName}[rear] = "${value}";\nrear = (rear + 1) % length;`,
-        `${varName}[rear] = "${value}"\nrear = (rear + 1) % length`
+        `${varName}[rear] = "${value}"\nrear = (rear + 1) % length`,
+        `${varName}[rear] = "${value}";\nrear = (rear + 1) % length;`
     );
 
     return true;
@@ -93,11 +95,6 @@ export function dequeue() {
     const varName = get(queueVarName);
     const slot = get(queueSlots)[front];
 
-    logOpQueue(
-        `String dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = null;\nfront = (front + 1) % length;`,
-        `dequeued = ${varName}[front]  # "${slot?.value}"\n${varName}[front] = None\nfront = (front + 1) % length`
-    );
-
     queueSlots.update(slots => {
         const updated = [...slots];
         updated[front] = null;
@@ -107,6 +104,12 @@ export function dequeue() {
     const newFront = (front + 1) % capacity;
     frontPtr.set(newFront);
     queueSize.update(s => s - 1);
+
+    logOpQueue(
+        `String dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = null;\nfront = (front + 1) % length;`,
+        `dequeued = ${varName}[front]  # "${slot?.value}"\n${varName}[front] = None\nfront = (front + 1) % length`,
+        `std::string dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = "";\nfront = (front + 1) % length;`
+    );
 
     return true;
 }
@@ -121,7 +124,8 @@ export function peekQueue() {
 
     logOpQueue(
         `String peeked = ${varName}[front]; // peek → "${slot?.value}"`,
-        `peeked = ${varName}[front]  # peek → "${slot?.value}"`
+        `peeked = ${varName}[front]  # peek → "${slot?.value}"`,
+        `std::string peeked = ${varName}[front]; // peek → "${slot?.value}"`
     );
 
     return true;

@@ -17,3 +17,13 @@ export function formatPythonValue(val) {
   if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
   return `"${val}"`;
 }
+
+/**
+ * @param {string|null|undefined} val
+ * @returns {string}
+ */
+export function formatCppValue(val) {
+  if (!val) return 'nullptr';
+  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
+  return `"${val}"`;
+}
