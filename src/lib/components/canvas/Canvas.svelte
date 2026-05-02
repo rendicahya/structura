@@ -1,12 +1,10 @@
 <script>
     import { onMount } from "svelte";
 
-    // Components
     import NodeComponent from "../node/NodeComponent.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import ContextMenu from "../ui/ContextMenu.svelte";
 
-    // Stores
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
     import { fitToViewTrigger } from "../../stores/shared/canvasControl.js";
     import {
@@ -26,7 +24,6 @@
         addNode,
     } from "../../stores/sll/graph.js";
 
-    // Utils
     import { createCanvasLogic } from "../../utils/canvasLogic.js";
 
     const NODE_W = 130;

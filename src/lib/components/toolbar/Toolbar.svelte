@@ -1,8 +1,6 @@
 <script>
-    // Components
     import Tooltip from "../ui/Tooltip.svelte";
 
-    // Stores
     import {
         pushHistory,
         undo,
@@ -73,7 +71,14 @@
     }
 
     function handleNewCanvas() {
+        if (currentNodes.length > 0) {
+            const ok = confirm(
+                "Start a new canvas? All unsaved work will be lost.",
+            );
+            if (!ok) return;
+        }
         if (isSLL) {
+            clearLog();
             applySnapshot({
                 nodes: [],
                 edges: [],
@@ -83,10 +88,10 @@
                 counter: 0,
                 codeLog: [],
             });
-            clearLog();
             initHistory();
             initNodeClass();
         } else {
+            clearLogDLL();
             applySnapshotDLL({
                 nodes: [],
                 edges: [],
@@ -96,7 +101,6 @@
                 counter: 0,
                 codeLog: [],
             });
-            clearLogDLL();
             initHistory();
             initNodeClassDLL();
         }

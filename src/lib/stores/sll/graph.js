@@ -272,15 +272,24 @@ export function getSnapshot() {
     };
 }
 
+export function resetCanvas() {
+    nodeCounter = 0;
+    nodes.set([]);
+    edges.set([]);
+    headId.set(null);
+    tailId.set(null);
+    walkId.set(null);
+}
+
 /**
  * @param {SLLSnapshot} snapshot
  */
 export function applySnapshot(snapshot) {
     nodeCounter = snapshot.counter ?? 0;
+
     nodes.set(snapshot.nodes ?? []);
     edges.set(snapshot.edges ?? []);
     headId.set(snapshot.headId ?? null);
     tailId.set(snapshot.tailId ?? null);
     walkId.set(snapshot.walkId ?? null);
-    codeLog.set(snapshot.codeLog ?? []);
 }

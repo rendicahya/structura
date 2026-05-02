@@ -1,7 +1,7 @@
 <script>
     import { onMount } from "svelte";
+    import { get } from "svelte/store";
 
-    // Components
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
@@ -15,7 +15,6 @@
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
     import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
 
-    // Stores
     import { initHistory } from "./lib/stores/shared/history.js";
     import { codeLog } from "./lib/stores/sll/sllLog.js";
     import { initNodeClass } from "./lib/stores/sll/graph.js";
@@ -62,20 +61,18 @@
     let canvasFitToView = $state(null);
 
     const ZOOM_STEP = 0.1;
-    let nodeClassInitialized = $state(false);
 
     $effect(() => {
         localStorage.setItem("structura-split", splitPos.toString());
         localStorage.setItem("structura-code-hidden", codeHidden.toString());
+    });
 
-        if (nodeClassInitialized) return;
-
+    // Handle node class initialization when page changes or log is cleared
+    $effect(() => {
         if (page === "#/linked-list") {
-            initNodeClass();
-            nodeClassInitialized = true;
+            if (get(codeLog).length === 0) initNodeClass();
         } else if (page === "#/doubly-linked-list") {
-            initNodeClassDLL();
-            nodeClassInitialized = true;
+            if (get(codeLogDLL).length === 0) initNodeClassDLL();
         }
     });
 

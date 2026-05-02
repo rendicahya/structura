@@ -1,10 +1,8 @@
 <script>
     import { onMount } from "svelte";
 
-    // Components
     import Tooltip from "../ui/Tooltip.svelte";
 
-    // Stores
     import {
         pushHistory,
         undo,
