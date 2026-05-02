@@ -1,4 +1,5 @@
 <script>
+    // Stores
     import {
         queueSlots,
         queueCapacity,

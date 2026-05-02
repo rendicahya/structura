@@ -1,7 +1,10 @@
 <script>
-    import Tooltip from "../ui/Tooltip.svelte";
     import { onMount } from "svelte";
 
+    // Components
+    import Tooltip from "../ui/Tooltip.svelte";
+
+    // Stores
     import {
         pushHistory,
         undo,
@@ -10,7 +13,6 @@
         canRedo,
         initHistory,
     } from "../../stores/shared/history.js";
-
     import {
         stackItems,
         stackCapacity,
@@ -23,7 +25,6 @@
         applySnapshotStack,
         clearStack,
     } from "../../stores/stack/graphStack.js";
-
     import { clearLogStack } from "../../stores/shared/stackLog.js";
     import { toast } from "../../stores/shared/toast.js";
 

@@ -1,7 +1,7 @@
 <script>
-    import { logOpStack } from "../../stores/shared/stackLog.js";
     import { get } from "svelte/store";
 
+    // Stores
     import {
         stackItems,
         stackCapacity,
@@ -10,6 +10,7 @@
         stackVarName,
         stackType,
     } from "../../stores/stack/graphStack.js";
+    import { logOpStack } from "../../stores/shared/stackLog.js";
 
     const NODE_W = 160;
     const NODE_H = 50;

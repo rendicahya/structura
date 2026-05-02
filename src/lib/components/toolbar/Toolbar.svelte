@@ -1,7 +1,10 @@
 <script>
+    // Components
+    import Tooltip from "../ui/Tooltip.svelte";
+
+    // Stores
     import {
         pushHistory,
-        initHistory,
         undo,
         redo,
         canUndo,
@@ -13,30 +16,25 @@
         unreachableCountDLL,
     } from "../../stores/dll/graphDLL.js";
     import { triggerFitToView } from "../../stores/shared/canvasControl.js";
-
-    // SLL imports
     import {
         createNode,
         addNode,
         getSnapshot,
         applySnapshot,
         garbageCollect,
+        initNodeClass,
+        nodes,
     } from "../../stores/sll/graph.js";
-    import { initNodeClass, nodes } from "../../stores/sll/graph.js";
     import { clearLog } from "../../stores/sll/sllLog.js";
     import { clearLogDLL } from "../../stores/dll/dllLog.js";
-
-    // DLL imports
     import {
         createNodeDLL,
         addNodeDLL,
         getSnapshotDLL,
         applySnapshotDLL,
         garbageCollectDLL,
+        nodesDLL,
     } from "../../stores/dll/graphDLL.js";
-    import { nodesDLL } from "../../stores/dll/graphDLL.js";
-
-    import Tooltip from "../ui/Tooltip.svelte";
     import { toast } from "../../stores/shared/toast.js";
 
     const {

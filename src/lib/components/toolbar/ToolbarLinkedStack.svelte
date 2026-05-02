@@ -1,5 +1,10 @@
 <script>
+    import { onMount } from "svelte";
+
+    // Components
     import Tooltip from "../ui/Tooltip.svelte";
+
+    // Stores
     import {
         pushHistory,
         undo,
@@ -21,7 +26,6 @@
     } from "../../stores/stack/graphLinkedStack.js";
     import { clearLogLinkedStack } from "../../stores/shared/linkedStackLog.js";
     import { toast } from "../../stores/shared/toast.js";
-    import { onMount } from "svelte";
 
     const {
         zoom = 1,

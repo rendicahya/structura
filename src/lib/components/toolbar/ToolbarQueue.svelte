@@ -1,5 +1,10 @@
 <script>
+    import { onMount } from "svelte";
+
+    // Components
     import Tooltip from "../ui/Tooltip.svelte";
+
+    // Stores
     import {
         pushHistory,
         undo,
@@ -22,7 +27,6 @@
     } from "../../stores/queue/graphQueue.js";
     import { clearLogQueue } from "../../stores/shared/queueLog.js";
     import { toast } from "../../stores/shared/toast.js";
-    import { onMount } from "svelte";
 
     const {
         zoom = 1,
