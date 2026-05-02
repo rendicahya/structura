@@ -25,9 +25,8 @@
 
   const NODE_W = 130;
   const NODE_H = 64;
-  const props = $props();
+  let { zoom = $bindable(1) } = $props();
 
-  let zoom = $state(props.zoom ?? 1);
   let svgEl = $state();
   let panX = $state(0);
   let panY = $state(0);
