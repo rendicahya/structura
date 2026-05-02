@@ -177,7 +177,6 @@
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="canvas-wrapper">
     {#if $queueCapacity === 0}
         <div class="empty-hint">
