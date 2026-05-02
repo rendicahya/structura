@@ -20,10 +20,10 @@
   import { queueLog } from "./lib/stores/shared/queueLog.js";
   import { triggerFitToView } from "./lib/stores/shared/canvasControl.js";
   import { initNodeClass } from "./lib/stores/sll/graph.js";
+  import { initNodeClassDLL } from "./lib/stores/dll/graphDLL.js";
 
   onMount(() => {
     initHistory();
-    initNodeClass();
 
     if (!location.hash || location.hash === "#") {
       location.hash = "#/linked-list";
@@ -61,13 +61,21 @@
   const { onready } = $props();
 
   const ZOOM_STEP = 0.1;
+  let nodeClassInitialized = $state(false);
 
   $effect(() => {
     localStorage.setItem("structura-split", splitPos.toString());
-  });
-
-  $effect(() => {
     localStorage.setItem("structura-code-hidden", codeHidden.toString());
+
+    if (nodeClassInitialized) return;
+
+    if (page === "#/linked-list") {
+      initNodeClass();
+      nodeClassInitialized = true;
+    } else if (page === "#/doubly-linked-list") {
+      initNodeClassDLL();
+      nodeClassInitialized = true;
+    }
   });
 
   function zoomIn() {

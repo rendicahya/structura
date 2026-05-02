@@ -7,9 +7,11 @@
     canUndo,
     canRedo,
   } from "../../stores/shared/history.js";
-
   import { unreachableCount } from "../../stores/sll/graph.js";
-  import { unreachableCountDLL } from "../../stores/dll/graphDLL.js";
+  import {
+    initNodeClassDLL,
+    unreachableCountDLL,
+  } from "../../stores/dll/graphDLL.js";
   import { triggerFitToView } from "../../stores/shared/canvasControl.js";
 
   // SLL imports
@@ -73,10 +75,6 @@
   }
 
   function handleNewCanvas() {
-    if (currentNodes.length > 0) {
-      const ok = confirm("Start a new canvas? All unsaved work will be lost.");
-      if (!ok) return;
-    }
     if (isSLL) {
       applySnapshot({
         nodes: [],
@@ -102,13 +100,16 @@
       });
       clearLogDLL();
       initHistory();
+      initNodeClassDLL();
     }
   }
 
   function handleGC() {
     pushHistory();
+
     if (isSLL) garbageCollect();
     else garbageCollectDLL();
+
     pushHistory();
   }
 

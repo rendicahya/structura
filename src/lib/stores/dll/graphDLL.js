@@ -23,6 +23,14 @@ export const walkIdDLL = writable(null);
 
 let nodeCounter = 0;
 
+export function initNodeClassDLL() {
+    logOp(
+        `class Node {\n    String data;\n    Node next;\n    Node prev;\n}`,
+        `class Node:\n    def __init__(self):\n        self.data = None\n        self.next = None\n        self.prev = None`,
+        `struct Node {\n    std::string data;\n    Node* next;\n    Node* prev;\n    Node() : next(nullptr), prev(nullptr) {}\n};`
+    );
+}
+
 /**
  * @typedef {{ id: string, varName: string, data: string, x: number, y: number, nextId: string|null, prevId: string|null }} DLLNode
  */
