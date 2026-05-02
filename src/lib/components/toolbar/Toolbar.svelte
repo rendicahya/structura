@@ -7,14 +7,12 @@
         redo,
         canUndo,
         canRedo,
+        initHistory,
     } from "../../stores/shared/history.js";
     import { unreachableCount } from "../../stores/sll/graph.js";
-    import {
-        initNodeClassDLL,
-        unreachableCountDLL,
-    } from "../../stores/dll/graphDLL.js";
     import { triggerFitToView } from "../../stores/shared/canvasControl.js";
     import {
+        resetCanvas,
         createNode,
         addNode,
         getSnapshot,
@@ -26,6 +24,9 @@
     import { clearLog } from "../../stores/sll/sllLog.js";
     import { clearLogDLL } from "../../stores/dll/dllLog.js";
     import {
+        resetCanvasDLL,
+        unreachableCountDLL,
+        initNodeClassDLL,
         createNodeDLL,
         addNodeDLL,
         getSnapshotDLL,
@@ -77,30 +78,15 @@
             );
             if (!ok) return;
         }
+
         if (isSLL) {
+            resetCanvas();
             clearLog();
-            applySnapshot({
-                nodes: [],
-                edges: [],
-                headId: null,
-                tailId: null,
-                walkId: null,
-                counter: 0,
-                codeLog: [],
-            });
             initHistory();
             initNodeClass();
         } else {
+            resetCanvasDLL();
             clearLogDLL();
-            applySnapshotDLL({
-                nodes: [],
-                edges: [],
-                headId: null,
-                tailId: null,
-                walkId: null,
-                counter: 0,
-                codeLog: [],
-            });
             initHistory();
             initNodeClassDLL();
         }

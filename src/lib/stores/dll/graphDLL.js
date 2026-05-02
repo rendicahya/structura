@@ -376,3 +376,12 @@ export function applySnapshotDLL(snapshot) {
     walkIdDLL.set(snapshot.walkId ?? null);
     codeLog.set(snapshot.codeLog ?? []);
 }
+
+export function resetCanvasDLL() {
+    nodeCounter = 0;
+    nodesDLL.set([]);
+    edgesDLL.set([]);
+    headIdDLL.set(null);
+    tailIdDLL.set(null);
+    walkIdDLL.set(null);
+}
