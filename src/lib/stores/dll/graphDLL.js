@@ -98,16 +98,10 @@ export function updateNodeDLL(nodeId, patch, silent = false) {
  * @param {boolean} [silent]
  */
 export function connectNextDLL(fromId, toId, silent = false) {
-  // Remove old next edge from fromId
   edgesDLL.update(es => es.filter(e => !(e.from === fromId && e.type === 'next')));
-  // Remove old prev edge from toId (someone else's next pointing to toId)
-  edgesDLL.update(es => es.filter(e => !(e.to === toId && e.type === 'next')));
 
   nodesDLL.update(ns => ns.map(n => {
     if (n.id === fromId) return { ...n, nextId: toId };
-    if (n.id === toId) return { ...n, prevId: fromId };
-    // Clear old prevId if someone else was pointing to toId
-    if (n.nextId === toId && n.id !== fromId) return { ...n, nextId: null };
     return n;
   }));
 
@@ -118,9 +112,9 @@ export function connectNextDLL(fromId, toId, silent = false) {
     const from = ns.find(n => n.id === fromId);
     const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
-      `${from.varName}.next = ${to.varName};\n${to.varName}.prev = ${from.varName};`,
-      `${from.varName}.next = ${to.varName}\n${to.varName}.prev = ${from.varName}`,
-      `${from.varName}->next = ${to.varName};\n${to.varName}->prev = ${from.varName};`
+      `${from.varName}.next = ${to.varName};`,
+      `${from.varName}.next = ${to.varName}`,
+      `${from.varName}->next = ${to.varName};`
     );
   }
 }
@@ -131,12 +125,10 @@ export function connectNextDLL(fromId, toId, silent = false) {
  * @param {boolean} [silent]
  */
 export function connectPrevDLL(fromId, toId, silent = false) {
-  // fromId.prev = toId
   edgesDLL.update(es => es.filter(e => !(e.from === fromId && e.type === 'prev')));
 
   nodesDLL.update(ns => ns.map(n => {
     if (n.id === fromId) return { ...n, prevId: toId };
-    if (n.id === toId) return { ...n, nextId: fromId };
     return n;
   }));
 
@@ -147,8 +139,9 @@ export function connectPrevDLL(fromId, toId, silent = false) {
     const from = ns.find(n => n.id === fromId);
     const to = ns.find(n => n.id === toId);
     if (from && to) logOp(
-      `${from.varName}.prev = ${to.varName};\n${to.varName}.next = ${from.varName};`,
-      `${from.varName}.prev = ${to.varName}\n${to.varName}.next = ${from.varName}`
+      `${from.varName}.prev = ${to.varName};`,
+      `${from.varName}.prev = ${to.varName}`,
+      `${from.varName}->prev = ${to.varName};`
     );
   }
 }
