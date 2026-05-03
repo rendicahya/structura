@@ -60,6 +60,7 @@
         if (isSLL) arrangeNodes();
         else arrangeNodesDLL();
         pushHistory();
+        triggerFitToView();
     }
 
     function handleAddNode() {
@@ -252,6 +253,61 @@
             Add Node
         </button>
 
+        <Tooltip text="Auto-arrange all nodes in a row">
+            <button
+                class="btn btn-secondary"
+                onclick={handleArrange}
+                disabled={currentNodes.length === 0}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect
+                        x="1"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <rect
+                        x="5.5"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <rect
+                        x="10"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <line
+                        x1="4"
+                        y1="7"
+                        x2="5.5"
+                        y2="7"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <line
+                        x1="8.5"
+                        y1="7"
+                        x2="10"
+                        y2="7"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                </svg>
+                Arrange
+            </button>
+        </Tooltip>
+
         <Tooltip
             text={gcCount > 0
                 ? `Run Garbage Collector (${gcCount} Collectable Node${gcCount > 1 ? "s" : ""})`
@@ -437,61 +493,6 @@
                     />
                 </svg>
                 New
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Auto-arrange all nodes in a row">
-            <button
-                class="btn btn-secondary"
-                onclick={handleArrange}
-                disabled={currentNodes.length === 0}
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect
-                        x="1"
-                        y="5"
-                        width="3"
-                        height="4"
-                        rx="1"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                    <rect
-                        x="5.5"
-                        y="5"
-                        width="3"
-                        height="4"
-                        rx="1"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                    <rect
-                        x="10"
-                        y="5"
-                        width="3"
-                        height="4"
-                        rx="1"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                    <line
-                        x1="4"
-                        y1="7"
-                        x2="5.5"
-                        y2="7"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                    <line
-                        x1="8.5"
-                        y1="7"
-                        x2="10"
-                        y2="7"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                </svg>
-                Arrange
             </button>
         </Tooltip>
 
