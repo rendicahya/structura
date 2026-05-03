@@ -9,7 +9,6 @@
         canRedo,
         initHistory,
     } from "../../stores/shared/history.js";
-    import { unreachableCount } from "../../stores/sll/graph.js";
     import { triggerFitToView } from "../../stores/shared/canvasControl.js";
     import {
         resetCanvas,
@@ -20,6 +19,8 @@
         garbageCollect,
         initNodeClass,
         nodes,
+        unreachableCount,
+        arrangeNodes,
     } from "../../stores/sll/graph.js";
     import { clearLog } from "../../stores/sll/sllLog.js";
     import { clearLogDLL } from "../../stores/dll/dllLog.js";
@@ -33,6 +34,7 @@
         applySnapshotDLL,
         garbageCollectDLL,
         nodesDLL,
+        arrangeNodesDLL,
     } from "../../stores/dll/graphDLL.js";
     import { toast } from "../../stores/shared/toast.js";
 
@@ -52,6 +54,13 @@
     let modeLabel = $derived(isSLL ? "Linked List" : "Doubly Linked List");
     let gcCount = $derived(isSLL ? $unreachableCount : $unreachableCountDLL);
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
+
+    function handleArrange() {
+        pushHistory();
+        if (isSLL) arrangeNodes();
+        else arrangeNodesDLL();
+        pushHistory();
+    }
 
     function handleAddNode() {
         pushHistory();
@@ -405,7 +414,11 @@
         <div class="separator"></div>
 
         <Tooltip text="New Canvas">
-            <button class="btn btn-secondary" onclick={handleNewCanvas}>
+            <button
+                class="btn btn-secondary"
+                onclick={handleNewCanvas}
+                disabled={currentNodes.length === 0}
+            >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <rect
                         x="2"
@@ -427,8 +440,67 @@
             </button>
         </Tooltip>
 
+        <Tooltip text="Auto-arrange all nodes in a row">
+            <button
+                class="btn btn-secondary"
+                onclick={handleArrange}
+                disabled={currentNodes.length === 0}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect
+                        x="1"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <rect
+                        x="5.5"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <rect
+                        x="10"
+                        y="5"
+                        width="3"
+                        height="4"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <line
+                        x1="4"
+                        y1="7"
+                        x2="5.5"
+                        y2="7"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                    <line
+                        x1="8.5"
+                        y1="7"
+                        x2="10"
+                        y2="7"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                    />
+                </svg>
+                Arrange
+            </button>
+        </Tooltip>
+
         <Tooltip text="Save to file">
-            <button class="btn btn-secondary" onclick={handleSave}>
+            <button
+                class="btn btn-secondary"
+                onclick={handleSave}
+                disabled={currentNodes.length === 0}
+            >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
                         d="M2 10V12H12V10"

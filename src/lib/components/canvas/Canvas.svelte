@@ -637,7 +637,7 @@
                     stroke-linecap="round"
                 />
             </svg>
-            Add Node here
+            Add a node
         </button>
     </div>
 {/if}
