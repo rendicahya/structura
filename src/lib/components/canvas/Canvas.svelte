@@ -1,12 +1,14 @@
 <script>
     import { onMount } from "svelte";
-
     import NodeComponent from "../node/NodeComponent.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import ContextMenu from "../ui/ContextMenu.svelte";
 
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
-    import { fitToViewTrigger } from "../../stores/shared/canvasControl.js";
+    import {
+        fitToViewTrigger,
+        canvasZoom,
+    } from "../../stores/shared/canvasControl.js";
     import {
         nodes,
         edges,
@@ -28,7 +30,7 @@
 
     const NODE_W = 130;
     const NODE_H = 64;
-    
+
     let { zoom = $bindable(1) } = $props();
     let svgEl = $state();
     let panX = $state(0);
@@ -293,6 +295,7 @@
     $effect(() => {
         if ($fitToViewTrigger === 0) return; // skip initial
         fitToView();
+        canvasZoom.set(zoom);
     });
 
     function fitToView() {

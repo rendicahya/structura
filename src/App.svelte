@@ -1,7 +1,10 @@
 <script>
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-
+    import {
+        fitToViewTrigger,
+        canvasZoom,
+    } from "./lib/stores/shared/canvasControl.js";
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
@@ -71,13 +74,14 @@
         localStorage.setItem("structura-code-hidden", codeHidden.toString());
     });
 
-    // Handle node class initialization when page changes or log is cleared
     $effect(() => {
         if (page === "#/linked-list") {
             if (get(codeLog).length === 0) initNodeClass();
         } else if (page === "#/doubly-linked-list") {
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
         }
+
+        zoom = $canvasZoom;
     });
 
     function zoomIn() {
