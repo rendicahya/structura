@@ -146,6 +146,11 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
         };
     }
 
+    function setPan(x, y) {
+        panX = x;
+        panY = y;
+    }
+
     return {
         setSvgEl,
         getSVGPoint,
@@ -162,5 +167,6 @@ export function createCanvasLogic({ getZoom, setZoom, getNodes, updateNodeFn }) 
         getPanY: () => panY,
         isPanning: () => panning,
         isDragging: () => !!dragging,
+        setPan,
     };
 }

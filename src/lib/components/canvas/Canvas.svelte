@@ -59,6 +59,11 @@
             ) => updateNode(id, patch, silent),
     });
 
+    $effect(() => {
+        if ($fitToViewTrigger === 0) return;
+        fitToView();
+    });
+
     function syncPan() {
         panX = logic.getPanX();
         panY = logic.getPanY();
@@ -292,17 +297,12 @@
         requestAnimationFrame(() => syncPan());
     }
 
-    $effect(() => {
-        if ($fitToViewTrigger === 0) return; // skip initial
-        fitToView();
-        canvasZoom.set(zoom);
-    });
-
     function fitToView() {
         if ($nodes.length === 0 || !svgEl) {
             zoom = 1;
             panX = 0;
             panY = 0;
+            logic.setPan(0, 0);
             return;
         }
 
@@ -323,6 +323,7 @@
 
         panX = (rect.width - contentW * zoom) / 2 - minX * zoom;
         panY = (rect.height - contentH * zoom) / 2 - minY * zoom;
+        logic.setPan(panX, panY); // ← sync ke logic
     }
 
     onMount(() => {
@@ -346,6 +347,7 @@
         bind:this={svgEl}
         class="canvas-svg"
         class:panning
+        role="application"
         onmousedown={onSVGMousedown}
         oncontextmenu={onSVGContextMenu}
     >
@@ -435,6 +437,7 @@
             bind:value={inlineEdit.value}
             style="left: {inlineEdit.x}px; top: {inlineEdit.y}px;"
             onkeydown={onInlineKeydown}
+            onblur={commitInlineEdit}
             placeholder="value"
             spellcheck="false"
         />
@@ -772,13 +775,6 @@
         border-radius: 4px;
         padding: 2px 6px;
         color: var(--text-dim);
-    }
-    .empty-title {
-        font-family: var(--font-ui);
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--text-muted);
-        margin-bottom: 6px;
     }
     .canvas-ctx-menu {
         position: fixed;

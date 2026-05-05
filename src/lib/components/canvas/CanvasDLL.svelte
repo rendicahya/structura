@@ -4,7 +4,10 @@
     import NodeComponent from "../node/NodeComponent.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import ContextMenu from "../ui/ContextMenu.svelte";
-
+    import {
+        fitToViewTrigger,
+        canvasZoom,
+    } from "../../stores/shared/canvasControl.js";
     import {
         nodesDLL,
         edgesDLL,
@@ -58,6 +61,39 @@
                 silent,
             ) => updateNodeDLL(id, patch, silent),
     });
+
+    $effect(() => {
+        canvasZoom.set(zoom);
+    });
+
+    function fitToView() {
+        if ($nodesDLL.length === 0 || !svgEl) {
+            zoom = 1;
+            panX = 0;
+            panY = 0;
+            return;
+        }
+
+        const rect = svgEl.getBoundingClientRect();
+        const padding = 80;
+        const NODE_W = 130;
+        const NODE_H = 64;
+
+        const minX = Math.min(...$nodesDLL.map((n) => n.x));
+        const minY = Math.min(...$nodesDLL.map((n) => n.y));
+        const maxX = Math.max(...$nodesDLL.map((n) => n.x + NODE_W));
+        const maxY = Math.max(...$nodesDLL.map((n) => n.y + NODE_H));
+
+        const contentW = maxX - minX;
+        const contentH = maxY - minY;
+
+        const scaleX = (rect.width - padding * 2) / contentW;
+        const scaleY = (rect.height - padding * 2) / contentH;
+        zoom = Math.min(Math.min(scaleX, scaleY), 1);
+
+        panX = (rect.width - contentW * zoom) / 2 - minX * zoom;
+        panY = (rect.height - contentH * zoom) / 2 - minY * zoom;
+    }
 
     function syncPan() {
         panX = logic.getPanX();

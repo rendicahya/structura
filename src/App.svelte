@@ -255,9 +255,9 @@
             style={codeHidden ? "width:100%" : `width:${splitPos}%`}
         >
             {#if page === "#/linked-list"}
-                <Canvas bind:zoom />
+                <Canvas bind:zoom active={page === '#/linked-list'} />
             {:else if page === "#/doubly-linked-list"}
-                <CanvasDLL bind:zoom />
+                <CanvasDLL bind:zoom active={page === '#/doubly-linked-list'} />
             {:else if page === "#/stack"}
                 <CanvasStack {zoom} onzoomchange={(z) => (zoom = z)} />
             {:else if page === "#/linked-stack"}
