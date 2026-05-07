@@ -34,9 +34,13 @@
     let panStartY = 0;
     let initialized = $state(false);
 
-    let prevTop = -1;
+    let prevTop = $state(-2); // -2 indicates uninitialized
     $effect(() => {
         const top = $topPtr;
+        if (prevTop === -2) {
+            prevTop = top;
+            return;
+        }
         if (top > prevTop) {
             const newItem = $stackItems[top];
             if (newItem) {
