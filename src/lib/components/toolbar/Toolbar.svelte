@@ -60,7 +60,6 @@
         if (isSLL) arrangeNodes();
         else arrangeNodesDLL();
         pushHistory();
-        triggerFitToView();
     }
 
     function handleAddNode() {

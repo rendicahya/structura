@@ -54,15 +54,13 @@ export function arrangeNodes() {
     if (ns.length === 0) return;
 
     const NODE_W = 130;
-    const NODE_H = 64;
     const GAP = 60;
-    const START_X = 80;
-    const START_Y = 200;
+    const baseY = ns[0].y;
 
     nodes.update(ns => ns.map((node, index) => ({
         ...node,
-        x: START_X + index * (NODE_W + GAP),
-        y: START_Y,
+        x: ns[0].x + index * (NODE_W + GAP),
+        y: baseY,
     })));
 }
 
