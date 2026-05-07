@@ -616,41 +616,6 @@
         }
     }
 
-    .empty-illustration {
-        width: 200px;
-        height: 80px;
-        opacity: 0.5;
-    }
-
-    .port-dot {
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    .arrow-line,
-    .arrow-head {
-        animation: fadeFlow 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%,
-        100% {
-            opacity: 0.4;
-        }
-        50% {
-            opacity: 1;
-        }
-    }
-
-    @keyframes fadeFlow {
-        0%,
-        100% {
-            opacity: 0.3;
-        }
-        50% {
-            opacity: 1;
-        }
-    }
-
     .empty-title {
         font-family: var(--font-ui);
         font-size: 15px;
