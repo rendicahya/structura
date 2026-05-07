@@ -341,7 +341,7 @@
                         />
                         <text
                             x={STACK_X + NODE_W + 70}
-                            y={y + NODE_H / 2 + 4}
+                            y={y + NODE_H / 2 + 1}
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="9"
