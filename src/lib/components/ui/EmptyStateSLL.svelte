@@ -1,6 +1,6 @@
 <svg
     class="empty-illustration"
-    viewBox="0 0 200 80"
+    viewBox="0 0 220 90"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
 >
@@ -90,8 +90,11 @@
         font-size="9"
         fill="var(--text-muted)">null</text
     >
+    <!-- Node 2 Port (Next) -->
+    <circle cx="165" cy="40" r="4" fill="var(--node-border)" class="port-dot-static" />
 
     <!-- Ground symbol -->
+    <!-- Attached to Node 2 Port Next (165, 40) -->
     <line
         x1="165"
         y1="40"
@@ -136,12 +139,16 @@
 
 <style>
     .empty-illustration {
-        width: 200px;
-        height: 80px;
+        width: 220px;
+        height: 90px;
         opacity: 0.5;
     }
     .port-dot {
         animation: pulse 2s ease-in-out infinite;
+    }
+    .port-dot-static {
+        stroke: var(--border-bright);
+        stroke-width: 1;
     }
     .arrow-line,
     .arrow-head {
