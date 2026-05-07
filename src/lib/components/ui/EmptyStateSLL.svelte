@@ -91,7 +91,7 @@
         fill="var(--text-muted)">null</text
     >
     <!-- Node 2 Port (Next) -->
-    <circle cx="165" cy="40" r="4" fill="var(--node-border)" class="port-dot-static" />
+    <circle cx="165" cy="40" r="4" fill="var(--accent)" class="port-dot" />
 
     <!-- Ground symbol -->
     <!-- Attached to Node 2 Port Next (165, 40) -->
@@ -145,10 +145,6 @@
     }
     .port-dot {
         animation: pulse 2s ease-in-out infinite;
-    }
-    .port-dot-static {
-        stroke: var(--border-bright);
-        stroke-width: 1;
     }
     .arrow-line,
     .arrow-head {
