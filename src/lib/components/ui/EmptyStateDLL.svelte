@@ -5,11 +5,12 @@
     xmlns="http://www.w3.org/2000/svg"
 >
     <!-- Left Ground (Prev of Node 1) -->
-    <line x1="10" y1="50" x2="30" y2="50" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="10" y1="50" x2="10" y2="64" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="3" y1="64" x2="17" y2="64" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="6" y1="69" x2="14" y2="69" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="9" y1="74" x2="11" y2="74" stroke="var(--text-muted)" stroke-width="1.5" />
+    <!-- From Port Prev (45, 56) to Left -->
+    <line x1="45" y1="56" x2="25" y2="56" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="25" y1="56" x2="25" y2="70" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="18" y1="70" x2="32" y2="70" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="21" y1="75" x2="29" y2="75" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="24" y1="80" x2="26" y2="80" stroke="var(--text-muted)" stroke-width="1.5" />
 
     <!-- Node 1 -->
     <rect
@@ -140,11 +141,12 @@
     />
 
     <!-- Right Ground (Next of Node 2) -->
-    <line x1="210" y1="50" x2="230" y2="50" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="230" y1="50" x2="230" y2="64" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="223" y1="64" x2="237" y2="64" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="226" y1="69" x2="234" y2="69" stroke="var(--text-muted)" stroke-width="1.5" />
-    <line x1="229" y1="74" x2="231" y2="74" stroke="var(--text-muted)" stroke-width="1.5" />
+    <!-- From Port Next (195, 44) to Right -->
+    <line x1="195" y1="44" x2="215" y2="44" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="215" y1="44" x2="215" y2="58" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="208" y1="58" x2="222" y2="58" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="211" y1="63" x2="219" y2="63" stroke="var(--text-muted)" stroke-width="1.5" />
+    <line x1="214" y1="68" x2="216" y2="68" stroke="var(--text-muted)" stroke-width="1.5" />
 </svg>
 
 <style>
