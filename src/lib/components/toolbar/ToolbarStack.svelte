@@ -42,7 +42,7 @@
     let newCapacity = $state(5);
 
     function handleNewStack() {
-        if ($stackItems.length > 0) {
+        if (!$stackIsEmpty) {
             const ok = confirm(
                 "Start a new stack? All unsaved work will be lost.",
             );

@@ -5,11 +5,14 @@ import { logOpStack, stackLog } from '../shared/stackLog.js';
  * @typedef {{ id: string, value: string, index: number }} StackItem
  */
 
-/** @type {import('svelte/store').Writable<StackItem[]>} */
+/** @type {import('svelte/store').Writable<(StackItem|null)[]>} */
 export const stackItems = writable([]);
 
 /** @type {import('svelte/store').Writable<number>} */
 export const stackCapacity = writable(0);
+
+/** @type {import('svelte/store').Writable<number>} */
+export const topPtr = writable(-1);
 
 /** @type {import('svelte/store').Writable<string>} */
 export const stackVarName = writable('stack');
@@ -21,30 +24,37 @@ let itemCounter = 0;
 
 /** @type {import('svelte/store').Readable<boolean>} */
 export const stackIsFull = derived(
-    [stackItems, stackCapacity],
-    ([$stackItems, $stackCapacity]) => $stackItems.length >= $stackCapacity
+    [topPtr, stackCapacity],
+    ([$top, $cap]) => $cap > 0 && $top >= $cap - 1
 );
 
 /** @type {import('svelte/store').Readable<boolean>} */
 export const stackIsEmpty = derived(
-    stackItems,
-    ($stackItems) => $stackItems.length === 0
+    topPtr,
+    ($top) => $top === -1
 );
 
 /**
  * @param {string} value
  */
 export function pushStack(value) {
-    const items = get(stackItems);
+    const top = get(topPtr);
     const capacity = get(stackCapacity);
     const varName = get(stackVarName);
     const type = get(stackType);
 
-    if (items.length >= capacity) return false;
+    if (top >= capacity - 1) return false;
 
+    const nextTop = top + 1;
     const id = `stack_${++itemCounter}`;
-    const newItem = { id, value, index: items.length };
-    stackItems.update(s => [...s, newItem]);
+    const newItem = { id, value, index: nextTop };
+    
+    stackItems.update(s => {
+        const updated = [...s];
+        updated[nextTop] = newItem;
+        return updated;
+    });
+    topPtr.set(nextTop);
 
     const formattedVal = formatStackValue(value, type);
 
@@ -57,14 +67,14 @@ export function pushStack(value) {
 }
 
 export function popStack() {
-    const items = get(stackItems);
-    if (items.length === 0) return false;
+    const top = get(topPtr);
+    if (top === -1) return false;
 
     const varName = get(stackVarName);
     const type = get(stackType);
     const cppType = type === 'String' ? 'std::string' : type;
 
-    stackItems.update(s => s.slice(0, -1));
+    topPtr.set(top - 1);
 
     logOpStack(
         `${type} popped = ${varName}[top--];`,
@@ -83,7 +93,8 @@ export function initStack(capacity, varName, type) {
     stackCapacity.set(capacity);
     stackVarName.set(varName);
     stackType.set(type);
-    stackItems.set([]);
+    stackItems.set(Array(capacity).fill(null));
+    topPtr.set(-1);
     itemCounter = 0;
     const cppType = type === 'String' ? 'std::string' : type;
 
@@ -98,6 +109,7 @@ export function getSnapshotStack() {
     return {
         items: JSON.parse(JSON.stringify(get(stackItems))),
         capacity: get(stackCapacity),
+        top: get(topPtr),
         varName: get(stackVarName),
         type: get(stackType),
         counter: itemCounter,
@@ -113,6 +125,7 @@ export function applySnapshotStack(snapshot) {
     itemCounter = snapshot.counter ?? 0;
     stackItems.set(snapshot.items ?? []);
     stackCapacity.set(snapshot.capacity ?? 0);
+    topPtr.set(snapshot.top ?? -1);
     stackVarName.set(snapshot.varName ?? 'stack');
     stackType.set(snapshot.type ?? 'int');
     stackLog.set(snapshot.codeLog ?? []);
@@ -121,6 +134,7 @@ export function applySnapshotStack(snapshot) {
 export function clearStack() {
     stackItems.set([]);
     stackCapacity.set(0);
+    topPtr.set(-1);
     stackVarName.set('stack');
     stackType.set('int');
     itemCounter = 0;

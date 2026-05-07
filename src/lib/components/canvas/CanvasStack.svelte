@@ -6,6 +6,7 @@
         stackCapacity,
         stackIsFull,
         stackIsEmpty,
+        topPtr,
         stackVarName,
         stackType,
     } from "../../stores/stack/graphStack.js";
@@ -33,17 +34,19 @@
     let panStartY = 0;
     let initialized = $state(false);
 
-    let prevLength = 0;
+    let prevTop = -1;
     $effect(() => {
-        const items = $stackItems;
-        if (items.length > prevLength) {
-            const newItem = items[items.length - 1];
-            animatingInId = newItem.id;
-            setTimeout(() => {
-                animatingInId = null;
-            }, 400);
+        const top = $topPtr;
+        if (top > prevTop) {
+            const newItem = $stackItems[top];
+            if (newItem) {
+                animatingInId = newItem.id;
+                setTimeout(() => {
+                    animatingInId = null;
+                }, 400);
+            }
         }
-        prevLength = items.length;
+        prevTop = top;
     });
 
     $effect(() => {
@@ -74,12 +77,12 @@
 
         const varName = get(stackVarName);
         const type = get(stackType);
-        const items = get(stackItems);
+        const top = get(topPtr);
 
-        if (items.length > 0) {
+        if (top !== -1) {
             logOpStack(
-                `${type} peeked = ${varName}[top - 1]; // peek`,
-                `peeked = ${varName}[top - 1]  # peek`,
+                `${type} peeked = ${varName}[top]; // peek`,
+                `peeked = ${varName}[top]  # peek`,
             );
         }
 
@@ -126,13 +129,6 @@
     function onWindowMouseup() {
         panning = false;
     }
-
-    let emptySlots = $derived(
-        Array.from(
-            { length: $stackCapacity - $stackItems.length },
-            (_, i) => $stackItems.length + i,
-        ),
-    );
 
     /**
      * @param {number} index
@@ -217,100 +213,99 @@
                     stroke-linecap="round"
                 />
 
-                <!-- Slot kosong -->
-                {#each emptySlots as slotIndex}
-                    {@const y = getItemY(slotIndex)}
-                    <rect
-                        x={STACK_X}
-                        {y}
-                        width={NODE_W}
-                        height={NODE_H}
-                        rx="6"
-                        fill="var(--surface)"
-                        stroke="var(--border)"
-                        stroke-width="1"
-                        stroke-dasharray="4 3"
-                    />
-                    <text
-                        x={STACK_X - 8}
-                        y={y + NODE_H / 2 + 4}
-                        text-anchor="end"
-                        font-family="var(--font-mono)"
-                        font-size="10"
-                        fill="var(--text-muted)">{slotIndex}</text
-                    >
-                {/each}
+                <!-- Item slots -->
+                {#each $stackItems as item, index (item?.id || `empty-${index}`)}
+                    {@const y = getItemY(index)}
+                    {@const isActive = index <= $topPtr}
+                    {@const isTop = index === $topPtr}
+                    {@const isAnimIn = isActive && animatingInId === item?.id}
+                    {@const isPeeking = isActive && peekingId === item?.id}
 
-                <!-- Item yang ada -->
-                {#each $stackItems as item (item.id)}
-                    {@const y = getItemY(item.index)}
-                    {@const isTop = item.index === $stackItems.length - 1}
-                    {@const isAnimIn = animatingInId === item.id}
-                    {@const isPeeking = peekingId === item.id}
-
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <g
-                        class="stack-item"
-                        class:anim-in={isAnimIn}
-                        class:peeking={isPeeking}
-                        oncontextmenu={(e) => onItemContextMenu(e, item.id)}
-                    >
+                    {#if !item}
+                        <!-- Slot benar-benar kosong -->
                         <rect
                             x={STACK_X}
                             {y}
                             width={NODE_W}
                             height={NODE_H}
                             rx="6"
-                            fill="var(--node-bg)"
-                            stroke={isPeeking
-                                ? "var(--warning)"
-                                : isTop
-                                  ? "var(--accent)"
-                                  : "var(--node-border)"}
-                            stroke-width={isPeeking || isTop ? 1.8 : 1}
+                            fill="var(--surface)"
+                            stroke="var(--border)"
+                            stroke-width="1"
+                            stroke-dasharray="4 3"
                         />
-                        {#if isTop && !isPeeking}
-                            <rect
-                                x={STACK_X + 1}
-                                y={y + 1}
-                                width={NODE_W - 2}
-                                height="3"
-                                rx="2"
-                                fill="var(--accent)"
-                                opacity="0.8"
-                            />
-                        {/if}
-                        {#if isPeeking}
-                            <rect
-                                x={STACK_X + 1}
-                                y={y + 1}
-                                width={NODE_W - 2}
-                                height="3"
-                                rx="2"
-                                fill="var(--warning)"
-                                opacity="0.8"
-                            />
-                        {/if}
-                        <text
-                            x={STACK_X + NODE_W / 2}
-                            y={y + NODE_H / 2 + 5}
-                            text-anchor="middle"
-                            font-family="var(--font-mono)"
-                            font-size="14"
-                            fill={item.value ? "#e8ecf5" : "var(--text-muted)"}
-                            font-weight="500">{item.value || "0"}</text
+                    {:else}
+                        <!-- Item yang ada (aktif atau poppped) -->
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <g
+                            class="stack-item"
+                            class:anim-in={isAnimIn}
+                            class:peeking={isPeeking}
+                            style={!isActive ? "opacity: 0.35;" : ""}
+                            oncontextmenu={(e) =>
+                                isActive && onItemContextMenu(e, item.id)}
                         >
-                        <text
-                            x={STACK_X - 8}
-                            y={y + NODE_H / 2 + 4}
-                            text-anchor="end"
-                            font-family="var(--font-mono)"
-                            font-size="10"
-                            fill="var(--text-muted)">{item.index}</text
-                        >
-                    </g>
+                            <rect
+                                x={STACK_X}
+                                {y}
+                                width={NODE_W}
+                                height={NODE_H}
+                                rx="6"
+                                fill="var(--node-bg)"
+                                stroke={isPeeking
+                                    ? "var(--warning)"
+                                    : isTop
+                                      ? "var(--accent)"
+                                      : "var(--node-border)"}
+                                stroke-width={isPeeking || isTop ? 1.8 : 1}
+                            />
+                            {#if isTop && !isPeeking}
+                                <rect
+                                    x={STACK_X + 1}
+                                    y={y + 1}
+                                    width={NODE_W - 2}
+                                    height="3"
+                                    rx="2"
+                                    fill="var(--accent)"
+                                    opacity="0.8"
+                                />
+                            {/if}
+                            {#if isPeeking}
+                                <rect
+                                    x={STACK_X + 1}
+                                    y={y + 1}
+                                    width={NODE_W - 2}
+                                    height="3"
+                                    rx="2"
+                                    fill="var(--warning)"
+                                    opacity="0.8"
+                                />
+                            {/if}
+                            <text
+                                x={STACK_X + NODE_W / 2}
+                                y={y + NODE_H / 2 + 5}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="14"
+                                fill={item.value
+                                    ? "#e8ecf5"
+                                    : "var(--text-muted)"}
+                                font-weight="500">{item.value || "0"}</text
+                            >
+                        </g>
+                    {/if}
 
-                    <!-- TOP badge -->
+                    <!-- Index label selalu ada -->
+                    <text
+                        x={STACK_X - 8}
+                        y={y + NODE_H / 2 + 4}
+                        text-anchor="end"
+                        font-family="var(--font-mono)"
+                        font-size="10"
+                        fill="var(--text-muted)">{index}</text
+                    >
+
+                    <!-- TOP badge (Hanya di topPtr) -->
                     {#if isTop}
                         <line
                             x1={STACK_X + NODE_W + 50}
@@ -441,14 +436,9 @@
                         Peek
                     </button>
                 {:else}
-                    {@const ctxItem = $stackItems.find(
-                        (i) => i.id === contextMenu?.itemId,
-                    )}
-                    {@const isTop = ctxItem?.index === $stackItems.length - 1}
                     <button
                         class="ctx-item"
                         onclick={handlePopFromMenu}
-                        disabled={!isTop}
                     >
                         <svg
                             width="13"
@@ -464,7 +454,7 @@
                                 stroke-linejoin="round"
                             />
                         </svg>
-                        Pop {!isTop ? "(top only)" : ""}
+                        Pop
                     </button>
                     <button
                         class="ctx-item"
