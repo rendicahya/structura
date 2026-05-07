@@ -49,9 +49,9 @@ export function pushStack(value) {
     const formattedVal = formatStackValue(value, type);
 
     logOpStack(
-        `${varName}[top++] = ${formattedVal};`,
-        `${varName}[top] = ${formattedVal}\ntop += 1`,
-        `${varName}[top++] = ${formattedVal};`
+        `${varName}[++top] = ${formattedVal};`,
+        `top += 1\n${varName}[top] = ${formattedVal}`,
+        `${varName}[++top] = ${formattedVal};`
     );
     return true;
 }
@@ -62,13 +62,14 @@ export function popStack() {
 
     const varName = get(stackVarName);
     const type = get(stackType);
+    const cppType = type === 'String' ? 'std::string' : type;
 
     stackItems.update(s => s.slice(0, -1));
 
     logOpStack(
-        `${type} popped = ${varName}[--top];`,
-        `top -= 1\npopped = ${varName}[top]`,
-        `${type === 'String' ? 'std::string' : type} popped = ${varName}[--top];`
+        `${type} popped = ${varName}[top--];`,
+        `popped = ${varName}[top]\ntop -= 1`,
+        `${cppType} popped = ${varName}[top--];`
     );
     return true;
 }
@@ -87,9 +88,9 @@ export function initStack(capacity, varName, type) {
     const cppType = type === 'String' ? 'std::string' : type;
 
     logOpStack(
-        `${type}[] ${varName} = new ${type}[${capacity}];\nint top = 0;`,
-        `${varName} = [None] * ${capacity}\ntop = 0`,
-        `${cppType} ${varName}[${capacity}];\nint top = 0;`
+        `${type}[] ${varName} = new ${type}[${capacity}];\nint top = -1;`,
+        `${varName} = [None] * ${capacity}\ntop = -1`,
+        `${cppType} ${varName}[${capacity}];\nint top = -1;`
     );
 }
 
