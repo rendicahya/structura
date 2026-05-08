@@ -36,6 +36,7 @@
     let lastDequeuedValue = $state(null);
     let animatingEnqueueIndex = $state(null);
     let animatingDequeueIndex = $state(null);
+    let animatingDequeue = $state(null);
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
 
     let frontBadgeX = $state(null);
@@ -57,8 +58,50 @@
         const cap = $queueCapacity;
         const slots = $queueSlots;
 
+        // Animasi Dequeue bergeser ke kiri
         if (currentSize < prevSize && prevSize > 0) {
-            lastDequeuedValue = slots[prevFrontPtr]?.value ?? null;
+            const dequeuedValue = slots[prevFrontPtr]?.value ?? null;
+            if (dequeuedValue !== null) {
+                const startX = getSlotX(prevFrontPtr);
+                const startY = SLOT_Y;
+                const targetX =
+                    CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 91;
+                const targetY = SLOT_Y + NODE_H / 2 - 30;
+
+                animatingDequeue = {
+                    value: dequeuedValue,
+                    x: startX,
+                    y: startY,
+                    w: NODE_W,
+                    h: NODE_H,
+                    fontSize: 14,
+                    opacity: 1,
+                };
+
+                const start = performance.now();
+                const duration = 450;
+
+                function step(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3); // cubic ease out
+
+                    if (animatingDequeue) {
+                        animatingDequeue.x = startX + (targetX - startX) * eased;
+                        animatingDequeue.y = startY + (targetY - startY) * eased;
+                        animatingDequeue.w = NODE_W + (54 - NODE_W) * eased;
+                        animatingDequeue.h = NODE_H + (34 - NODE_H) * eased;
+                        animatingDequeue.fontSize = 14 + (12 - 14) * eased;
+                    }
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        lastDequeuedValue = dequeuedValue;
+                        animatingDequeue = null;
+                    }
+                }
+                requestAnimationFrame(step);
+            }
         }
 
         // Animasi REAR bergerak saat Enqueue
@@ -882,6 +925,33 @@
                         font-weight="600"
                         >{$queueIsFull ? "QUEUE FULL" : "QUEUE EMPTY"}</text
                     >
+                {/if}
+
+                <!-- Element yang sedang di-dequeue (animasi terbang) -->
+                {#if animatingDequeue}
+                    <g
+                        style="transform: translate({animatingDequeue.x}px, {animatingDequeue.y}px);"
+                    >
+                        <rect
+                            x={0}
+                            y={0}
+                            width={animatingDequeue.w}
+                            height={animatingDequeue.h}
+                            rx="6"
+                            fill="var(--node-bg)"
+                            stroke="var(--success)"
+                            stroke-width="1.8"
+                        />
+                        <text
+                            x={animatingDequeue.w / 2}
+                            y={animatingDequeue.h / 2 + animatingDequeue.fontSize / 2 - 2}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size={animatingDequeue.fontSize}
+                            fill="#e8ecf5"
+                            font-weight="600">{animatingDequeue.value}</text
+                        >
+                    </g>
                 {/if}
             </g>
         </svg>
