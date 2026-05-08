@@ -30,22 +30,36 @@
     let panning = $state(false);
     let panStartX = 0;
     let panStartY = 0;
-    let initialized = $state(false);
+    let initialized = false;
+    let centeredSlotsRef = null;
     let peekingIndex = $state(null);
+    let lastDequeuedValue = $state(null);
     let animatingEnqueueIndex = $state(null);
     let animatingDequeueIndex = $state(null);
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
 
+    let frontBadgeX = $state(null);
+    let frontAnimating = $state(false);
+    let animatingFrontTo = $state(null);
+
     let rearBadgeX = $state(null);
     let rearAnimating = $state(false);
+    let animatingRearTo = $state(null);
 
+    let prevFrontPtr = $state(0);
     let prevRearPtr = $state(0);
     let prevSize = $state(0);
 
     $effect(() => {
+        const currentFront = $frontPtr;
         const currentRear = $rearPtr;
         const currentSize = $queueSize;
         const cap = $queueCapacity;
+        const slots = $queueSlots;
+
+        if (currentSize < prevSize && prevSize > 0) {
+            lastDequeuedValue = slots[prevFrontPtr]?.value ?? null;
+        }
 
         // Animasi REAR bergerak saat Enqueue
         if (currentSize > prevSize && currentSize > 1 && cap > 0) {
@@ -84,15 +98,82 @@
             }
         }
 
+        // Animasi FRONT bergerak saat Dequeue
+        if (currentSize < prevSize && prevSize > 1 && currentSize > 0 && cap > 0) {
+            const fromIndex = prevFrontPtr;
+            const toIndex = currentFront;
+
+            const fromX = getSlotX(fromIndex) + NODE_W / 2;
+            const toX = getSlotX(toIndex) + NODE_W / 2;
+
+            const isWrap = Math.abs(toIndex - fromIndex) > 1;
+
+            if (!isWrap) {
+                frontBadgeX = fromX;
+                frontAnimating = true;
+                animatingFrontTo = toIndex;
+
+                const start = performance.now();
+                const duration = 350;
+
+                function step(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3);
+                    frontBadgeX = fromX + (toX - fromX) * eased;
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        frontBadgeX = null;
+                        frontAnimating = false;
+                        animatingFrontTo = null;
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+        }
+
+        prevFrontPtr = currentFront;
         prevRearPtr = currentRear;
         prevSize = currentSize;
     });
 
+    $effect(() => {
+        const capacity = $queueCapacity;
+        const slots = $queueSlots;
+        const isFreshQueue =
+            slots.length === capacity && slots.every((slot) => slot === null);
+
+        if (isFreshQueue) {
+            lastDequeuedValue = null;
+        }
+
+        if (
+            capacity > 0 &&
+            svgEl &&
+            (!initialized || (isFreshQueue && slots !== centeredSlotsRef))
+        ) {
+            requestAnimationFrame(() => {
+                if (!svgEl || $queueCapacity === 0) return;
+                centerQueue();
+                initialized = true;
+                centeredSlotsRef = slots;
+            });
+        }
+
+        if (capacity === 0) {
+            initialized = false;
+            centeredSlotsRef = null;
+            lastDequeuedValue = null;
+        }
+    });
+
     function centerQueue() {
+        if (!svgEl) return;
         const rect = svgEl.getBoundingClientRect();
-        const totalW = $queueCapacity * (NODE_W + NODE_GAP) + CANVAS_PAD_X * 2;
-        panX = (rect.width - totalW) / 2;
-        panY = (rect.height - NODE_H) / 2 - CANVAS_PAD_Y / 2;
+        const queueW = $queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP;
+        panX = (rect.width - queueW) / 2 - CANVAS_PAD_X;
+        panY = (rect.height - NODE_H) / 2 - SLOT_Y;
     }
 
     function onSVGMousedown(e) {
@@ -159,8 +240,23 @@
         return CANVAS_PAD_X + index * (NODE_W + NODE_GAP);
     }
 
+    function formatDequeuedValue(value) {
+        if (value == null) return "";
+        return value.length > 8 ? `${value.slice(0, 8)}...` : value;
+    }
+
     function isFrontSlot(index) {
         return index === $frontPtr && $queueSize > 0;
+    }
+
+    function isActiveSlot(index) {
+        const size = $queueSize;
+        const capacity = $queueCapacity;
+        if (size === 0 || capacity === 0) return false;
+        if (size >= capacity) return true;
+
+        const distanceFromFront = (index - $frontPtr + capacity) % capacity;
+        return distanceFromFront < size;
     }
 
     function isRearSlot(index) {
@@ -209,35 +305,167 @@
             <g
                 style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
             >
+                {#if lastDequeuedValue !== null}
+                    <g>
+                        <rect
+                            x={CANVAS_PAD_X -
+                                24 -
+                                ARROW_OFFSET -
+                                ARROW_SIZE / 2 -
+                                91}
+                            y={SLOT_Y + NODE_H / 2 - 30}
+                            width="54"
+                            height="34"
+                            rx="5"
+                            fill="color-mix(in srgb, var(--accent) 12%, transparent)"
+                            stroke="color-mix(in srgb, var(--accent) 42%, transparent)"
+                            stroke-width="1"
+                        />
+                        <text
+                            x={CANVAS_PAD_X -
+                                24 -
+                                ARROW_OFFSET -
+                                ARROW_SIZE / 2 -
+                                64}
+                            y={SLOT_Y + NODE_H / 2 - 9}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="12"
+                            fill="var(--accent)"
+                            font-weight="600"
+                            >{formatDequeuedValue(lastDequeuedValue)}</text
+                        >
+                    </g>
+                {/if}
+
                 <!-- Panah DEQUEUE di kiri (elemen keluar dari FRONT) -->
-                <g>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <g
+                    class="queue-action-button accent"
+                    class:disabled={$queueIsEmpty}
+                    role="button"
+                    tabindex={$queueIsEmpty ? -1 : 0}
+                    aria-label="Dequeue"
+                    aria-disabled={$queueIsEmpty}
+                    onclick={(e) => {
+                        e.stopPropagation();
+                        if (!$queueIsEmpty) handleDequeueFromMenu();
+                    }}
+                    onkeydown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!$queueIsEmpty) handleDequeueFromMenu();
+                    }}
+                    onmousedown={(e) => e.stopPropagation()}
+                >
+                    <rect
+                        x={CANVAS_PAD_X -
+                            24 -
+                            ARROW_OFFSET -
+                            ARROW_SIZE / 2 -
+                            29}
+                        y={SLOT_Y + NODE_H / 2 - 30}
+                        width="58"
+                        height="34"
+                        rx="5"
+                    />
                     <text
                         x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
-                        y={SLOT_Y + NODE_H / 2 - 8}
+                        y={SLOT_Y + NODE_H / 2 - 14}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
-                        fill="var(--danger)"
-                        font-weight="600">dequeue</text
+                        fill="var(--accent)"
+                        font-weight="600">Dequeue</text
                     >
                     <!-- Garis dari bracket kiri ke ujung kiri -->
                     <line
                         x1={CANVAS_PAD_X - 24 - ARROW_OFFSET}
-                        y1={SLOT_Y + NODE_H / 2}
+                        y1={SLOT_Y + NODE_H / 2 - 6}
                         x2={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE}
-                        y2={SLOT_Y + NODE_H / 2}
-                        stroke="var(--danger)"
+                        y2={SLOT_Y + NODE_H / 2 - 6}
+                        stroke="var(--accent)"
                         stroke-width="1.8"
                     />
                     <!-- Arrowhead mengarah ke kiri -->
                     <polygon
                         points="
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 4}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 + 4}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 10}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2 - 6}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 2}
     "
-                        fill="var(--danger)"
+                        fill="var(--accent)"
                     />
+                </g>
+
+                <!-- Tombol PEEK di bawah Dequeue -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <g
+                    class="queue-action-button secondary"
+                    class:disabled={$queueIsEmpty}
+                    role="button"
+                    tabindex={$queueIsEmpty ? -1 : 0}
+                    aria-label="Peek"
+                    aria-disabled={$queueIsEmpty}
+                    onclick={(e) => {
+                        e.stopPropagation();
+                        if (!$queueIsEmpty) handlePeekFromMenu();
+                    }}
+                    onkeydown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!$queueIsEmpty) handlePeekFromMenu();
+                    }}
+                    onmousedown={(e) => e.stopPropagation()}
+                >
+                    <rect
+                        x={CANVAS_PAD_X -
+                            24 -
+                            ARROW_OFFSET -
+                            ARROW_SIZE / 2 -
+                            24}
+                        y={SLOT_Y + NODE_H / 2 + 12}
+                        width="48"
+                        height="24"
+                        rx="5"
+                    />
+                    <circle
+                        cx={CANVAS_PAD_X -
+                            24 -
+                            ARROW_OFFSET -
+                            ARROW_SIZE / 2 -
+                            14}
+                        cy={SLOT_Y + NODE_H / 2 + 24}
+                        r="4"
+                        stroke="var(--text-muted)"
+                        stroke-width="1.3"
+                        fill="none"
+                    />
+                    <circle
+                        cx={CANVAS_PAD_X -
+                            24 -
+                            ARROW_OFFSET -
+                            ARROW_SIZE / 2 -
+                            14}
+                        cy={SLOT_Y + NODE_H / 2 + 24}
+                        r="1.4"
+                        fill="var(--text-muted)"
+                    />
+                    <text
+                        x={CANVAS_PAD_X -
+                            24 -
+                            ARROW_OFFSET -
+                            ARROW_SIZE / 2 +
+                            9}
+                        y={SLOT_Y + NODE_H / 2 + 28}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        fill="var(--text-muted)"
+                        font-weight="600">Peek</text
+                    >
                 </g>
 
                 <!-- Array bracket kiri -->
@@ -255,10 +483,12 @@
                 <!-- Slots -->
                 {#each $queueSlots as slot, index}
                     {@const x = getSlotX(index)}
-                    {@const isFront = isFrontSlot(index)}
+                    {@const isActive = isActiveSlot(index)}
+                    {@const isFront = isFrontSlot(index) && !frontAnimating}
                     {@const isRear = isRearSlot(index) && !rearAnimating}
                     {@const isPeeking = peekingIndex === index}
                     {@const isEmpty = slot === null}
+                    {@const isDequeued = slot !== null && !isActive}
                     {@const isAnimIn = animatingEnqueueIndex === index}
                     {@const isAnimOut = animatingDequeueIndex === index}
 
@@ -275,23 +505,27 @@
                             width={NODE_W}
                             height={NODE_H}
                             rx="6"
-                            fill={isEmpty ? "var(--surface)" : "var(--node-bg)"}
+                            fill={isEmpty || isDequeued
+                                ? "var(--surface)"
+                                : "var(--node-bg)"}
                             stroke={isPeeking
                                 ? "var(--warning)"
                                 : isFront
                                   ? "var(--success)"
                                   : isRear
                                     ? "#c084fc"
-                                    : isEmpty
+                                    : isEmpty || isDequeued
                                       ? "var(--border)"
                                       : "var(--node-border)"}
                             stroke-width={isPeeking || isFront || isRear
                                 ? 1.8
                                 : 1}
-                            stroke-dasharray={isEmpty ? "4 3" : "none"}
+                            stroke-dasharray={isEmpty || isDequeued
+                                ? "4 3"
+                                : "none"}
                         />
 
-                        {#if !isEmpty && (isFront || isRear) && !isPeeking}
+                        {#if !isEmpty && !isDequeued && (isFront || isRear) && !isPeeking}
                             <rect
                                 x={x + 1}
                                 y={SLOT_Y + 1}
@@ -321,8 +555,10 @@
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="14"
-                            fill={isEmpty ? "var(--text-muted)" : "#e8ecf5"}
-                            font-weight={isEmpty ? "400" : "500"}
+                            fill={isEmpty || isDequeued
+                                ? "var(--text-muted)"
+                                : "#e8ecf5"}
+                            font-weight={isEmpty || isDequeued ? "400" : "500"}
                             >{isEmpty ? "null" : slot.value}</text
                         >
 
@@ -411,12 +647,41 @@
                             />
                         {/if}
 
-                        <!-- F/R badge kalau sama -->
+                        <!-- FRONT dan REAR bertumpuk kalau sama -->
                         {#if isFront && isRear}
                             <rect
-                                x={x + NODE_W / 2 - 16}
+                                x={x + NODE_W / 2 - 20}
+                                y={SLOT_Y - 52}
+                                width="40"
+                                height="20"
+                                rx="5"
+                                fill="rgba(192,132,252,0.15)"
+                                stroke="#c084fc"
+                                stroke-width="1.2"
+                            />
+                            <text
+                                x={x + NODE_W / 2}
+                                y={SLOT_Y - 37}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="9"
+                                font-weight="700"
+                                fill="#c084fc"
+                                letter-spacing="0.8">REAR</text
+                            >
+                            <line
+                                x1={x + NODE_W / 2}
+                                y1={SLOT_Y - 32}
+                                x2={x + NODE_W / 2}
+                                y2={SLOT_Y - 28}
+                                stroke="#c084fc"
+                                stroke-width="1.5"
+                            />
+
+                            <rect
+                                x={x + NODE_W / 2 - 22}
                                 y={SLOT_Y - 28}
-                                width="32"
+                                width="44"
                                 height="20"
                                 rx="5"
                                 fill="rgba(78,204,163,0.15)"
@@ -428,10 +693,10 @@
                                 y={SLOT_Y - 13}
                                 text-anchor="middle"
                                 font-family="var(--font-mono)"
-                                font-size="8"
+                                font-size="9"
                                 font-weight="700"
                                 fill="var(--success)"
-                                letter-spacing="0.5">F/R</text
+                                letter-spacing="0.8">FRONT</text
                             >
                             <line
                                 x1={x + NODE_W / 2}
@@ -450,6 +715,43 @@
                         {/if}
                     </g>
                 {/each}
+
+                <!-- Animated FRONT pointer -->
+                {#if frontAnimating && frontBadgeX !== null}
+                    <rect
+                        x={frontBadgeX - 22}
+                        y={SLOT_Y - 28}
+                        width="44"
+                        height="20"
+                        rx="5"
+                        fill="rgba(78,204,163,0.15)"
+                        stroke="var(--success)"
+                        stroke-width="1.2"
+                    />
+                    <text
+                        x={frontBadgeX}
+                        y={SLOT_Y - 13}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        font-weight="700"
+                        fill="var(--success)"
+                        letter-spacing="0.8">FRONT</text
+                    >
+                    <line
+                        x1={frontBadgeX}
+                        y1={SLOT_Y - 8}
+                        x2={frontBadgeX}
+                        y2={SLOT_Y - 2}
+                        stroke="var(--success)"
+                        stroke-width="1.5"
+                    />
+                    <polygon
+                        points="{frontBadgeX - 4},{SLOT_Y - 4} {frontBadgeX +
+                            4},{SLOT_Y - 4} {frontBadgeX},{SLOT_Y}"
+                        fill="var(--success)"
+                    />
+                {/if}
 
                 <!-- Animated REAR pointer -->
                 {#if rearAnimating && rearBadgeX !== null}
@@ -501,7 +803,38 @@
                 />
 
                 <!-- Panah ENQUEUE di kanan (elemen masuk dari REAR) -->
-                <g>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <g
+                    class="queue-action-button accent"
+                    class:disabled={$queueIsFull}
+                    role="button"
+                    tabindex={$queueIsFull ? -1 : 0}
+                    aria-label="Enqueue"
+                    aria-disabled={$queueIsFull}
+                    onclick={(e) => {
+                        e.stopPropagation();
+                        if (!$queueIsFull) handleEnqueueFromMenu();
+                    }}
+                    onkeydown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!$queueIsFull) handleEnqueueFromMenu();
+                    }}
+                    onmousedown={(e) => e.stopPropagation()}
+                >
+                    <rect
+                        x={CANVAS_PAD_X +
+                            totalW +
+                            24 +
+                            ARROW_OFFSET +
+                            ARROW_SIZE / 2 -
+                            29}
+                        y={SLOT_Y + NODE_H / 2 - 24}
+                        width="58"
+                        height="34"
+                        rx="5"
+                    />
                     <text
                         x={CANVAS_PAD_X +
                             totalW +
@@ -513,7 +846,7 @@
                         font-family="var(--font-mono)"
                         font-size="9"
                         fill="var(--accent)"
-                        font-weight="600">enqueue</text
+                        font-weight="600">Enqueue</text
                     >
                     <line
                         x1={CANVAS_PAD_X +
@@ -537,16 +870,17 @@
                     />
                 </g>
 
-                <!-- Full indicator -->
-                {#if $queueIsFull}
+                <!-- Queue state indicator -->
+                {#if $queueIsFull || $queueIsEmpty}
                     <text
                         x={CANVAS_PAD_X + totalW / 2}
-                        y={SLOT_Y - 44}
+                        y={SLOT_Y + NODE_H + 46}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="10"
-                        fill="var(--danger)"
-                        font-weight="600">FULL</text
+                        fill={$queueIsFull ? "var(--danger)" : "var(--accent)"}
+                        font-weight="600"
+                        >{$queueIsFull ? "QUEUE FULL" : "QUEUE EMPTY"}</text
                     >
                 {/if}
             </g>
@@ -632,6 +966,39 @@
     }
     .canvas-svg.panning {
         cursor: grabbing;
+    }
+    .queue-action-button {
+        cursor: pointer;
+        outline: none;
+    }
+    .queue-action-button rect {
+        fill: color-mix(in srgb, var(--surface2) 72%, transparent);
+        stroke-width: 1;
+        transition:
+            fill 0.12s,
+            stroke 0.12s,
+            opacity 0.12s;
+    }
+    .queue-action-button.accent rect {
+        stroke: color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    .queue-action-button.secondary rect {
+        stroke: color-mix(in srgb, var(--border-bright) 70%, transparent);
+    }
+    .queue-action-button:hover:not(.disabled) rect,
+    .queue-action-button:focus-visible rect {
+        fill: var(--surface2);
+        stroke-width: 1.3;
+    }
+    .queue-action-button text,
+    .queue-action-button circle,
+    .queue-action-button line,
+    .queue-action-button polygon {
+        pointer-events: none;
+    }
+    .queue-action-button.disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
     }
     .empty-hint {
         position: absolute;

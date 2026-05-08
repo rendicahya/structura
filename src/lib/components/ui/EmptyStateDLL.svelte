@@ -151,8 +151,8 @@
 
 <style>
     .empty-illustration {
-        width: 240px;
-        height: 100px;
+        width: 300px;
+        height: 125px;
         opacity: 0.5;
     }
 

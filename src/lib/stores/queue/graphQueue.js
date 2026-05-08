@@ -95,20 +95,14 @@ export function dequeue() {
     const varName = get(queueVarName);
     const slot = get(queueSlots)[front];
 
-    queueSlots.update(slots => {
-        const updated = [...slots];
-        updated[front] = null;
-        return updated;
-    });
-
     const newFront = (front + 1) % capacity;
     frontPtr.set(newFront);
     queueSize.update(s => s - 1);
 
     logOpQueue(
-        `String dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = null;\nfront = (front + 1) % length;`,
-        `dequeued = ${varName}[front]  # "${slot?.value}"\n${varName}[front] = None\nfront = (front + 1) % length`,
-        `std::string dequeued = ${varName}[front]; // "${slot?.value}"\n${varName}[front] = "";\nfront = (front + 1) % length;`
+        `String dequeued = ${varName}[front]; // "${slot?.value}"\nfront = (front + 1) % length;`,
+        `dequeued = ${varName}[front]  # "${slot?.value}"\nfront = (front + 1) % length`,
+        `std::string dequeued = ${varName}[front]; // "${slot?.value}"\nfront = (front + 1) % length;`
     );
 
     return true;

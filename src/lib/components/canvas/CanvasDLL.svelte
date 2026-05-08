@@ -601,7 +601,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 16px;
+        gap: 20px;
         animation: fadeIn 0.4s ease;
     }
     @keyframes fadeIn {
@@ -617,7 +617,7 @@
 
     .empty-title {
         font-family: var(--font-ui);
-        font-size: 15px;
+        font-size: 18px;
         font-weight: 700;
         color: var(--text-muted);
     }
@@ -625,7 +625,7 @@
     .empty-hints-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
         align-items: center;
     }
 
@@ -634,17 +634,17 @@
         align-items: center;
         gap: 8px;
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: 14px;
         color: var(--text-muted);
     }
 
     .empty-hint-item kbd {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         background: var(--surface2);
         border: 1px solid var(--border-bright);
         border-radius: 4px;
-        padding: 2px 6px;
+        padding: 3px 8px;
         color: var(--text-dim);
     }
     .empty-title {

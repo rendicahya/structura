@@ -139,8 +139,8 @@
 
 <style>
     .empty-illustration {
-        width: 220px;
-        height: 90px;
+        width: 280px;
+        height: 115px;
         opacity: 0.5;
     }
     .port-dot {

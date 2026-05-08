@@ -268,67 +268,6 @@
 
         <div class="separator"></div>
 
-        <Tooltip text={$queueIsFull ? "Queue is full" : "Enqueue value"}>
-            <button
-                class="btn btn-primary"
-                onclick={handleEnqueue}
-                disabled={$queueSlots.length === 0 || $queueIsFull}
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                        d="M10 7H4M6.5 4.5L4 7l2.5 2.5"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                Enqueue
-            </button>
-        </Tooltip>
-
-        <Tooltip
-            text={$queueIsEmpty ? "Queue is empty" : "Dequeue front element"}
-            ><button
-                class="btn btn-primary"
-                onclick={handleDequeue}
-                disabled={$queueSlots.length === 0 || $queueIsEmpty}
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                        d="M4 7h6M4 4.5L1.5 7 4 9.5"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                Dequeue
-            </button>
-        </Tooltip>
-
-        <Tooltip text={$queueIsEmpty ? "Queue is empty" : "Peek front element"}>
-            <button
-                class="btn btn-secondary"
-                onclick={handlePeek}
-                disabled={$queueSlots.length === 0 || $queueIsEmpty}
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <circle
-                        cx="7"
-                        cy="7"
-                        r="4"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                    />
-                    <circle cx="7" cy="7" r="1.5" fill="currentColor" />
-                </svg>
-                Peek
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
         <Tooltip text="Zoom out" shortcut="Scroll ↓">
             <button
                 class="btn btn-icon"
