@@ -29,6 +29,27 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+.light-theme {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --border: #e2e8f0;
+  --border-bright: #cbd5e1;
+  --accent: #2563eb;
+  --accent-dim: #1d4ed8;
+  --accent-glow: rgba(37, 99, 235, 0.1);
+  --node-bg: #ffffff;
+  --node-border: #94a3b8;
+  --node-selected: #2563eb;
+  --text: #0f172a;
+  --text-dim: #475569;
+  --text-muted: #94a3b8;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --code-bg: #fdfdfd;
+}
+
 html, body {
   width: 100%;
   height: 100%;

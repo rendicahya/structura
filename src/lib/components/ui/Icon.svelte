@@ -102,6 +102,13 @@
         `,
         unlink: `
             <path d="M2 6.5h2.5M8.5 6.5H11M4.5 6.5C4.5 5.1 5.6 4 7 4s2.5 1.1 2.5 2.5S8.4 9 7 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+        `,
+        sun: `
+            <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.4" />
+            <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.8 2.8l1 1M10.2 10.2l1 1M2.8 11.2l1-1M10.2 3.8l1-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        `,
+        moon: `
+            <path d="M11 9.5C10.2 9.8 9.4 10 8.5 10 5.5 10 3 7.5 3 4.5c0-.9.2-1.7.5-2.5C2 3 1 5 1 7.5 1 10.5 3.5 13 6.5 13c2.5 0 4.5-1 5.5-2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
         `
     };
 

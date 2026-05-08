@@ -16,6 +16,7 @@
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
     import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
+    import Icon from "./lib/components/ui/Icon.svelte";
 
     import { initHistory } from "./lib/stores/shared/history.js";
     import { codeLog } from "./lib/stores/sll/sllLog.js";
@@ -66,11 +67,22 @@
     let zoom = $state(1);
     let canvasFitToView = $state(null);
 
+    let theme = $state(localStorage.getItem("structura-theme") ?? "dark");
+
     const ZOOM_STEP = 0.1;
 
     $effect(() => {
         localStorage.setItem("structura-split", splitPos.toString());
         localStorage.setItem("structura-code-hidden", codeHidden.toString());
+    });
+
+    $effect(() => {
+        if (theme === "light") {
+            document.documentElement.classList.add("light-theme");
+        } else {
+            document.documentElement.classList.remove("light-theme");
+        }
+        localStorage.setItem("structura-theme", theme);
     });
 
     $effect(() => {
@@ -191,6 +203,16 @@
             onclick={() => navigate("#/linked-queue")}
         >
             Linked-List Queue
+        </button>
+
+        <div class="nav-spacer"></div>
+
+        <button
+            class="theme-toggle"
+            onclick={() => (theme = theme === "dark" ? "light" : "dark")}
+            title="Toggle light/dark mode"
+        >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
         </button>
     </nav>
 
@@ -344,6 +366,30 @@
     .nav-tab.active {
         color: var(--accent);
         border-bottom-color: var(--accent);
+    }
+
+    .nav-spacer {
+        flex: 1;
+    }
+
+    .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin-bottom: 6px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-dim);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .theme-toggle:hover {
+        background: var(--surface2);
+        color: var(--accent);
+        border-color: var(--accent);
     }
 
     .workspace {
