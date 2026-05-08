@@ -26,6 +26,7 @@
     } from "../../stores/sll/graph.js";
 
     import { createCanvasLogic } from "../../utils/canvasLogic.js";
+    import CanvasDefs from "./CanvasDefs.svelte";
 
     const NODE_W = 130;
     const NODE_H = 64;
@@ -35,12 +36,17 @@
     let panX = $state(0);
     let panY = $state(0);
     let panning = $state(false);
+    /** @type {string | null} */
     let pendingFrom = $state(null);
     let pendingX = $state(0);
     let pendingY = $state(0);
+    /** @type {{ x: number, y: number, node: any } | null} */
     let contextMenu = $state(null);
+    /** @type {{ clientX: number, clientY: number, svgX: number, svgY: number } | null} */
     let canvasContextMenu = $state(null);
+    /** @type {string | null} */
     let selectedNodeId = $state(null);
+    /** @type {{ nodeId: string, x: number, y: number, value: any } | null} */
     let inlineEdit = $state(null);
     let inlineInputEl = $state();
 
@@ -115,6 +121,7 @@
     }
 
     function onCanvasAddNode() {
+        if (!canvasContextMenu) return;
         pushHistory();
         const node = createNode(
             canvasContextMenu.svgX - NODE_W / 2,
@@ -209,6 +216,7 @@
 
     /** @param {{varName: string}} param0 */
     function onMenuRename({ varName }) {
+        if (!contextMenu) return;
         pushHistory();
         updateNode(contextMenu.node.id, { varName });
         pushHistory();
@@ -217,6 +225,7 @@
 
     /** @param {{data: any}} param0 */
     function onMenuEditData({ data }) {
+        if (!contextMenu) return;
         pushHistory();
         updateNode(contextMenu.node.id, { data });
         pushHistory();
@@ -224,6 +233,7 @@
     }
 
     function onMenuDisconnect() {
+        if (!contextMenu) return;
         pushHistory();
         disconnectNode(contextMenu.node.id);
         pushHistory();
@@ -231,6 +241,7 @@
     }
 
     function onMenuSetHead() {
+        if (!contextMenu) return;
         pushHistory();
         setHead($headId === contextMenu.node.id ? null : contextMenu.node.id);
         pushHistory();
@@ -238,6 +249,7 @@
     }
 
     function onMenuSetTail() {
+        if (!contextMenu) return;
         pushHistory();
         setTail($tailId === contextMenu.node.id ? null : contextMenu.node.id);
         pushHistory();
@@ -245,6 +257,7 @@
     }
 
     function onMenuSetWalk() {
+        if (!contextMenu) return;
         pushHistory();
         setWalk($walkId === contextMenu.node.id ? null : contextMenu.node.id);
         pushHistory();
@@ -252,6 +265,7 @@
     }
 
     function onMenuUnlink() {
+        if (!contextMenu) return;
         pushHistory();
         removeNodeFromList(contextMenu.node.id);
         pushHistory();
@@ -346,6 +360,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="canvas-wrapper">
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <svg
         bind:this={svgEl}
         class="canvas-svg"
@@ -354,41 +369,7 @@
         onmousedown={onSVGMousedown}
         oncontextmenu={onSVGContextMenu}
     >
-        <defs>
-            <pattern
-                id="grid"
-                width={28}
-                height={28}
-                patternUnits="userSpaceOnUse"
-                patternTransform="translate({panX}, {panY}) scale({zoom})"
-            >
-                <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
-            </pattern>
-
-            <marker
-                id="arrow-solid"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-            >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8fff" />
-            </marker>
-
-            <marker
-                id="arrow-pending"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-            >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f0b429" />
-            </marker>
-        </defs>
+        <CanvasDefs {panX} {panY} {zoom} />
 
         <rect width="100%" height="100%" fill="url(#grid)" />
 

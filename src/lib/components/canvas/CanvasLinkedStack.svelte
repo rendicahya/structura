@@ -30,7 +30,7 @@
 
     // Animasi push
     let animatingInId = $state(null);
-    let prevLength = 0;
+    let prevLength = $linkedStackNodes.length;
     $effect(() => {
         const nodes = $linkedStackNodes;
         if (nodes.length > prevLength) {

@@ -33,7 +33,7 @@
 
   // Animasi enqueue
   let animatingInId = $state(null);
-  let prevChainLength = 0;
+  let prevChainLength = $queueChain.length;
 
   $effect(() => {
     const chain = $queueChain;
@@ -137,6 +137,7 @@
     </div>
   {/if}
 
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
     bind:this={svgEl}
     class="canvas-svg"

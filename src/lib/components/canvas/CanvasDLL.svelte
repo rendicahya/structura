@@ -29,6 +29,7 @@
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
 
     import { createCanvasLogic } from "../../utils/canvasLogic.js";
+    import CanvasDefs from "./CanvasDefs.svelte";
 
     const NODE_W = 130;
     const NODE_H = 64;
@@ -38,13 +39,18 @@
     let panX = $state(0);
     let panY = $state(0);
     let panning = $state(false);
+    /** @type {string | null} */
     let pendingFrom = $state(null);
     let pendingPortType = $state("next");
     let pendingX = $state(0);
     let pendingY = $state(0);
+    /** @type {{ x: number, y: number, node: any } | null} */
     let contextMenu = $state(null);
+    /** @type {{ clientX: number, clientY: number, svgX: number, svgY: number } | null} */
     let canvasContextMenu = $state(null);
+    /** @type {string | null} */
     let selectedNodeId = $state(null);
+    /** @type {{ nodeId: string, x: number, y: number, value: any } | null} */
     let inlineEdit = $state(null);
     let inlineInputEl = $state();
 
@@ -147,6 +153,7 @@
     }
 
     function onCanvasAddNode() {
+        if (!canvasContextMenu) return;
         pushHistory();
         const node = createNodeDLL(
             canvasContextMenu.svgX - NODE_W / 2,
@@ -239,6 +246,7 @@
 
     /** @param {{varName: string}} param0 */
     function onMenuRename({ varName }) {
+        if (!contextMenu) return;
         pushHistory();
         updateNodeDLL(contextMenu.node.id, { varName });
         pushHistory();
@@ -247,6 +255,7 @@
 
     /** @param {{data: any}} param0 */
     function onMenuEditData({ data }) {
+        if (!contextMenu) return;
         pushHistory();
         updateNodeDLL(contextMenu.node.id, { data });
         pushHistory();
@@ -254,6 +263,7 @@
     }
 
     function onMenuDisconnectNext() {
+        if (!contextMenu) return;
         pushHistory();
         disconnectNextDLL(contextMenu.node.id);
         pushHistory();
@@ -261,6 +271,7 @@
     }
 
     function onMenuDisconnectPrev() {
+        if (!contextMenu) return;
         pushHistory();
         disconnectPrevDLL(contextMenu.node.id);
         pushHistory();
@@ -268,6 +279,7 @@
     }
 
     function onMenuSetHead() {
+        if (!contextMenu) return;
         pushHistory();
         setHeadDLL(
             $headIdDLL === contextMenu.node.id ? null : contextMenu.node.id,
@@ -277,6 +289,7 @@
     }
 
     function onMenuSetTail() {
+        if (!contextMenu) return;
         pushHistory();
         setTailDLL(
             $tailIdDLL === contextMenu.node.id ? null : contextMenu.node.id,
@@ -286,6 +299,7 @@
     }
 
     function onMenuSetWalk() {
+        if (!contextMenu) return;
         pushHistory();
         setWalkDLL(
             $walkIdDLL === contextMenu.node.id ? null : contextMenu.node.id,
@@ -295,6 +309,7 @@
     }
 
     function onMenuUnlink() {
+        if (!contextMenu) return;
         pushHistory();
         removeNodeFromListDLL(contextMenu.node.id);
         pushHistory();
@@ -382,53 +397,7 @@
         onmousedown={onSVGMousedown}
         oncontextmenu={onSVGContextMenu}
     >
-        <defs>
-            <pattern
-                id="grid"
-                width={28}
-                height={28}
-                patternUnits="userSpaceOnUse"
-                patternTransform="translate({panX}, {panY}) scale({zoom})"
-            >
-                <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
-            </pattern>
-
-            <marker
-                id="arrow-solid-dll"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-            >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8fff" />
-            </marker>
-
-            <marker
-                id="arrow-prev-dll"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-            >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#c792ea" />
-            </marker>
-
-            <marker
-                id="arrow-pending-dll"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-            >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f0b429" />
-            </marker>
-        </defs>
+        <CanvasDefs {panX} {panY} {zoom} markerPrefix="dll" />
 
         <rect width="100%" height="100%" fill="url(#grid)" />
 

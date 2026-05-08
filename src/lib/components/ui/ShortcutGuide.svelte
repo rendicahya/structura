@@ -1,4 +1,5 @@
 <script>
+    import Icon from "./Icon.svelte";
     const { onclose } = $props();
 
     function close() {
@@ -36,14 +37,7 @@
         <div class="guide-header">
             <span class="guide-title">Keyboard Shortcuts</span>
             <button class="close-btn" aria-label="Close" onclick={close}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                        d="M2 2l10 10M12 2L2 12"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                    />
-                </svg>
+                <Icon name="close" size={14} />
             </button>
         </div>
 

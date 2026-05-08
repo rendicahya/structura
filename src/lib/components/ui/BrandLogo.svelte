@@ -1,0 +1,83 @@
+<svg
+    class="brand-icon-img"
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+>
+    <rect
+        x="2"
+        y="22"
+        width="26"
+        height="20"
+        rx="5"
+        fill="#13161e"
+        stroke="#5b8fff"
+        stroke-width="2"
+    />
+    <line
+        x1="14"
+        y1="22"
+        x2="14"
+        y2="42"
+        stroke="#353c52"
+        stroke-width="1.5"
+    />
+    <circle cx="9" cy="32" r="3" fill="#5b8fff" />
+    <path
+        d="M28 32 H38"
+        stroke="#5b8fff"
+        stroke-width="2"
+        stroke-linecap="round"
+    />
+    <polygon points="36,28 44,32 36,36" fill="#5b8fff" />
+    <rect
+        x="38"
+        y="22"
+        width="24"
+        height="20"
+        rx="5"
+        fill="#13161e"
+        stroke="#5b8fff"
+        stroke-width="2"
+    />
+    <line
+        x1="50"
+        y1="22"
+        x2="50"
+        y2="42"
+        stroke="#353c52"
+        stroke-width="1.5"
+    />
+    <line
+        x1="57"
+        y1="32"
+        x2="62"
+        y2="32"
+        stroke="#444d66"
+        stroke-width="1.5"
+    />
+    <line
+        x1="59"
+        y1="35"
+        x2="63"
+        y2="35"
+        stroke="#444d66"
+        stroke-width="1.5"
+    />
+    <line
+        x1="61"
+        y1="38"
+        x2="63"
+        y2="38"
+        stroke="#444d66"
+        stroke-width="1.5"
+    />
+</svg>
+
+<style>
+    .brand-icon-img {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+</style>

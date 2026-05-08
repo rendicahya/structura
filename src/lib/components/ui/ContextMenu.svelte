@@ -1,5 +1,6 @@
 <script>
     import { onMount, onDestroy } from "svelte";
+    import Icon from "./Icon.svelte";
 
     const {
         x = 0,
@@ -151,97 +152,29 @@
         </div>
     {:else}
         <button class="menu-item" onclick={handleRename}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <path
-                    d="M2 10.5H4.5L10 5L8 3L2.5 8.5V10.5Z"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linejoin="round"
-                />
-            </svg>
+            <Icon name="rename" size={13} />
             Rename variable
         </button>
 
         <button class="menu-item" onclick={handleEditData}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <rect
-                    x="2"
-                    y="2"
-                    width="9"
-                    height="9"
-                    rx="1.5"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                />
-                <path
-                    d="M5 6.5h3M6.5 5v3"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                />
-            </svg>
+            <Icon name="edit" size={13} />
             Edit data
         </button>
 
         <div class="menu-divider"></div>
 
         <button class="menu-item head-item" onclick={handleSetHead}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <circle
-                    cx="6.5"
-                    cy="6.5"
-                    r="4.5"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                />
-                <path
-                    d="M4.5 6.5h4M6.5 4.5l2 2-2 2"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
+            <Icon name="head" size={13} />
             {isHead ? "✓ Head (unset)" : "Set as head"}
         </button>
 
         <button class="menu-item tail-item" onclick={handleSetTail}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <circle
-                    cx="6.5"
-                    cy="6.5"
-                    r="4.5"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                />
-                <path
-                    d="M8.5 6.5h-4M6.5 4.5l-2 2 2 2"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
+            <Icon name="tail" size={13} />
             {isTail ? "✓ Tail (unset)" : "Set as tail"}
         </button>
 
         <button class="menu-item walk-item" onclick={handleSetWalk}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <circle
-                    cx="6.5"
-                    cy="6.5"
-                    r="4.5"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                />
-                <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" />
-                <path
-                    d="M6.5 2V1M6.5 12v-1M2 6.5H1M12 6.5h-1"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                />
-            </svg>
+            <Icon name="walk" size={13} />
             {isWalk ? "✓ Walk (unset)" : "Set as walk"}
         </button>
 
@@ -249,27 +182,13 @@
             <div class="menu-divider"></div>
             {#if hasNext}
                 <button class="menu-item" onclick={handleDisconnectNext}>
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <path
-                            d="M4 4L9 9M9 4L4 9"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                        />
-                    </svg>
+                    <Icon name="disconnect" size={13} />
                     Disconnect next
                 </button>
             {/if}
             {#if hasPrev}
                 <button class="menu-item" onclick={handleDisconnectPrev}>
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <path
-                            d="M4 4L9 9M9 4L4 9"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                        />
-                    </svg>
+                    <Icon name="disconnect" size={13} />
                     Disconnect prev
                 </button>
             {/if}
@@ -278,14 +197,7 @@
         <div class="menu-divider"></div>
 
         <button class="menu-item danger" onclick={handleUnlink}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <path
-                    d="M2 6.5h2.5M8.5 6.5H11M4.5 6.5C4.5 5.1 5.6 4 7 4s2.5 1.1 2.5 2.5S8.4 9 7 9"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                />
-            </svg>
+            <Icon name="unlink" size={13} />
             Unlink node
         </button>
     {/if}
