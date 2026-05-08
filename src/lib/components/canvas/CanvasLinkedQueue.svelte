@@ -2,7 +2,7 @@
   import {
     linkedQueueNodes, linkedQueueIsEmpty, queueChain,
     unreachableQueueNodes, headNode, tailNode,
-    enqueueLinked, dequeueLinked, peekLinkedQueue,
+    peekLinkedQueue,
     garbageCollectLinkedQueue
   } from '../../stores/queue/graphLinkedQueue.js';
   import { pushHistory } from '../../stores/shared/history.js';

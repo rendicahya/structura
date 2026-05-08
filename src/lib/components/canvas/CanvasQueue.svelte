@@ -8,11 +8,8 @@
         queueIsFull,
         queueIsEmpty,
         queueSize,
-        enqueue,
-        dequeue,
         peekQueue,
     } from "../../stores/queue/graphQueue.js";
-    import { pushHistory } from "../../stores/shared/history.js";
     import { toast } from "../../stores/shared/toast.js";
 
     const NODE_W = 80;

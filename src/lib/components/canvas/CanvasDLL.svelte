@@ -6,7 +6,6 @@
     import ContextMenu from "../ui/ContextMenu.svelte";
     import EmptyStateDLL from "../ui/EmptyStateDLL.svelte";
     import {
-        fitToViewTrigger,
         canvasZoom,
     } from "../../stores/shared/canvasControl.js";
     import {

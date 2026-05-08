@@ -9,7 +9,6 @@
         canRedo,
         initHistory,
     } from "../../stores/shared/history.js";
-    import { triggerFitToView } from "../../stores/shared/canvasControl.js";
     import {
         resetCanvas,
         createNode,

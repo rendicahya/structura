@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import { get } from "svelte/store";
     import {
-        fitToViewTrigger,
         canvasZoom,
     } from "./lib/stores/shared/canvasControl.js";
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";

@@ -7,7 +7,6 @@
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
     import {
         fitToViewTrigger,
-        canvasZoom,
     } from "../../stores/shared/canvasControl.js";
     import {
         nodes,

@@ -12,7 +12,6 @@
         initHistory,
     } from "../../stores/shared/history.js";
     import {
-        stackItems,
         stackCapacity,
         stackIsFull,
         stackIsEmpty,
