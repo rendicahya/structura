@@ -29,6 +29,8 @@
 
     /** @type {string|null} */
     let animatingInId = $state(null);
+    /** @type {{ value: any, x: number, y: number, opacity: number } | null} */
+    let animatingPop = $state(null);
     let panX = $state(0);
     let panY = $state(0);
     let panning = $state(false);
@@ -39,18 +41,53 @@
     let prevTop = $state(-2); // -2 indicates uninitialized
     $effect(() => {
         const top = $topPtr;
+        const items = $stackItems;
         if (prevTop === -2) {
             prevTop = top;
             return;
         }
 
         if (top > prevTop) {
-            const newItem = $stackItems[top];
+            const newItem = items[top];
             if (newItem) {
                 animatingInId = newItem.id;
                 setTimeout(() => {
                     animatingInId = null;
                 }, 400);
+            }
+        } else if (top < prevTop && prevTop >= 0) {
+            // Animasi Pop meluncur ke atas
+            const poppedItem = items[prevTop];
+            if (poppedItem) {
+                const startX = STACK_X;
+                const startY = getItemY(prevTop);
+
+                animatingPop = {
+                    value: poppedItem.value,
+                    x: startX,
+                    y: startY,
+                    opacity: 1,
+                };
+
+                const start = performance.now();
+                const duration = 400;
+
+                function step(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3); // cubic ease out
+
+                    if (animatingPop) {
+                        animatingPop.y = startY - 60 * eased;
+                        animatingPop.opacity = 1 - eased;
+                    }
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        animatingPop = null;
+                    }
+                }
+                requestAnimationFrame(step);
             }
         }
         prevTop = top;
@@ -382,6 +419,31 @@
                         font-weight="700"
                         letter-spacing="0.5">STACK EMPTY</text
                     >
+                {/if}
+
+                <!-- Pop Animation Element -->
+                {#if animatingPop}
+                    <g
+                        style="transform: translate({animatingPop.x}px, {animatingPop.y}px); opacity: {animatingPop.opacity};"
+                    >
+                        <rect
+                            width={NODE_W}
+                            height={NODE_H}
+                            rx="6"
+                            fill="var(--node-bg)"
+                            stroke="var(--accent)"
+                            stroke-width="1.8"
+                        />
+                        <text
+                            x={NODE_W / 2}
+                            y={NODE_H / 2 + 5}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="14"
+                            fill="#e8ecf5"
+                            font-weight="500">{animatingPop.value}</text
+                        >
+                    </g>
                 {/if}
             </g>
         </svg>
