@@ -11,6 +11,8 @@
         stackType,
     } from "../../stores/stack/graphStack.js";
     import { logOpStack } from "../../stores/shared/stackLog.js";
+    import Tooltip from "../ui/Tooltip.svelte";
+    import Icon from "../ui/Icon.svelte";
 
     const NODE_W = 160;
     const NODE_H = 50;
@@ -41,6 +43,7 @@
             prevTop = top;
             return;
         }
+
         if (top > prevTop) {
             const newItem = $stackItems[top];
             if (newItem) {
@@ -308,29 +311,31 @@
                         font-size="10"
                         fill="var(--text-muted)">{index}</text
                     >
+                {/each}
 
-                    <!-- TOP badge (Hanya di topPtr) -->
-                    {#if isTop}
+                <!-- TOP badge (Ditingkatkan dengan animasi transisi vertikal) -->
+                {#if $topPtr !== -1}
+                    <g
+                        class="top-pointer"
+                        style="transform: translateY({getItemY($topPtr)}px);"
+                    >
                         <line
                             x1={STACK_X + NODE_W + 50}
-                            y1={y + NODE_H / 2}
+                            y1={NODE_H / 2}
                             x2={STACK_X + NODE_W + 2}
-                            y2={y + NODE_H / 2}
+                            y2={NODE_H / 2}
                             stroke="var(--success)"
                             stroke-width="1.5"
                         />
                         <polygon
-                            points="{STACK_X + NODE_W + 8},{y +
-                                NODE_H / 2 -
-                                4} {STACK_X + NODE_W + 2},{y +
-                                NODE_H / 2} {STACK_X + NODE_W + 8},{y +
-                                NODE_H / 2 +
-                                4}"
+                            points="{STACK_X + NODE_W + 8},{NODE_H / 2 -
+                                4} {STACK_X + NODE_W + 2},{NODE_H /
+                                2} {STACK_X + NODE_W + 8},{NODE_H / 2 + 4}"
                             fill="var(--success)"
                         />
                         <rect
                             x={STACK_X + NODE_W + 50}
-                            y={y + NODE_H / 2 - 12}
+                            y={NODE_H / 2 - 12}
                             width="40"
                             height="20"
                             rx="5"
@@ -340,7 +345,7 @@
                         />
                         <text
                             x={STACK_X + NODE_W + 70}
-                            y={y + NODE_H / 2 + 1}
+                            y={NODE_H / 2 + 1}
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="9"
@@ -348,22 +353,72 @@
                             fill="var(--success)"
                             letter-spacing="0.8">TOP</text
                         >
-                    {/if}
-                {/each}
+                    </g>
+                {/if}
 
                 {#if $stackIsFull}
                     <text
                         x={STACK_X + NODE_W / 2}
-                        y={CANVAS_PAD_Y - 16}
+                        y={CANVAS_PAD_Y +
+                            $stackCapacity * (NODE_H + NODE_GAP) +
+                            24}
                         text-anchor="middle"
-                        font-family="var(--font-mono)"
-                        font-size="10"
+                        font-family="var(--font-ui)"
+                        font-size="11"
                         fill="var(--danger)"
-                        font-weight="600">FULL</text
+                        font-weight="700"
+                        letter-spacing="0.5">STACK FULL</text
+                    >
+                {:else if $stackIsEmpty}
+                    <text
+                        x={STACK_X + NODE_W / 2}
+                        y={CANVAS_PAD_Y +
+                            $stackCapacity * (NODE_H + NODE_GAP) +
+                            24}
+                        text-anchor="middle"
+                        font-family="var(--font-ui)"
+                        font-size="11"
+                        fill="var(--accent)"
+                        font-weight="700"
+                        letter-spacing="0.5">STACK EMPTY</text
                     >
                 {/if}
             </g>
         </svg>
+
+        {#if $stackCapacity > 0}
+            <div
+                class="canvas-actions"
+                style="
+                left: {panX + (STACK_X + NODE_W / 2) * zoom}px; 
+                top: {panY + (CANVAS_PAD_Y - 42) * zoom}px;
+                transform: translate(-50%, -50%) scale({zoom});
+            "
+            >
+                <Tooltip text={$stackIsFull ? "Stack is full" : "Push value"}>
+                    <button
+                        class="btn-canvas btn-push"
+                        onclick={handlePushFromMenu}
+                        disabled={$stackIsFull}
+                    >
+                        <Icon name="push" size={14} />
+                        <span>Push</span>
+                    </button>
+                </Tooltip>
+                <Tooltip
+                    text={$stackIsEmpty ? "Stack is empty" : "Pop top element"}
+                >
+                    <button
+                        class="btn-canvas btn-pop"
+                        onclick={handlePopFromMenu}
+                        disabled={$stackIsEmpty}
+                    >
+                        <Icon name="pop" size={14} />
+                        <span>Pop</span>
+                    </button>
+                </Tooltip>
+            </div>
+        {/if}
 
         {#if contextMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -374,20 +429,7 @@
             >
                 {#if contextMenu.type === "canvas"}
                     <button class="ctx-item" onclick={handlePushFromMenu}>
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M6.5 9V4M4 6.5l2.5 2.5 2.5-2.5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <Icon name="push" size={13} />
                         Push
                     </button>
                     <button
@@ -395,20 +437,7 @@
                         onclick={handlePopFromMenu}
                         disabled={$stackIsEmpty}
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M6.5 4v5M4 6.5l2.5-2.5 2.5 2.5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <Icon name="pop" size={13} />
                         Pop
                     </button>
                     <div class="ctx-divider"></div>
@@ -417,73 +446,19 @@
                         onclick={() => handlePeek(contextMenu?.itemId ?? "")}
                         disabled={$stackIsEmpty}
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <circle
-                                cx="6.5"
-                                cy="6.5"
-                                r="4"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                            />
-                            <circle
-                                cx="6.5"
-                                cy="6.5"
-                                r="1.5"
-                                fill="currentColor"
-                            />
-                        </svg>
+                        <Icon name="walk" size={13} />
                         Peek
                     </button>
                 {:else}
-                    <button
-                        class="ctx-item"
-                        onclick={handlePopFromMenu}
-                    >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <path
-                                d="M6.5 4v5M4 6.5l2.5-2.5 2.5 2.5"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                    <button class="ctx-item" onclick={handlePopFromMenu}>
+                        <Icon name="pop" size={13} />
                         Pop
                     </button>
                     <button
                         class="ctx-item"
                         onclick={() => handlePeek(contextMenu?.itemId ?? "")}
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                        >
-                            <circle
-                                cx="6.5"
-                                cy="6.5"
-                                r="4"
-                                stroke="currentColor"
-                                stroke-width="1.3"
-                            />
-                            <circle
-                                cx="6.5"
-                                cy="6.5"
-                                r="1.5"
-                                fill="currentColor"
-                            />
-                        </svg>
+                        <Icon name="walk" size={13} />
                         Peek
                     </button>
                 {/if}
@@ -510,6 +485,58 @@
     .stack-svg.panning {
         cursor: grabbing;
     }
+
+    /* Actions Overlay */
+    .canvas-actions {
+        position: absolute;
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+        z-index: 10;
+        transition: transform 0.1s ease-out;
+    }
+    .btn-canvas {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-bright);
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: all 0.15s ease;
+    }
+    .btn-canvas:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        border-color: var(--accent);
+    }
+    .btn-canvas:active:not(:disabled) {
+        transform: translateY(0);
+    }
+    .btn-canvas:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .btn-push {
+        background: var(--accent);
+        color: white;
+        border: none;
+    }
+    .btn-push:hover:not(:disabled) {
+        background: #6f9fff;
+    }
+    .btn-pop {
+        background: var(--surface2);
+        color: var(--text);
+    }
+
     .stack-item {
         transition: transform 0.3s ease;
     }
@@ -600,5 +627,10 @@
     }
     .peeking {
         filter: drop-shadow(0 0 6px rgba(240, 180, 41, 0.5));
+    }
+
+    /* TOP Pointer Animation */
+    .top-pointer {
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 </style>

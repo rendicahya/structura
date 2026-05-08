@@ -172,37 +172,6 @@
 
         <div class="separator"></div>
 
-        <Tooltip
-            text={$stackIsFull ? "Stack is full" : "Push value onto stack"}
-        >
-            <button
-                class="btn btn-primary"
-                onclick={handlePush}
-                disabled={$stackCapacity === 0 || $stackIsFull}
-            >
-                <Icon name="push" />
-                Push
-            </button>
-        </Tooltip>
-
-        <Tooltip
-            text={$stackIsEmpty
-                ? "Stack is empty"
-                : "Pop top element from stack"}
-        >
-            <!-- Di tombol Pop -->
-            <button
-                class="btn btn-primary"
-                onclick={handlePop}
-                disabled={$stackCapacity === 0 || $stackIsEmpty}
-            >
-                <Icon name="pop" />
-                Pop
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
         <Tooltip text="Zoom out" shortcut="Scroll ↓">
             <button
                 class="btn btn-icon"
