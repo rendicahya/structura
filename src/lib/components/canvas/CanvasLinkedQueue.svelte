@@ -121,6 +121,9 @@
 
   const GROUND_LEN = 22;
   const GROUND_LINES = [{ w: 14 }, { w: 9 }, { w: 4 }];
+
+  const headIdx = $derived($linkedQueueNodes.findIndex(n => n.id === $headNode?.id));
+  const tailIdx = $derived($linkedQueueNodes.findIndex(n => n.id === $tailNode?.id));
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
@@ -164,8 +167,10 @@
 
       <!-- Queue direction indicator -->
       {#if $queueChain.length > 0}
-        {@const firstX = getNodeX(0)}
-        {@const lastX = getNodeX($queueChain.length - 1)}
+        {@const firstNodeIndex = $linkedQueueNodes.findIndex(n => n.id === $headNode?.id)}
+        {@const lastNodeIndex = $linkedQueueNodes.findIndex(n => n.id === $tailNode?.id)}
+        {@const firstX = getNodeX(firstNodeIndex)}
+        {@const lastX = getNodeX(lastNodeIndex)}
         {@const midX = firstX + (lastX - firstX + NODE_W) / 2}
         <g transform="translate({midX}, {NODE_H + 45})">
           <text text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-muted)" font-weight="700" letter-spacing="1">QUEUE DIRECTION</text>
@@ -173,11 +178,12 @@
         </g>
       {/if}
 
-      <!-- Queue chain nodes -->
-      {#each $queueChain as node, index (node.id)}
+      <!-- All Nodes (Queue + Dequeued) -->
+      {#each $linkedQueueNodes as node, index (node.id)}
         {@const x = getNodeX(index)}
         {@const isHead = node.id === $headNode?.id}
         {@const isTail = node.id === $tailNode?.id}
+        {@const isUnreachable = $unreachableQueueNodes.some(n => n.id === node.id)}
         {@const isPeeking = peekingId === node.id}
         {@const isAnimIn = animatingInId === node.id}
 
@@ -185,6 +191,7 @@
         <g
           class="node-group"
           class:anim-in={isAnimIn}
+          class:unreachable={isUnreachable}
           oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
         >
           <!-- Shadow -->
@@ -198,19 +205,23 @@
             fill="var(--node-bg)"
             stroke={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
             stroke-width={isHead || isTail || isPeeking ? 1.8 : 1}
+            opacity={isUnreachable ? 0.5 : 1}
+            stroke-dasharray={isUnreachable ? "4 3" : "none"}
           />
 
           <!-- Accent bar -->
-          <rect
-            x={x+1} y="1" width={NODE_W-2} height="3" rx="2"
-            fill={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
-            opacity="0.8"
-          />
+          {#if !isUnreachable}
+            <rect
+              x={x+1} y="1" width={NODE_W-2} height="3" rx="2"
+              fill={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
+              opacity="0.8"
+            />
+          {/if}
 
           <!-- varName -->
           <text x={x + NODE_W/2} y="22" text-anchor="middle"
             font-family="var(--font-mono)" font-size="10"
-            fill="var(--accent)" font-weight="500"
+            fill={isUnreachable ? 'var(--text-muted)' : 'var(--accent)'} font-weight="500"
           >{node.varName}</text>
 
           <!-- divider -->
@@ -219,64 +230,30 @@
           <!-- data -->
           <text x={x + NODE_W/2} y="50" text-anchor="middle"
             font-family="var(--font-mono)" font-size="13"
-            fill={node.data ? '#e8ecf5' : 'var(--text-muted)'}
-            font-weight={node.data ? '500' : '400'}
+            fill={isUnreachable ? 'var(--text-muted)' : node.data ? 'var(--text)' : 'var(--text-muted)'}
+            font-weight={node.data && !isUnreachable ? '500' : '400'}
           >{node.data || 'null'}</text>
+
+          {#if isUnreachable}
+            <text x={x + NODE_W/2} y={NODE_H + 15} text-anchor="middle"
+              font-family="var(--font-mono)" font-size="9"
+              fill="var(--text-muted)" font-style="italic"
+            >unreachable</text>
+          {/if}
         </g>
 
-        <!-- HEAD badge -->
-        {#if isHead && !isTail}
-          <rect x={x + NODE_W/2 - 22} y="-28" width="44" height="20" rx="5"
-            fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2"/>
-          <text x={x + NODE_W/2} y="-13" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="9" font-weight="700"
-            fill="var(--success)" letter-spacing="0.8">HEAD</text>
-          <line x1={x + NODE_W/2} y1="-8" x2={x + NODE_W/2} y2="-2"
-            stroke="var(--success)" stroke-width="1.5"/>
-          <polygon
-            points="{x + NODE_W/2 - 4},-4 {x + NODE_W/2 + 4},-4 {x + NODE_W/2},0"
-            fill="var(--success)"
-          />
-        {/if}
-
-        <!-- TAIL badge -->
-        {#if isTail && !isHead}
-          <rect x={x + NODE_W/2 - 18} y="-28" width="36" height="20" rx="5"
-            fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2"/>
-          <text x={x + NODE_W/2} y="-13" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="9" font-weight="700"
-            fill="#c084fc" letter-spacing="0.8">TAIL</text>
-          <line x1={x + NODE_W/2} y1="-8" x2={x + NODE_W/2} y2="-2"
-            stroke="#c084fc" stroke-width="1.5"/>
-          <polygon
-            points="{x + NODE_W/2 - 4},-4 {x + NODE_W/2 + 4},-4 {x + NODE_W/2},0"
-            fill="#c084fc"
-          />
-        {/if}
-
-        <!-- HEAD+TAIL badge kalau sama -->
-        {#if isHead && isTail}
-          <rect x={x + NODE_W/2 - 30} y="-28" width="60" height="20" rx="5"
-            fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2"/>
-          <text x={x + NODE_W/2} y="-13" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="8" font-weight="700"
-            fill="var(--success)" letter-spacing="0.5">HEAD/TAIL</text>
-          <line x1={x + NODE_W/2} y1="-8" x2={x + NODE_W/2} y2="-2"
-            stroke="var(--success)" stroke-width="1.5"/>
-          <polygon
-            points="{x + NODE_W/2 - 4},-4 {x + NODE_W/2 + 4},-4 {x + NODE_W/2},0"
-            fill="var(--success)"
-          />
-        {/if}
-
         <!-- Arrow ke node berikutnya -->
-        {#if index < $queueChain.length - 1}
-          <line
-            x1={x + NODE_W} y1={NODE_H/2}
-            x2={x + NODE_W + NODE_GAP - 4} y2={NODE_H/2}
-            stroke="var(--accent)" stroke-width="1.8"
-            marker-end="url(#arrow-lq)"
-          />
+        {#if node.nextId}
+          {@const nextNodeIndex = $linkedQueueNodes.findIndex(n => n.id === node.nextId)}
+          {#if nextNodeIndex !== -1}
+            {@const nextX = getNodeX(nextNodeIndex)}
+            <line
+              x1={x + NODE_W} y1={NODE_H/2}
+              x2={nextX - 4} y2={NODE_H/2}
+              stroke="var(--accent)" stroke-width="1.8"
+              marker-end="url(#arrow-lq)"
+            />
+          {/if}
         {/if}
 
         <!-- Ground symbol untuk node terakhir -->
@@ -295,35 +272,35 @@
         {/if}
       {/each}
 
-      <!-- Unreachable nodes (sudah di-dequeue) -->
-      {#each $unreachableQueueNodes as node, index (node.id)}
-        {@const x = getNodeX($queueChain.length + index + 1)}
-
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <g
-          class="node-group unreachable"
-          oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
-        >
-          <rect x={x+2} y="4" width={NODE_W} height={NODE_H} rx="10" fill="rgba(0,0,0,0.2)"/>
-          <rect x={x} y="0" width={NODE_W} height={NODE_H} rx="10"
-            fill="var(--node-bg)" stroke="var(--border)" stroke-width="1"
-            opacity="0.5" stroke-dasharray="4 3"
-          />
-          <text x={x + NODE_W/2} y="22" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="10"
-            fill="var(--text-muted)" font-weight="500"
-          >{node.varName}</text>
-          <line x1={x+12} y1="28" x2={x+NODE_W-12} y2="28" stroke="var(--border)" stroke-width="1"/>
-          <text x={x + NODE_W/2} y="50" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="13"
-            fill="var(--text-muted)"
-          >{node.data || 'null'}</text>
-          <text x={x + NODE_W + 8} y={NODE_H/2 + 4}
-            font-family="var(--font-mono)" font-size="9"
-            fill="var(--text-muted)" font-style="italic"
-          >unreachable</text>
+      <!-- Pointers layer (animated) -->
+      {#if headIdx !== -1}
+        {@const hx = getNodeX(headIdx)}
+        <g class="pointer-group" style="transform: translateX({hx}px)">
+          <rect x={NODE_W/2 - 22} y="-28" width="44" height="20" rx="5"
+            fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2"/>
+          <text x={NODE_W/2} y="-13" text-anchor="middle"
+            font-family="var(--font-mono)" font-size="9" font-weight="700"
+            fill="var(--success)" letter-spacing="0.8">HEAD</text>
+          <line x1={NODE_W/2} y1="-8" x2={NODE_W/2} y2="-2"
+            stroke="var(--success)" stroke-width="1.5"/>
+          <polygon points="{NODE_W/2 - 4},-4 {NODE_W/2 + 4},-4 {NODE_W/2},0" fill="var(--success)" />
         </g>
-      {/each}
+      {/if}
+
+      {#if tailIdx !== -1}
+        {@const tx = getNodeX(tailIdx)}
+        {@const isStacked = headIdx === tailIdx}
+        <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px)">
+          <rect x={NODE_W/2 - 18} y="-28" width="36" height="20" rx="5"
+            fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2"/>
+          <text x={NODE_W/2} y="-13" text-anchor="middle"
+            font-family="var(--font-mono)" font-size="9" font-weight="700"
+            fill="#c084fc" letter-spacing="0.8">TAIL</text>
+          <line x1={NODE_W/2} y1="-8" x2={NODE_W/2} y2="-2"
+            stroke="#c084fc" stroke-width="1.5"/>
+          <polygon points="{NODE_W/2 - 4},-4 {NODE_W/2 + 4},-4 {NODE_W/2},0" fill="#c084fc" />
+        </g>
+      {/if}
     </g>
   </svg>
 
@@ -409,6 +386,7 @@
     from { opacity: 0; transform: translateX(30px); }
     to   { opacity: 1; transform: translateX(0); }
   }
+  .pointer-group { transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out; pointer-events: none; }
   .empty-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); }
   .empty-hints-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
