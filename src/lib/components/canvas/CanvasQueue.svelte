@@ -971,7 +971,7 @@
                 >
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                         <path
-                            d="M9 6.5H4M6.5 4l2.5 2.5-2.5 2.5"
+                            d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
                             stroke="currentColor"
                             stroke-width="1.3"
                             stroke-linecap="round"

@@ -7,72 +7,47 @@ import { logOpLinkedQueue, linkedQueueLog } from '../shared/linkedQueueLog.js';
 
 /** @type {import('svelte/store').Writable<LinkedQueueNode[]>} */
 export const linkedQueueNodes = writable([]);
+export const headId = writable(null);
+export const tailId = writable(null);
 
 let nodeCounter = 0;
 
 export const linkedQueueIsEmpty = derived(
-  linkedQueueNodes,
-  ($nodes) => $nodes.filter(n => isInQueue(n, $nodes)).length === 0
+  headId,
+  ($headId) => !$headId
 );
 
-/**
- * Check if node is reachable from head
- * @param {LinkedQueueNode} node
- * @param {LinkedQueueNode[]} nodes
- */
-function isInQueue(node, nodes) {
-  const pointed = new Set(nodes.map(n => n.nextId).filter(Boolean));
-  const heads = nodes.filter(n => !pointed.has(n.id) && nodes.some(m => m.id === n.id));
-  if (heads.length === 0) return false;
-  let current = heads[0];
-  while (current) {
-    if (current.id === node.id) return true;
-    const next = nodes.find(n => n.id === current.nextId);
-    current = next ?? null;
-  }
-  return false;
-}
-
-function getQueueChain(nodes) {
-  if (nodes.length === 0) return [];
-  const pointed = new Set(nodes.map(n => n.nextId).filter(Boolean));
-  const tops = nodes.filter(n => !pointed.has(n.id));
-  if (tops.length === 0) return [];
+function getQueueChain(nodes, hId) {
+  if (!hId) return [];
   const result = [];
-  let current = tops[0];
+  let current = nodes.find(n => n.id === hId);
   while (current) {
     result.push(current);
-    const next = nodes.find(n => n.id === current.nextId);
-    current = next ?? null;
+    const nextId = current.nextId;
+    current = nextId ? nodes.find(n => n.id === nextId) : null;
   }
   return result;
 }
 
 export const headNode = derived(
-  linkedQueueNodes,
-  ($nodes) => {
-    const chain = getQueueChain($nodes);
-    return chain.length > 0 ? chain[0] : null;
-  }
+  [linkedQueueNodes, headId],
+  ([$nodes, $headId]) => $nodes.find(n => n.id === $headId) || null
 );
 
 export const tailNode = derived(
-  linkedQueueNodes,
-  ($nodes) => {
-    const chain = getQueueChain($nodes);
-    return chain.length > 0 ? chain[chain.length - 1] : null;
-  }
+  [linkedQueueNodes, tailId],
+  ([$nodes, $tailId]) => $nodes.find(n => n.id === $tailId) || null
 );
 
 export const queueChain = derived(
-  linkedQueueNodes,
-  ($nodes) => getQueueChain($nodes)
+  [linkedQueueNodes, headId],
+  ([$nodes, $headId]) => getQueueChain($nodes, $headId)
 );
 
 export const unreachableQueueNodes = derived(
-  linkedQueueNodes,
-  ($nodes) => {
-    const chain = getQueueChain($nodes);
+  [linkedQueueNodes, headId],
+  ([$nodes, $headId]) => {
+    const chain = getQueueChain($nodes, $headId);
     const chainIds = new Set(chain.map(n => n.id));
     return $nodes.filter(n => !chainIds.has(n.id));
   }
@@ -85,7 +60,8 @@ export function enqueueLinked(value) {
   const id = `lq_${++nodeCounter}`;
   const varName = `node${nodeCounter}`;
   const nodes = get(linkedQueueNodes);
-  const tail = nodes.length > 0 ? getQueueChain(nodes).at(-1) : null;
+  const hId = get(headId);
+  const tId = get(tailId);
 
   /** @type {LinkedQueueNode} */
   const newNode = { id, varName, data: value, nextId: null };
@@ -101,10 +77,11 @@ export function enqueueLinked(value) {
     `Node* ${varName} = new Node(${formatVal(value)});`,
   ];
 
-  if (tail) {
+  if (tId) {
     linkedQueueNodes.update(ns => ns.map(n =>
-      n.id === tail.id ? { ...n, nextId: id } : n
+      n.id === tId ? { ...n, nextId: id } : n
     ));
+    tailId.set(id);
     javaOps.push(`tail.next = ${varName};`);
     javaOps.push(`tail = ${varName};`);
     pyOps.push(`tail.next = ${varName}`);
@@ -113,6 +90,8 @@ export function enqueueLinked(value) {
     cppOps.push(`tail = ${varName};`);
   } else {
     // First node — head and tail both point to it
+    headId.set(id);
+    tailId.set(id);
     javaOps.push(`head = ${varName};`);
     javaOps.push(`tail = ${varName};`);
     pyOps.push(`head = ${varName}`);
@@ -127,11 +106,13 @@ export function enqueueLinked(value) {
 
 export function dequeueLinked() {
   const nodes = get(linkedQueueNodes);
-  const chain = getQueueChain(nodes);
-  if (chain.length === 0) return false;
+  const hId = get(headId);
+  if (!hId) return false;
 
-  const head = chain[0];
-  const newHead = chain.length > 1 ? chain[1] : null;
+  const currentHead = nodes.find(n => n.id === hId);
+  if (!currentHead) return false;
+
+  const nextHeadId = currentHead.nextId;
 
   const javaOps = [
     `Node dequeued = head;`,
@@ -151,20 +132,28 @@ export function dequeueLinked() {
 
   logOpLinkedQueue(javaOps, pyOps, cppOps);
 
-  // Sever head dari chain tapi tetap di canvas
+  // Update headId
+  headId.set(nextHeadId);
+  if (!nextHeadId) {
+    tailId.set(null);
+  }
+
+  // Sever head dari chain tapi tetap di canvas (biar jadi unreachable)
   linkedQueueNodes.update(ns => ns.map(n =>
-    n.id === head.id ? { ...n, nextId: null } : n
+    n.id === hId ? { ...n, nextId: null } : n
   ));
 
   return true;
 }
 
 export function peekLinkedQueue() {
-  const nodes = get(linkedQueueNodes);
-  const chain = getQueueChain(nodes);
-  if (chain.length === 0) return false;
+  const hId = get(headId);
+  if (!hId) return false;
 
-  const head = chain[0];
+  const nodes = get(linkedQueueNodes);
+  const head = nodes.find(n => n.id === hId);
+  if (!head) return false;
+
   logOpLinkedQueue(
     [`Node peeked = head; // peek → ${head.data}`],
     [`peeked = head  # peek → ${head.data}`],
@@ -175,7 +164,8 @@ export function peekLinkedQueue() {
 
 export function garbageCollectLinkedQueue() {
   const nodes = get(linkedQueueNodes);
-  const chain = getQueueChain(nodes);
+  const hId = get(headId);
+  const chain = getQueueChain(nodes, hId);
   const chainIds = new Set(chain.map(n => n.id));
   const toRemove = nodes.filter(n => !chainIds.has(n.id));
 
@@ -198,12 +188,16 @@ export function garbageCollectLinkedQueue() {
 
 export function clearLinkedQueue() {
   linkedQueueNodes.set([]);
+  headId.set(null);
+  tailId.set(null);
   nodeCounter = 0;
 }
 
 export function getSnapshotLinkedQueue() {
   return {
     nodes: JSON.parse(JSON.stringify(get(linkedQueueNodes))),
+    headId: get(headId),
+    tailId: get(tailId),
     counter: nodeCounter,
     codeLog: JSON.parse(JSON.stringify(get(linkedQueueLog))),
     _type: 'linked-queue',
@@ -216,6 +210,8 @@ export function getSnapshotLinkedQueue() {
 export function applySnapshotLinkedQueue(snapshot) {
   nodeCounter = snapshot.counter ?? 0;
   linkedQueueNodes.set(snapshot.nodes ?? []);
+  headId.set(snapshot.headId ?? null);
+  tailId.set(snapshot.tailId ?? null);
   linkedQueueLog.set(snapshot.codeLog ?? []);
 }
 

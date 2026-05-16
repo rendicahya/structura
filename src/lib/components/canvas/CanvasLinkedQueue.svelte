@@ -150,6 +150,9 @@
       <marker id="arrow-lq" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
         <polygon points="0 0, 8 3, 0 6" fill="#5b8fff" />
       </marker>
+      <marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)" />
+      </marker>
       <pattern id="grid-lq" width="28" height="28" patternUnits="userSpaceOnUse">
         <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
       </pattern>
@@ -158,6 +161,17 @@
     <rect width="100%" height="100%" fill="url(#grid-lq)" />
 
     <g style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;">
+
+      <!-- Queue direction indicator -->
+      {#if $queueChain.length > 0}
+        {@const firstX = getNodeX(0)}
+        {@const lastX = getNodeX($queueChain.length - 1)}
+        {@const midX = firstX + (lastX - firstX + NODE_W) / 2}
+        <g transform="translate({midX}, {NODE_H + 45})">
+          <text text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-muted)" font-weight="700" letter-spacing="1">QUEUE DIRECTION</text>
+          <line x1="50" y1="12" x2="-50" y2="12" stroke="var(--text-muted)" stroke-width="1.2" marker-end="url(#arrow-muted)" opacity="0.6" />
+        </g>
+      {/if}
 
       <!-- Queue chain nodes -->
       {#each $queueChain as node, index (node.id)}
@@ -324,7 +338,7 @@
       {#if contextMenu.type === 'canvas'}
         <button class="ctx-item" onclick={handleEnqueueFromMenu}>
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path d="M9 6.5H4M6.5 4l2.5 2.5-2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Enqueue
         </button>
