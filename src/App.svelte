@@ -1,9 +1,7 @@
 <script>
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import {
-        canvasZoom,
-    } from "./lib/stores/shared/canvasControl.js";
+    import { canvasZoom } from "./lib/stores/shared/canvasControl.js";
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
@@ -30,6 +28,11 @@
     import ToolbarLinkedQueue from "./lib/components/toolbar/ToolbarLinkedQueue.svelte";
     import CanvasLinkedQueue from "./lib/components/canvas/CanvasLinkedQueue.svelte";
     import { linkedQueueLog } from "./lib/stores/shared/linkedQueueLog.js";
+
+    import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
+    import CanvasTree from "./lib/components/canvas/CanvasTree.svelte";
+    import { treeLog } from "./lib/stores/shared/treeLog.js";
+    import { initTree } from "./lib/stores/tree/graphTree.js";
 
     onMount(() => {
         initHistory();
@@ -90,6 +93,8 @@
             if (get(codeLog).length === 0) initNodeClass();
         } else if (page === "#/doubly-linked-list") {
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
+        } else if (page === "#/tree") {
+            if (get(treeLog).length === 0) initTree();
         }
 
         zoom = $canvasZoom;
@@ -205,6 +210,14 @@
             Linked-List Queue
         </button>
 
+        <button
+            class="nav-tab"
+            class:active={page === "#/tree"}
+            onclick={() => navigate("#/tree")}
+        >
+            Binary Tree
+        </button>
+
         <div class="nav-spacer"></div>
 
         <button
@@ -267,6 +280,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/tree"}
+        <ToolbarTree
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -276,9 +299,9 @@
             style={codeHidden ? "width:100%" : `width:${splitPos}%`}
         >
             {#if page === "#/linked-list"}
-                <Canvas bind:zoom active={page === '#/linked-list'} />
+                <Canvas bind:zoom active={page === "#/linked-list"} />
             {:else if page === "#/doubly-linked-list"}
-                <CanvasDLL bind:zoom active={page === '#/doubly-linked-list'} />
+                <CanvasDLL bind:zoom active={page === "#/doubly-linked-list"} />
             {:else if page === "#/stack"}
                 <CanvasStack {zoom} onzoomchange={(z) => (zoom = z)} />
             {:else if page === "#/linked-stack"}
@@ -287,6 +310,8 @@
                 <CanvasQueue {zoom} />
             {:else if page === "#/linked-queue"}
                 <CanvasLinkedQueue {zoom} />
+            {:else if page === "#/tree"}
+                <CanvasTree {zoom} />
             {/if}
         </div>
 
@@ -314,7 +339,9 @@
                               ? linkedStackLog
                               : page === "#/queue"
                                 ? queueLog
-                                : linkedQueueLog}
+                                : page === "#/linked-queue"
+                                  ? linkedQueueLog
+                                  : treeLog}
                 />
             </div>
         {/if}
