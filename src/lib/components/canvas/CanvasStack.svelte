@@ -53,7 +53,7 @@
                 animatingInId = newItem.id;
                 setTimeout(() => {
                     animatingInId = null;
-                }, 400);
+                }, 800);
             }
         } else if (top < prevTop && prevTop >= 0) {
             // Animasi Pop meluncur ke atas
@@ -603,7 +603,7 @@
         transition: transform 0.3s ease;
     }
     .stack-item.anim-in {
-        animation: slideDown 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+        animation: slideDown 0.6s cubic-bezier(0.25, 1, 0.5, 1);
     }
     @keyframes slideDown {
         from {
