@@ -3,14 +3,8 @@
     export let shortcut = "";
 
     let visible = false;
-    let x = 0;
-    let y = 0;
-    let triggerEl;
 
     function show() {
-        const rect = triggerEl.getBoundingClientRect();
-        x = rect.left + rect.width / 2;
-        y = rect.bottom + 6;
         visible = true;
     }
 
@@ -21,7 +15,6 @@
 
 <div
     class="tooltip-wrapper"
-    bind:this={triggerEl}
     role="group"
     onmouseenter={show}
     onmouseleave={hide}
@@ -29,26 +22,29 @@
     onfocusout={hide}
 >
     <slot />
+    {#if visible && text}
+        <div class="tooltip">
+            <span class="tooltip-text">{text}</span>
+            {#if shortcut}
+                <span class="tooltip-shortcut">{shortcut}</span>
+            {/if}
+        </div>
+    {/if}
 </div>
-
-{#if visible}
-    <div class="tooltip" style="left: {x}px; top: {y}px;">
-        <span class="tooltip-text">{text}</span>
-        {#if shortcut}
-            <span class="tooltip-shortcut">{shortcut}</span>
-        {/if}
-    </div>
-{/if}
 
 <style>
     .tooltip-wrapper {
         display: inline-flex;
+        position: relative;
     }
 
     .tooltip {
-        position: fixed;
+        position: absolute;
+        top: 100%;
+        left: 50%;
         transform: translateX(-50%);
-        z-index: 9999;
+        margin-top: 8px;
+        z-index: 10000;
         background: var(--surface2);
         border: 1px solid var(--border-bright);
         border-radius: 6px;

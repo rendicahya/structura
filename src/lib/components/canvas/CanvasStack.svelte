@@ -603,7 +603,7 @@
         transition: transform 0.3s ease;
     }
     .stack-item.anim-in {
-        animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: slideDown 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     }
     @keyframes slideDown {
         from {
@@ -693,6 +693,6 @@
 
     /* TOP Pointer Animation */
     .top-pointer {
-        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
 </style>
