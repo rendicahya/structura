@@ -12,6 +12,7 @@
         canUndo,
         canRedo,
         initHistory,
+        registerHistoryHandlers,
     } from "../../stores/shared/history.js";
     import {
         stackCapacity,
@@ -24,6 +25,9 @@
         applySnapshotStack,
         clearStack,
     } from "../../stores/stack/graphStack.js";
+
+    // Register history handlers
+    registerHistoryHandlers(getSnapshotStack, applySnapshotStack);
     import { clearLogStack } from "../../stores/shared/stackLog.js";
     import { toast } from "../../stores/shared/toast.js";
 
@@ -37,6 +41,7 @@
         onopenShortcuts,
     } = $props();
 
+    let showConfirmNew = $state(false);
     let showNewStack = $state(false);
     let showPush = $state(false);
     let pushValue = $state("");
@@ -44,11 +49,14 @@
 
     function handleNewStack() {
         if (!$stackIsEmpty) {
-            const ok = confirm(
-                "Start a new stack? All unsaved work will be lost.",
-            );
-            if (!ok) return;
+            showConfirmNew = true;
+        } else {
+            showNewStack = true;
         }
+    }
+
+    function confirmNewStackActual() {
+        showConfirmNew = false;
         showNewStack = true;
     }
 
@@ -261,6 +269,46 @@
     </div>
 </div>
 
+<!-- Confirm New Modal -->
+{#if showConfirmNew}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
+        <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">New Stack</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showConfirmNew = false)}
+                >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                            d="M2 2l10 10M12 2L2 12"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-text">
+                    Start a new stack? All unsaved work will be lost.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showConfirmNew = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmNewStackActual}
+                    >Confirm</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
 <!-- New Stack Modal -->
 {#if showNewStack}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -285,8 +333,9 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>Capacity (1–20)</label>
+                    <label for="stack-capacity">Capacity (1–20)</label>
                     <input
+                        id="stack-capacity"
                         type="number"
                         bind:value={newCapacity}
                         min="1"
@@ -331,17 +380,16 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>
-                        Value
-                        <input
-                            bind:this={pushInputEl}
-                            bind:value={pushValue}
-                            onkeydown={(e) =>
-                                e.key === "Enter" && confirmPush()}
-                            placeholder="Enter value..."
-                            spellcheck="false"
-                        />
-                    </label>
+                    <label for="push-value">Value</label>
+                    <input
+                        id="push-value"
+                        bind:this={pushInputEl}
+                        bind:value={pushValue}
+                        onkeydown={(e) =>
+                            e.key === "Enter" && confirmPush()}
+                        placeholder="Enter value..."
+                        spellcheck="false"
+                    />
                 </div>
             </div>
             <div class="modal-footer">
@@ -373,11 +421,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-    .brand-icon-img {
-        width: 28px;
-        height: 28px;
-        flex-shrink: 0;
     }
     .brand-name {
         font-family: var(--font-ui);
@@ -421,14 +464,6 @@
     .btn-primary:hover:not(:disabled) {
         background: #6f9fff;
         box-shadow: 0 0 16px var(--accent-glow);
-    }
-    .btn-danger {
-        background: rgba(255, 91, 110, 0.15);
-        color: var(--danger);
-        border: 1px solid rgba(255, 91, 110, 0.3);
-    }
-    .btn-danger:hover:not(:disabled) {
-        background: rgba(255, 91, 110, 0.25);
     }
     .btn-secondary {
         background: var(--surface2);

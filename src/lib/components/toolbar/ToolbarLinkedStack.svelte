@@ -12,6 +12,7 @@
         canUndo,
         canRedo,
         initHistory,
+        registerHistoryHandlers,
     } from "../../stores/shared/history.js";
     import {
         linkedStackNodes,
@@ -24,6 +25,9 @@
         getSnapshotLinkedStack,
         applySnapshotLinkedStack,
     } from "../../stores/stack/graphLinkedStack.js";
+
+    // Register history handlers
+    registerHistoryHandlers(getSnapshotLinkedStack, applySnapshotLinkedStack);
     import { clearLogLinkedStack } from "../../stores/shared/linkedStackLog.js";
     import { toast } from "../../stores/shared/toast.js";
 
@@ -87,16 +91,21 @@
         pushHistory();
     }
 
+    let showConfirmNew = $state(false);
+
     function handleNewStack() {
         if ($linkedStackNodes.length > 0) {
-            const ok = confirm(
-                "Start a new stack? All unsaved work will be lost.",
-            );
-            if (!ok) return;
+            showConfirmNew = true;
+        } else {
+            confirmNewStack();
         }
+    }
+
+    function confirmNewStack() {
         clearLinkedStack();
         clearLogLinkedStack();
         initHistory();
+        showConfirmNew = false;
         toast.success("Stack cleared");
     }
 
@@ -296,11 +305,44 @@
     </div>
 </div>
 
+<!-- Confirm New Modal -->
+{#if showConfirmNew}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
+        <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">New Stack</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showConfirmNew = false)}
+                >
+                    <Icon name="close" size={14} />
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-text">
+                    Start a new stack? All unsaved work will be lost.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showConfirmNew = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmNewStack}
+                    >Confirm</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
 <!-- Push Modal -->
 {#if showPush}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="modal-overlay" onmousedown={() => (showPush = false)}>
-        <div class="modal" onmousedown={(e) => e.stopPropagation()}>
+        <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <span class="modal-title">Push value</span>
                 <button
@@ -313,17 +355,16 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>
-                        Value
-                        <input
-                            bind:this={pushInputEl}
-                            bind:value={pushValue}
-                            onkeydown={(e) =>
-                                e.key === "Enter" && confirmPush()}
-                            placeholder="Enter value..."
-                            spellcheck="false"
-                        />
-                    </label>
+                    <label for="push-value">Value</label>
+                    <input
+                        id="push-value"
+                        bind:this={pushInputEl}
+                        bind:value={pushValue}
+                        onkeydown={(e) =>
+                            e.key === "Enter" && confirmPush()}
+                        placeholder="Enter value..."
+                        spellcheck="false"
+                    />
                 </div>
             </div>
             <div class="modal-footer">
@@ -355,11 +396,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-    .brand-icon-img {
-        width: 28px;
-        height: 28px;
-        flex-shrink: 0;
     }
     .brand-name {
         font-family: var(--font-ui);
@@ -454,6 +490,8 @@
         background: var(--border);
         color: var(--text);
     }
+
+    /* Modal */
     .modal-overlay {
         position: fixed;
         inset: 0;
@@ -476,10 +514,13 @@
         background: var(--surface);
         border: 1px solid var(--border-bright);
         border-radius: 14px;
-        width: 260px;
+        width: 320px;
         box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
         animation: slideIn 0.15s ease;
         overflow: hidden;
+    }
+    .modal-sm {
+        width: 280px;
     }
     @keyframes slideIn {
         from {
@@ -522,9 +563,13 @@
     }
     .modal-body {
         padding: 16px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+    }
+    .confirm-text {
+        font-family: var(--font-ui);
+        font-size: 13px;
+        color: var(--text-dim);
+        line-height: 1.5;
+        margin: 0;
     }
     .field {
         display: flex;

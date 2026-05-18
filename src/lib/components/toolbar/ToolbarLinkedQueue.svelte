@@ -2,8 +2,11 @@
   import Tooltip from '../ui/Tooltip.svelte';
   import BrandLogo from '../ui/BrandLogo.svelte';
   import Icon from '../ui/Icon.svelte';
-  import { pushHistory, undo, redo, canUndo, canRedo, initHistory } from '../../stores/shared/history.js';
+  import { pushHistory, undo, redo, canUndo, canRedo, initHistory, registerHistoryHandlers } from '../../stores/shared/history.js';
   import { linkedQueueNodes, linkedQueueIsEmpty, enqueueLinked, dequeueLinked, peekLinkedQueue, garbageCollectLinkedQueue, clearLinkedQueue, getSnapshotLinkedQueue, applySnapshotLinkedQueue } from '../../stores/queue/graphLinkedQueue.js';
+  
+  // Register history handlers
+  registerHistoryHandlers(getSnapshotLinkedQueue, applySnapshotLinkedQueue);
   import { clearLogLinkedQueue } from '../../stores/shared/linkedQueueLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { onMount } from 'svelte';
@@ -18,6 +21,7 @@
     onopenShortcuts,
   } = $props();
 
+  let showConfirmNew = $state(false);
   let showEnqueue = $state(false);
   let enqueueValue = $state('');
   let enqueueInputEl = $state();
@@ -61,12 +65,17 @@
 
   function handleNew() {
     if ($linkedQueueNodes.length > 0) {
-      const ok = confirm('Start a new queue? All unsaved work will be lost.');
-      if (!ok) return;
+      showConfirmNew = true;
+    } else {
+      confirmNewActual();
     }
+  }
+
+  function confirmNewActual() {
     clearLinkedQueue();
     clearLogLinkedQueue();
     initHistory();
+    showConfirmNew = false;
     toast.success('Queue cleared');
   }
 
@@ -219,6 +228,28 @@
   </div>
 </div>
 
+<!-- Confirm New Modal -->
+{#if showConfirmNew}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal-overlay" onmousedown={() => showConfirmNew = false}>
+    <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <span class="modal-title">New Queue</span>
+        <button class="close-btn" aria-label="Close" onclick={() => showConfirmNew = false}>
+          <Icon name="close" size={14} />
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-text">Start a new queue? All unsaved work will be lost.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick={() => showConfirmNew = false}>Cancel</button>
+        <button class="btn btn-primary" onclick={confirmNewActual}>Confirm</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <!-- Enqueue Modal -->
 {#if showEnqueue}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -232,8 +263,9 @@
       </div>
       <div class="modal-body">
         <div class="field">
-          <label>Value</label>
+          <label for="enqueue-value">Value</label>
           <input
+            id="enqueue-value"
             bind:this={enqueueInputEl}
             bind:value={enqueueValue}
             onkeydown={(e) => e.key === 'Enter' && confirmEnqueue()}
@@ -253,7 +285,6 @@
 <style>
   .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand-icon-img { width: 28px; height: 28px; flex-shrink: 0; }
   .brand-name { font-family: var(--font-ui); font-weight: 800; font-size: 18px; letter-spacing: -0.5px; color: var(--text); }
   .actions { display: flex; align-items: center; gap: 6px; }
   .separator { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }

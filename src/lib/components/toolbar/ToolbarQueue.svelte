@@ -38,6 +38,7 @@
         onopenShortcuts,
     } = $props();
 
+    let showConfirmNew = $state(false);
     let showNewQueue = $state(false);
     let showEnqueue = $state(false);
     let enqueueValue = $state("");
@@ -50,11 +51,14 @@
     function handleNewQueue() {
         const slots = $queueSlots;
         if (slots.length > 0) {
-            const ok = confirm(
-                "Start a new queue? All unsaved work will be lost.",
-            );
-            if (!ok) return;
+            showConfirmNew = true;
+        } else {
+            showNewQueue = true;
         }
+    }
+
+    function confirmNewQueueActual() {
+        showConfirmNew = false;
         showNewQueue = true;
     }
 
@@ -265,6 +269,39 @@
     </div>
 </div>
 
+<!-- Confirm New Modal -->
+{#if showConfirmNew}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
+        <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">New Queue</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showConfirmNew = false)}
+                >
+                    <Icon name="close" size={14} />
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-text">
+                    Start a new queue? All unsaved work will be lost.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showConfirmNew = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmNewQueueActual}
+                    >Confirm</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
 <!-- New Queue Modal -->
 {#if showNewQueue}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -282,15 +319,14 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>
-                        Capacity (1–20)
-                        <input
-                            type="number"
-                            bind:value={newCapacity}
-                            min="1"
-                            max="20"
-                        />
-                    </label>
+                    <label for="queue-capacity">Capacity (1–20)</label>
+                    <input
+                        id="queue-capacity"
+                        type="number"
+                        bind:value={newCapacity}
+                        min="1"
+                        max="20"
+                    />
                 </div>
             </div>
             <div class="modal-footer">
@@ -323,8 +359,9 @@
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>Value</label>
+                    <label for="enqueue-value">Value</label>
                     <input
+                        id="enqueue-value"
                         bind:this={enqueueInputEl}
                         bind:value={enqueueValue}
                         onkeydown={(e) => e.key === "Enter" && confirmEnqueue()}
@@ -362,11 +399,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-    .brand-icon-img {
-        width: 28px;
-        height: 28px;
-        flex-shrink: 0;
     }
     .brand-name {
         font-family: var(--font-ui);

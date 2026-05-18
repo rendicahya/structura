@@ -1,4 +1,6 @@
 <script>
+    import { flip } from "svelte/animate";
+    import { untrack } from "svelte";
     import {
         linkedStackNodes,
         topId,
@@ -28,33 +30,69 @@
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
 
-    // Animasi push
+    // Animasi push & pop
     let animatingInId = $state(null);
+    let animatingPopId = $state(null);
     let prevLength = $linkedStackNodes.length;
+    let prevNodes = [...$linkedStackNodes];
+
     $effect(() => {
         const nodes = $linkedStackNodes;
-        if (nodes.length > prevLength) {
+        const currentLength = nodes.length;
+
+        if (currentLength > prevLength) {
+            // Push operation
             animatingInId = nodes[0].id;
             setTimeout(() => {
                 animatingInId = null;
-            }, 400);
+            }, 500);
+        } else if (currentLength < prevLength) {
+            // Pop operation
+            const poppedNode = prevNodes.find(n => !nodes.some(curr => curr.id === n.id));
+            if (poppedNode) {
+                animatingPopId = poppedNode.id;
+                setTimeout(() => {
+                    animatingPopId = null;
+                }, 600);
+            }
         }
-        prevLength = nodes.length;
+        prevLength = currentLength;
+        prevNodes = [...nodes];
     });
 
-    // Center saat pertama ada node
+    // Center hanya saat pertama kali node muncul dan SVG sudah siap
     $effect(() => {
-        if ($linkedStackNodes.length > 0 && !initialized && svgEl) {
-            centerStack();
-            initialized = true;
+        const nodes = $linkedStackNodes;
+        const el = svgEl;
+
+        if (nodes.length > 0 && el) {
+            untrack(() => {
+                if (!initialized) {
+                    // Coba center, jika gagal (dimensi 0), coba lagi di frame berikutnya
+                    const attemptCenter = () => {
+                        if (centerStack()) {
+                            initialized = true;
+                        } else if (!initialized) {
+                            requestAnimationFrame(attemptCenter);
+                        }
+                    };
+                    attemptCenter();
+                }
+            });
+        } else if (nodes.length === 0) {
+            initialized = false;
         }
-        if ($linkedStackNodes.length === 0) initialized = false;
     });
 
     function centerStack() {
+        if (!svgEl) return false;
         const rect = svgEl.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+
         panX = rect.width / 2 - NODE_W / 2;
-        panY = CANVAS_PAD_Y;
+        // Kita letakkan anchor (node terbawah) di tengah layar secara vertikal
+        panY = rect.height / 2 - NODE_H / 2;
+        return true;
     }
 
     function onSVGMousedown(e) {
@@ -120,26 +158,33 @@
      * @param {number} index
      */
     function getNodeY(index) {
-        return index * (NODE_H + NODE_GAP);
+        const totalNodes = stackNodeIds.length;
+        if (totalNodes === 0) return 0;
+        // Node terbawah (index = totalNodes - 1) adalah anchor (Y=0)
+        return (index - (totalNodes - 1)) * (NODE_H + NODE_GAP);
     }
 
-    let stackNodeIds = $derived(() => {
+    // Posisi Y absolut untuk badge TOP (harus mengikuti node index 0)
+    let topBadgeY = $derived(getNodeY(0));
+
+    let stackNodeIds = $derived((() => {
         const nodes = $linkedStackNodes;
-        const pointed = new Set(nodes.map((n) => n.nextId).filter(Boolean));
-        const tops = nodes.filter((n) => !pointed.has(n.id));
-        if (tops.length === 0) return [];
+        const currentTopId = $topId;
+        if (!currentTopId) return [];
+
         const result = [];
-        let current = tops[0];
-        while (current) {
-            result.push(current.id);
-            const next = nodes.find((n) => n.id === current.nextId);
-            current = next ?? null;
+        let currentId = currentTopId;
+        while (currentId) {
+            result.push(currentId);
+            const node = nodes.find((n) => n.id === currentId);
+            currentId = node?.nextId ?? null;
+            if (result.length > nodes.length) break;
         }
         return result;
-    });
+    })());
 
     let unreachableNodes = $derived(
-        $linkedStackNodes.filter((n) => !stackNodeIds().includes(n.id)),
+        $linkedStackNodes.filter((n) => !stackNodeIds.includes(n.id)),
     );
 
     const GROUND_LEN = 22;
@@ -200,178 +245,189 @@
             style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
         >
             <!-- Stack nodes (reachable) -->
-            {#each stackNodeIds() as nodeId, index}
-                {@const node = $linkedStackNodes.find((n) => n.id === nodeId)}
-                {#if node}
-                    {@const y = getNodeY(index)}
-                    {@const isTop = index === 0}
-                    {@const isPeeking = peekingId === node.id}
-                    {@const isAnimIn = animatingInId === node.id}
+            {#each stackNodeIds as nodeId, index (nodeId)}
+                <g animate:flip={{ duration: 400 }}>
+                    {#if $linkedStackNodes.find((n) => n.id === nodeId)}
+                        {@const node = $linkedStackNodes.find((n) => n.id === nodeId)}
+                        {@const y = getNodeY(index)}
+                        {@const isTop = index === 0}
+                        {@const isPeeking = peekingId === node.id}
+                        {@const isAnimIn = animatingInId === node.id}
 
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <g
-                        class="node-group"
-                        class:anim-in={isAnimIn}
-                        oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
-                    >
-                        <!-- Shadow -->
-                        <rect
-                            x="2"
-                            y={y + 4}
-                            width={NODE_W}
-                            height={NODE_H}
-                            rx="10"
-                            fill="rgba(0,0,0,0.35)"
-                        />
-
-                        <!-- Main box -->
-                        <rect
-                            x="0"
-                            {y}
-                            width={NODE_W}
-                            height={NODE_H}
-                            rx="10"
-                            fill="var(--node-bg)"
-                            stroke={isPeeking
-                                ? "var(--warning)"
-                                : isTop
-                                  ? "var(--accent)"
-                                  : "var(--node-border)"}
-                            stroke-width={isTop || isPeeking ? 1.8 : 1}
-                        />
-
-                        <!-- Top accent bar -->
-                        <rect
-                            x="1"
-                            y={y + 1}
-                            width={NODE_W - 2}
-                            height="3"
-                            rx="2"
-                            fill={isPeeking
-                                ? "var(--warning)"
-                                : isTop
-                                  ? "var(--accent)"
-                                  : "var(--node-border)"}
-                            opacity="0.8"
-                        />
-
-                        <!-- var name -->
-                        <text
-                            x={NODE_W / 2}
-                            y={y + 22}
-                            text-anchor="middle"
-                            font-family="var(--font-mono)"
-                            font-size="10"
-                            fill="var(--accent)"
-                            font-weight="500">{node.varName}</text
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <g
+                            class="node-group"
+                            class:anim-in={isAnimIn}
+                            oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
                         >
+                            <!-- Shadow -->
+                            <rect
+                                x="2"
+                                y={y + 4}
+                                width={NODE_W}
+                                height={NODE_H}
+                                rx="10"
+                                fill="rgba(0,0,0,0.35)"
+                            />
 
-                        <!-- divider -->
-                        <line
-                            x1="12"
-                            y1={y + 28}
-                            x2={NODE_W - 12}
-                            y2={y + 28}
-                            stroke="var(--border)"
-                            stroke-width="1"
-                        />
+                            <!-- Main box -->
+                            <rect
+                                x="0"
+                                {y}
+                                width={NODE_W}
+                                height={NODE_H}
+                                rx="10"
+                                fill="var(--node-bg)"
+                                stroke={isPeeking
+                                    ? "var(--warning)"
+                                    : isTop
+                                      ? "var(--accent)"
+                                      : "var(--node-border)"}
+                                stroke-width={isTop || isPeeking ? 1.8 : 1}
+                            />
 
-                        <!-- data -->
-                        <text
-                            x={NODE_W / 2}
-                            y={y + 50}
-                            text-anchor="middle"
-                            font-family="var(--font-mono)"
-                            font-size="13"
-                            fill={node.data ? "#e8ecf5" : "var(--text-muted)"}
-                            font-weight={node.data ? "500" : "400"}
-                            >{node.data || "null"}</text
-                        >
-                    </g>
+                            <!-- Top accent bar -->
+                            <rect
+                                x="1"
+                                y={y + 1}
+                                width={NODE_W - 2}
+                                height="3"
+                                rx="2"
+                                fill={isPeeking
+                                    ? "var(--warning)"
+                                    : isTop
+                                      ? "var(--accent)"
+                                      : "var(--node-border)"}
+                                opacity="0.8"
+                            />
 
-                    <!-- TOP badge -->
-                    {#if isTop}
-                        <rect
-                            x={NODE_W + 10}
-                            y={y + NODE_H / 2 - 10}
-                            width="40"
-                            height="20"
-                            rx="5"
-                            fill="rgba(78,204,163,0.15)"
-                            stroke="var(--success)"
-                            stroke-width="1.2"
-                        />
-                        <text
-                            x={NODE_W + 30}
-                            y={y + NODE_H / 2 + 4}
-                            text-anchor="middle"
-                            font-family="var(--font-mono)"
-                            font-size="9"
-                            font-weight="700"
-                            fill="var(--success)"
-                            letter-spacing="0.8">TOP</text
-                        >
-                        <line
-                            x1={NODE_W + 10}
-                            y1={y + NODE_H / 2}
-                            x2={NODE_W + 1}
-                            y2={y + NODE_H / 2}
-                            stroke="var(--success)"
-                            stroke-width="1.5"
-                        />
-                        <polygon
-                            points="{NODE_W + 7},{y + NODE_H / 2 - 4} {NODE_W +
-                                1},{y + NODE_H / 2} {NODE_W + 7},{y +
-                                NODE_H / 2 +
-                                4}"
-                            fill="var(--success)"
-                        />
-                    {/if}
+                            <!-- var name -->
+                            <text
+                                x={NODE_W / 2}
+                                y={y + 22}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="10"
+                                fill="var(--accent)"
+                                font-weight="500">{node.varName}</text
+                            >
 
-                    <!-- Arrow ke node berikutnya -->
-                    {#if index < stackNodeIds().length - 1}
-                        {@const nextY = getNodeY(index + 1)}
-                        <line
-                            x1={NODE_W / 2}
-                            y1={y + NODE_H}
-                            x2={NODE_W / 2}
-                            y2={nextY - 4}
-                            stroke="var(--accent)"
-                            stroke-width="1.8"
-                            marker-end="url(#arrow-ls)"
-                        />
-                    {/if}
-
-                    <!-- Ground symbol untuk node terbawah -->
-                    {#if index === stackNodeIds().length - 1}
-                        <line
-                            x1={NODE_W / 2}
-                            y1={y + NODE_H}
-                            x2={NODE_W / 2}
-                            y2={y + NODE_H + GROUND_LEN}
-                            stroke="var(--text-muted)"
-                            stroke-width="1.5"
-                        />
-                        {#each GROUND_LINES as gl, i}
+                            <!-- divider -->
                             <line
-                                x1={NODE_W / 2 - gl.w / 2}
-                                y1={y + NODE_H + GROUND_LEN + i * 7}
-                                x2={NODE_W / 2 + gl.w / 2}
-                                y2={y + NODE_H + GROUND_LEN + i * 7}
+                                x1="12"
+                                y1={y + 28}
+                                x2={NODE_W - 12}
+                                y2={y + 28}
+                                stroke="var(--border)"
+                                stroke-width="1"
+                            />
+
+                            <!-- data -->
+                            <text
+                                x={NODE_W / 2}
+                                y={y + 50}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="13"
+                                fill={node.data
+                                    ? "#e8ecf5"
+                                    : "var(--text-muted)"}
+                                font-weight={node.data ? "500" : "400"}
+                                >{node.data || "null"}</text
+                            >
+                        </g>
+
+                        <!-- Arrow ke node berikutnya -->
+                        {#if index < stackNodeIds.length - 1}
+                            {@const nextY = getNodeY(index + 1)}
+                            <line
+                                x1={NODE_W / 2}
+                                y1={y + NODE_H}
+                                x2={NODE_W / 2}
+                                y2={nextY - 4}
+                                stroke="var(--accent)"
+                                stroke-width="1.8"
+                                marker-end="url(#arrow-ls)"
+                            />
+                        {/if}
+
+                        <!-- Ground symbol untuk node terbawah -->
+                        {#if index === stackNodeIds.length - 1}
+                            <line
+                                x1={NODE_W / 2}
+                                y1={y + NODE_H}
+                                x2={NODE_W / 2}
+                                y2={y + NODE_H + GROUND_LEN}
                                 stroke="var(--text-muted)"
                                 stroke-width="1.5"
                             />
-                        {/each}
+                            {#each GROUND_LINES as gl, i}
+                                <line
+                                    x1={NODE_W / 2 - gl.w / 2}
+                                    y1={y + NODE_H + GROUND_LEN + i * 7}
+                                    x2={NODE_W / 2 + gl.w / 2}
+                                    y2={y + NODE_H + GROUND_LEN + i * 7}
+                                    stroke="var(--text-muted)"
+                                    stroke-width="1.5"
+                                />
+                            {/each}
+                        {/if}
                     {/if}
-                {/if}
+                </g>
             {/each}
+
+            <!-- TOP badge (Ditingkatkan dengan animasi transisi) -->
+            {#if $topId}
+                <g
+                    class="top-pointer"
+                    style="transform: translateY({topBadgeY}px);"
+                >
+                    <rect
+                        x={NODE_W + 10}
+                        y={NODE_H / 2 - 10}
+                        width="40"
+                        height="20"
+                        rx="5"
+                        fill="rgba(78,204,163,0.15)"
+                        stroke="var(--success)"
+                        stroke-width="1.2"
+                    />
+                    <text
+                        x={NODE_W + 30}
+                        y={NODE_H / 2 + 4}
+                        text-anchor="middle"
+                        font-family="var(--font-mono)"
+                        font-size="9"
+                        font-weight="700"
+                        fill="var(--success)"
+                        letter-spacing="0.8">TOP</text
+                    >
+                    <line
+                        x1={NODE_W + 10}
+                        y1={NODE_H / 2}
+                        x2={NODE_W + 1}
+                        y2={NODE_H / 2}
+                        stroke="var(--success)"
+                        stroke-width="1.5"
+                    />
+                    <polygon
+                        points="{NODE_W + 7},{NODE_H / 2 - 4} {NODE_W +
+                            1},{NODE_H / 2} {NODE_W + 7},{NODE_H /
+                            2 +
+                            4}"
+                        fill="var(--success)"
+                    />
+                </g>
+            {/if}
 
             <!-- Unreachable nodes (sudah di-pop, menunggu GC) -->
             {#each unreachableNodes as node, index}
-                {@const y = getNodeY(stackNodeIds().length + index + 1)}
+                {@const y = getNodeY(stackNodeIds.length + index + 1)}
+                {@const isPopping = animatingPopId === node.id}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <g
                     class="node-group unreachable"
+                    class:anim-pop={isPopping}
                     oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
                 >
                     <rect
@@ -628,7 +684,7 @@
         opacity: 0.5;
     }
     .node-group.anim-in {
-        animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: slideDown 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     }
     @keyframes slideDown {
         from {
@@ -638,6 +694,23 @@
         to {
             opacity: 1;
             transform: translateY(0);
+        }
+    }
+    .node-group.anim-pop {
+        animation: popOut 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    @keyframes popOut {
+        0% {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        30% {
+            opacity: 1;
+            transform: translateX(40px);
+        }
+        100% {
+            opacity: 0.5;
+            transform: translateX(0);
         }
     }
     .empty-hint {
@@ -737,5 +810,10 @@
         color: var(--text-muted);
         padding: 4px 10px 6px;
         font-style: italic;
+    }
+
+    /* TOP Pointer Animation */
+    .top-pointer {
+        transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
     }
 </style>
