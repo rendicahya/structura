@@ -67,7 +67,7 @@
                 const targetX = getSlotX(targetIndex);
                 const targetY = SLOT_Y;
                 const startX = CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + ARROW_SIZE / 2;
-                const startY = SLOT_Y + NODE_H / 2 - 12;
+                const startY = SLOT_Y;
 
                 animatingEnqueue = {
                     value: newValue,
