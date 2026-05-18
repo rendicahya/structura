@@ -77,7 +77,7 @@
                     const eased = 1 - Math.pow(1 - t, 3); // cubic ease out
 
                     if (animatingPop) {
-                        animatingPop.y = startY - 60 * eased;
+                        animatingPop.y = startY - 120 * eased;
                         animatingPop.opacity = 1 - eased;
                     }
 
@@ -608,7 +608,7 @@
     @keyframes slideDown {
         from {
             opacity: 0;
-            transform: translateY(-30px);
+            transform: translateY(-100px);
         }
         to {
             opacity: 1;
