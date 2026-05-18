@@ -10,6 +10,7 @@
         canUndo,
         canRedo,
         initHistory,
+        registerHistoryHandlers,
     } from "../../stores/shared/history.js";
     import {
         resetCanvas,
@@ -56,6 +57,17 @@
     let gcCount = $derived(isSLL ? $unreachableCount : $unreachableCountDLL);
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
 
+    let showConfirmNew = $state(false);
+
+    // Register history handlers
+    $effect(() => {
+        if (isSLL) {
+            registerHistoryHandlers(getSnapshot, applySnapshot);
+        } else {
+            registerHistoryHandlers(getSnapshotDLL, applySnapshotDLL);
+        }
+    });
+
     function handleArrange() {
         pushHistory();
         if (isSLL) arrangeNodes();
@@ -83,12 +95,13 @@
 
     function handleNewCanvas() {
         if (currentNodes.length > 0) {
-            const ok = confirm(
-                "Start a new canvas? All unsaved work will be lost.",
-            );
-            if (!ok) return;
+            showConfirmNew = true;
+        } else {
+            confirmNewCanvas();
         }
+    }
 
+    function confirmNewCanvas() {
         if (isSLL) {
             resetCanvas();
             clearLog();
@@ -100,6 +113,7 @@
             initHistory();
             initNodeClassDLL();
         }
+        showConfirmNew = false;
     }
 
     function handleGC() {
@@ -296,6 +310,39 @@
     </div>
 </div>
 
+<!-- Confirm New Modal -->
+{#if showConfirmNew}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
+        <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">New Canvas</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showConfirmNew = false)}
+                >
+                    <Icon name="close" size={14} />
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-text">
+                    Start a new canvas? All unsaved work will be lost.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showConfirmNew = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmNewCanvas}
+                    >Confirm</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
 <style>
     .toolbar {
         display: flex;
@@ -416,5 +463,93 @@
         padding: 1px 6px;
         font-family: var(--font-mono);
         border: 1px solid rgba(78, 204, 163, 0.4);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    .modal {
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 14px;
+        width: 320px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+        animation: slideIn 0.15s ease;
+        overflow: hidden;
+    }
+    .modal-sm {
+        width: 280px;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+        font-family: var(--font-ui);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+    }
+    .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.1s;
+    }
+    .close-btn:hover {
+        background: var(--surface2);
+        color: var(--text);
+    }
+    .modal-body {
+        padding: 16px 20px;
+    }
+    .confirm-text {
+        font-family: var(--font-ui);
+        font-size: 13px;
+        color: var(--text-dim);
+        line-height: 1.5;
+        margin: 0;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--border);
     }
 </style>

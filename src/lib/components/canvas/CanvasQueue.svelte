@@ -33,7 +33,6 @@
     let initialized = false;
     let centeredSlotsRef = null;
     let peekingIndex = $state(null);
-    let lastDequeuedValue = $state(null);
     let animatingEnqueueIndex = $state(null);
     let animatingEnqueue = $state(null);
     let animatingDequeueIndex = $state(null);
@@ -140,7 +139,6 @@
                     if (t < 1) {
                         requestAnimationFrame(step);
                     } else {
-                        lastDequeuedValue = dequeuedValue;
                         animatingDequeue = null;
                     }
                 }
@@ -232,7 +230,7 @@
             slots.length === capacity && slots.every((slot) => slot === null);
 
         if (isFreshQueue) {
-            lastDequeuedValue = null;
+            // No-op
         }
 
         if (
@@ -251,7 +249,6 @@
         if (capacity === 0) {
             initialized = false;
             centeredSlotsRef = null;
-            lastDequeuedValue = null;
         }
     });
 
@@ -325,11 +322,6 @@
 
     function getSlotX(index) {
         return CANVAS_PAD_X + index * (NODE_W + NODE_GAP);
-    }
-
-    function formatDequeuedValue(value) {
-        if (value == null) return "";
-        return value.length > 8 ? `${value.slice(0, 8)}...` : value;
     }
 
     function isFrontSlot(index) {

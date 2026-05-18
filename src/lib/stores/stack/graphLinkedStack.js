@@ -8,18 +8,15 @@ import { logOpLinkedStack, linkedStackLog } from '../shared/linkedStackLog.js';
 /** @type {import('svelte/store').Writable<LinkedStackNode[]>} */
 export const linkedStackNodes = writable([]);
 
-let nodeCounter = 0;
+/** @type {import('svelte/store').Writable<string|null>} */
+export const topId = writable(null);
 
-/** @type {import('svelte/store').Readable<string|null>} */
-export const topId = derived(
-    linkedStackNodes,
-    ($nodes) => $nodes.length > 0 ? $nodes[0].id : null
-);
+let nodeCounter = 0;
 
 /** @type {import('svelte/store').Readable<boolean>} */
 export const linkedStackIsEmpty = derived(
-    linkedStackNodes,
-    ($nodes) => $nodes.length === 0
+    topId,
+    ($topId) => $topId === null
 );
 
 /**
@@ -28,24 +25,13 @@ export const linkedStackIsEmpty = derived(
 export function pushLinkedStack(value) {
     const id = `ls_${++nodeCounter}`;
     const varName = `node${nodeCounter}`;
-    const nodes = get(linkedStackNodes);
-    const currentTop = nodes.length > 0 ? nodes[0] : null;
+    const currentTopId = get(topId);
 
     /** @type {LinkedStackNode} */
-    const newNode = { id, varName, data: value, nextId: currentTop?.id ?? null };
+    const newNode = { id, varName, data: value, nextId: currentTopId };
 
     linkedStackNodes.update(ns => [newNode, ...ns]);
-
-    const javaOps = [
-        `Node ${varName} = new Node(${formatVal(value)});`,
-        `${varName}.next = top;`,
-        `top = ${varName};`,
-    ];
-    const pyOps = [
-        `${varName} = Node(${formatPyVal(value)})`,
-        `${varName}.next = top`,
-        `top = ${varName}`,
-    ];
+    topId.set(id);
 
     logOpLinkedStack(
         [`Node ${varName} = new Node(${formatVal(value)});`, `${varName}.next = top;`, `top = ${varName};`],
@@ -57,28 +43,12 @@ export function pushLinkedStack(value) {
 }
 
 export function popLinkedStack() {
+    const currentTopId = get(topId);
+    if (!currentTopId) return false;
+
     const nodes = get(linkedStackNodes);
-    if (nodes.length === 0) return false;
-
-    const popped = nodes[0];
-    const newTop = nodes.length > 1 ? nodes[1] : null;
-
-    const javaOps = [
-        `Node popped = top;`,
-        `top = top.next;`,
-        `popped.next = null;`,
-    ];
-    const pyOps = [
-        `popped = top`,
-        `top = top.next`,
-        `popped.next = None`,
-    ];
-
-    linkedStackNodes.update(ns => {
-        const updated = [...ns];
-        updated[0] = { ...updated[0], nextId: null };
-        return updated.slice(1).concat({ ...popped, nextId: null });
-    });
+    const popped = nodes.find(n => n.id === currentTopId);
+    if (!popped) return false;
 
     logOpLinkedStack(
         [`Node popped = top;`, `top = top.next;`, `popped.next = null;`],
@@ -86,50 +56,43 @@ export function popLinkedStack() {
         [`Node* popped = top;`, `top = top->next;`, `popped->next = nullptr;`]
     );
 
-    return false;
+    // Update top pointer to next node
+    topId.set(popped.nextId);
+
+    // Detach popped node from the stack (make it unreachable)
+    linkedStackNodes.update(ns => {
+        return ns.map(n => n.id === popped.id ? { ...n, nextId: null } : n);
+    });
+
+    return true;
 }
 
 export function peekLinkedStack() {
+    const currentTopId = get(topId);
+    if (!currentTopId) return false;
+
     const nodes = get(linkedStackNodes);
-
-    if (nodes.length === 0) return false;
-
-    const top = nodes[0];
+    const topNode = nodes.find(n => n.id === currentTopId);
+    if (!topNode) return false;
 
     logOpLinkedStack(
-        [`Node peeked = top; // peek → ${top.data}`],
-        [`peeked = top  # peek → ${top.data}`],
-        [`Node* peeked = top; // peek → ${top.data}`]
+        [`Node peeked = top; // peek → ${topNode.data}`],
+        [`peeked = top  # peek → ${topNode.data}`],
+        [`Node* peeked = top; // peek → ${topNode.data}`]
     );
 
     return true;
 }
 
 export function garbageCollectLinkedStack() {
-    const nodes = get(linkedStackNodes);
+    const allNodes = get(linkedStackNodes);
     const reachable = new Set();
 
-    const stackNodes = nodes.filter((_, i) => {
-        return true;
-    });
-
-    const allNodes = get(linkedStackNodes);
-    const inStack = new Set();
-
-    allNodes.forEach(n => {
-        if (n.nextId) inStack.add(n.nextId);
-    });
-
-    const pointed = new Set(allNodes.map(n => n.nextId).filter(Boolean));
-    const tops = allNodes.filter(n => !pointed.has(n.id));
-
-    if (tops.length > 0) {
-        let current = tops[0];
-        while (current) {
-            reachable.add(current.id);
-            const next = allNodes.find(n => n.id === current.nextId);
-            current = next ?? null;
-        }
+    let currentId = get(topId);
+    while (currentId) {
+        reachable.add(currentId);
+        const node = allNodes.find(n => n.id === currentId);
+        currentId = node?.nextId ?? null;
     }
 
     const toRemove = allNodes.filter(n => !reachable.has(n.id));
@@ -137,9 +100,9 @@ export function garbageCollectLinkedStack() {
     if (toRemove.length === 0) {
         logOpLinkedStack(
             ['// GC: no unreachable nodes found'],
-            ['# GC: no unreachable nodes found']
+            ['# GC: no unreachable nodes found'],
+            ['// GC: no unreachable nodes found']
         );
-
         return;
     }
 
@@ -148,21 +111,20 @@ export function garbageCollectLinkedStack() {
     const cppOps = toRemove.map(n => `// GC: delete ${n.varName};`);
 
     logOpLinkedStack(javaOps, pyOps, cppOps);
-    logOpLinkedStack(
-        ['// GC: no unreachable nodes found'],
-        ['# GC: no unreachable nodes found'],
-        ['// GC: no unreachable nodes found']
-    );
+    
+    linkedStackNodes.set(allNodes.filter(n => reachable.has(n.id)));
 }
 
 export function clearLinkedStack() {
     linkedStackNodes.set([]);
+    topId.set(null);
     nodeCounter = 0;
 }
 
 export function getSnapshotLinkedStack() {
     return {
         nodes: JSON.parse(JSON.stringify(get(linkedStackNodes))),
+        topId: get(topId),
         counter: nodeCounter,
         codeLog: JSON.parse(JSON.stringify(get(linkedStackLog))),
         _type: 'linked-stack',
@@ -175,6 +137,7 @@ export function getSnapshotLinkedStack() {
 export function applySnapshotLinkedStack(snapshot) {
     nodeCounter = snapshot.counter ?? 0;
     linkedStackNodes.set(snapshot.nodes ?? []);
+    topId.set(snapshot.topId ?? null);
     linkedStackLog.set(snapshot.codeLog ?? []);
 }
 
