@@ -107,16 +107,13 @@
                 const startX = getSlotX(prevFrontPtr);
                 const startY = SLOT_Y;
                 const targetX =
-                    CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 91;
-                const targetY = SLOT_Y + NODE_H / 2 - 30;
+                    CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 100;
+                const targetY = SLOT_Y;
 
                 animatingDequeue = {
                     value: dequeuedValue,
                     x: startX,
                     y: startY,
-                    w: NODE_W,
-                    h: NODE_H,
-                    fontSize: 14,
                     opacity: 1,
                 };
 
@@ -130,9 +127,7 @@
                     if (animatingDequeue) {
                         animatingDequeue.x = startX + (targetX - startX) * eased;
                         animatingDequeue.y = startY + (targetY - startY) * eased;
-                        animatingDequeue.w = NODE_W + (54 - NODE_W) * eased;
-                        animatingDequeue.h = NODE_H + (34 - NODE_H) * eased;
-                        animatingDequeue.fontSize = 14 + (12 - 14) * eased;
+                        animatingDequeue.opacity = 1 - eased;
                     }
 
                     if (t < 1) {
@@ -390,39 +385,6 @@
             <g
                 style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
             >
-                {#if lastDequeuedValue !== null}
-                    <g>
-                        <rect
-                            x={CANVAS_PAD_X -
-                                24 -
-                                ARROW_OFFSET -
-                                ARROW_SIZE / 2 -
-                                91}
-                            y={SLOT_Y + NODE_H / 2 - 30}
-                            width="54"
-                            height="34"
-                            rx="5"
-                            fill="color-mix(in srgb, var(--accent) 12%, transparent)"
-                            stroke="color-mix(in srgb, var(--accent) 42%, transparent)"
-                            stroke-width="1"
-                        />
-                        <text
-                            x={CANVAS_PAD_X -
-                                24 -
-                                ARROW_OFFSET -
-                                ARROW_SIZE / 2 -
-                                64}
-                            y={SLOT_Y + NODE_H / 2 - 9}
-                            text-anchor="middle"
-                            font-family="var(--font-mono)"
-                            font-size="12"
-                            fill="var(--accent)"
-                            font-weight="600"
-                            >{formatDequeuedValue(lastDequeuedValue)}</text
-                        >
-                    </g>
-                {/if}
-
                 <!-- Panah DEQUEUE di kiri (elemen keluar dari FRONT) -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <g
@@ -977,21 +939,23 @@
                         <rect
                             x={0}
                             y={0}
-                            width={animatingDequeue.w}
-                            height={animatingDequeue.h}
+                            width={NODE_W}
+                            height={NODE_H}
                             rx="6"
                             fill="var(--node-bg)"
                             stroke="var(--success)"
                             stroke-width="1.8"
+                            style="opacity: {animatingDequeue.opacity}"
                         />
                         <text
-                            x={animatingDequeue.w / 2}
-                            y={animatingDequeue.h / 2 + animatingDequeue.fontSize / 2 - 2}
+                            x={NODE_W / 2}
+                            y={NODE_H / 2 + 5}
                             text-anchor="middle"
                             font-family="var(--font-mono)"
-                            font-size={animatingDequeue.fontSize}
+                            font-size="14"
                             fill="#e8ecf5"
-                            font-weight="600">{animatingDequeue.value}</text
+                            font-weight="600"
+                            style="opacity: {animatingDequeue.opacity}">{animatingDequeue.value}</text
                         >
                     </g>
                 {/if}
