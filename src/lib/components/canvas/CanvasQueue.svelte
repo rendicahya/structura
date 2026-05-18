@@ -48,9 +48,9 @@
     let rearAnimating = $state(false);
     let animatingRearTo = $state(null);
 
-    let prevFrontPtr = $state(0);
-    let prevRearPtr = $state(0);
-    let prevSize = $state(0);
+    let prevFrontPtr = $state(-1);
+    let prevRearPtr = $state(-1);
+    let prevSize = $state(-1);
 
     $effect(() => {
         const currentFront = $frontPtr;
@@ -58,6 +58,13 @@
         const currentSize = $queueSize;
         const cap = $queueCapacity;
         const slots = $queueSlots;
+
+        if (prevSize === -1) {
+            prevFrontPtr = currentFront;
+            prevRearPtr = currentRear;
+            prevSize = currentSize;
+            return;
+        }
 
         // Animasi Enqueue meluncur dari kanan
         if (currentSize > prevSize && cap > 0) {
