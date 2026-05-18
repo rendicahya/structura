@@ -35,6 +35,7 @@
     let peekingIndex = $state(null);
     let lastDequeuedValue = $state(null);
     let animatingEnqueueIndex = $state(null);
+    let animatingEnqueue = $state(null);
     let animatingDequeueIndex = $state(null);
     let animatingDequeue = $state(null);
     let totalW = $derived($queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP);
@@ -57,6 +58,47 @@
         const currentSize = $queueSize;
         const cap = $queueCapacity;
         const slots = $queueSlots;
+
+        // Animasi Enqueue meluncur dari kanan
+        if (currentSize > prevSize && cap > 0) {
+            const targetIndex = (currentRear - 1 + cap) % cap;
+            const newValue = slots[targetIndex]?.value;
+            if (newValue !== undefined) {
+                const targetX = getSlotX(targetIndex);
+                const targetY = SLOT_Y;
+                const startX = CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + ARROW_SIZE / 2;
+                const startY = SLOT_Y + NODE_H / 2 - 12;
+
+                animatingEnqueue = {
+                    value: newValue,
+                    x: startX,
+                    y: startY,
+                    opacity: 1
+                };
+                animatingEnqueueIndex = targetIndex;
+
+                const start = performance.now();
+                const duration = 500;
+
+                function step(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3); // cubic ease out
+
+                    if (animatingEnqueue) {
+                        animatingEnqueue.x = startX + (targetX - startX) * eased;
+                        animatingEnqueue.y = startY + (targetY - startY) * eased;
+                    }
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        animatingEnqueue = null;
+                        animatingEnqueueIndex = null;
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+        }
 
         // Animasi Dequeue bergeser ke kiri
         if (currentSize < prevSize && prevSize > 0) {
@@ -598,11 +640,11 @@
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="14"
-                            fill={isEmpty || isDequeued
+                            fill={isEmpty || isDequeued || isAnimIn
                                 ? "var(--text-muted)"
                                 : "#e8ecf5"}
-                            font-weight={isEmpty || isDequeued ? "400" : "500"}
-                            >{isEmpty ? "null" : slot.value}</text
+                            font-weight={isEmpty || isDequeued || isAnimIn ? "400" : "500"}
+                            >{isEmpty || isAnimIn ? "null" : slot.value}</text
                         >
 
                         <text
@@ -950,6 +992,33 @@
                             font-size={animatingDequeue.fontSize}
                             fill="#e8ecf5"
                             font-weight="600">{animatingDequeue.value}</text
+                        >
+                    </g>
+                {/if}
+
+                <!-- Element yang sedang di-enqueue (animasi terbang) -->
+                {#if animatingEnqueue}
+                    <g
+                        style="transform: translate({animatingEnqueue.x}px, {animatingEnqueue.y}px);"
+                    >
+                        <rect
+                            x={0}
+                            y={0}
+                            width={NODE_W}
+                            height={NODE_H}
+                            rx="6"
+                            fill="var(--node-bg)"
+                            stroke="#c084fc"
+                            stroke-width="1.8"
+                        />
+                        <text
+                            x={NODE_W / 2}
+                            y={NODE_H / 2 + 5}
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="14"
+                            fill="#e8ecf5"
+                            font-weight="600">{animatingEnqueue.value}</text
                         >
                     </g>
                 {/if}
