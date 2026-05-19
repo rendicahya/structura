@@ -330,7 +330,7 @@
                                 font-family="var(--font-mono)"
                                 font-size="13"
                                 fill={node.data
-                                    ? "#e8ecf5"
+                                    ? "var(--text)"
                                     : "var(--text-muted)"}
                                 font-weight={node.data ? "500" : "400"}
                                 >{node.data || "null"}</text

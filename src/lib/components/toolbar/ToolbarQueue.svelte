@@ -115,6 +115,7 @@
             return;
         }
         peekQueue();
+        toast.success("Peeked front element");
     }
 
     function handleSave() {
@@ -231,6 +232,29 @@
 
         <div class="separator"></div>
 
+        <Tooltip text="Peek front element">
+            <button
+                class="btn btn-primary"
+                onclick={handlePeek}
+                disabled={$queueIsEmpty}
+            >
+                <Icon name="walk" />
+                Peek
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Enqueue value">
+            <button class="btn btn-primary" onclick={handleEnqueue} disabled={$queueIsFull}>
+                <Icon name="push" />
+                Enqueue
+            </button>
+        </Tooltip>
+        <Tooltip text="Dequeue value">
+            <button class="btn btn-primary" onclick={handleDequeue} disabled={$queueIsEmpty}>
+                <Icon name="pop" />
+                Dequeue
+            </button>
+        </Tooltip>
         <Tooltip text="Save to file">
             <button class="btn btn-secondary" onclick={handleSave}>
                 <Icon name="save" />
@@ -438,9 +462,11 @@
     .btn-primary {
         background: var(--accent);
         color: #fff;
+        border-color: var(--accent);
     }
     .btn-primary:hover:not(:disabled) {
         background: #6f9fff;
+        border-color: #6f9fff;
         box-shadow: 0 0 16px var(--accent-glow);
     }
     .btn-secondary {

@@ -332,7 +332,7 @@
                                 font-family="var(--font-mono)"
                                 font-size="14"
                                 fill={item.value
-                                    ? "#e8ecf5"
+                                    ? "var(--text)"
                                     : "var(--text-muted)"}
                                 font-weight="500">{item.value || "0"}</text
                             >
@@ -440,7 +440,7 @@
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="14"
-                            fill="#e8ecf5"
+                            fill="var(--text)"
                             font-weight="500">{animatingPop.value}</text
                         >
                     </g>

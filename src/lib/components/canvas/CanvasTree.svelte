@@ -365,7 +365,7 @@
                         font-size="13"
                         fill={reachable
                             ? node.data
-                                ? "#e8ecf5"
+                                ? "var(--text)"
                                 : "var(--text-muted)"
                             : "var(--text-muted)"}
                         font-weight={node.data ? "500" : "400"}

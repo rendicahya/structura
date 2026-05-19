@@ -386,6 +386,7 @@
             >
                 <!-- Panah DEQUEUE di kiri (elemen keluar dari FRONT) -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <!-- Dequeue & Peek di kiri (stacked) -->
                 <g
                     class="queue-action-button accent"
                     class:disabled={$queueIsEmpty}
@@ -406,19 +407,15 @@
                     onmousedown={(e) => e.stopPropagation()}
                 >
                     <rect
-                        x={CANVAS_PAD_X -
-                            24 -
-                            ARROW_OFFSET -
-                            ARROW_SIZE / 2 -
-                            29}
-                        y={SLOT_Y + NODE_H / 2 - 30}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 29}
+                        y={SLOT_Y + NODE_H / 2 - 40}
                         width="58"
                         height="34"
                         rx="5"
                     />
                     <text
                         x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
-                        y={SLOT_Y + NODE_H / 2 - 14}
+                        y={SLOT_Y + NODE_H / 2 - 24}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
@@ -428,27 +425,25 @@
                     <!-- Garis dari bracket kiri ke ujung kiri -->
                     <line
                         x1={CANVAS_PAD_X - 24 - ARROW_OFFSET}
-                        y1={SLOT_Y + NODE_H / 2 - 6}
+                        y1={SLOT_Y + NODE_H / 2 - 15}
                         x2={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE}
-                        y2={SLOT_Y + NODE_H / 2 - 6}
+                        y2={SLOT_Y + NODE_H / 2 - 15}
                         stroke="var(--accent)"
                         stroke-width="1.8"
                     />
                     <!-- Arrowhead mengarah ke kiri -->
                     <polygon
                         points="
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 10}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2 - 6}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 2}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 19}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2 - 15}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 11}
     "
                         fill="var(--accent)"
                     />
                 </g>
 
-                <!-- Tombol PEEK di bawah Dequeue -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <g
-                    class="queue-action-button secondary"
+                    class="queue-action-button accent"
                     class:disabled={$queueIsEmpty}
                     role="button"
                     tabindex={$queueIsEmpty ? -1 : 0}
@@ -467,49 +462,19 @@
                     onmousedown={(e) => e.stopPropagation()}
                 >
                     <rect
-                        x={CANVAS_PAD_X -
-                            24 -
-                            ARROW_OFFSET -
-                            ARROW_SIZE / 2 -
-                            24}
-                        y={SLOT_Y + NODE_H / 2 + 12}
-                        width="48"
-                        height="24"
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 29}
+                        y={SLOT_Y + NODE_H / 2 + 6}
+                        width="58"
+                        height="34"
                         rx="5"
                     />
-                    <circle
-                        cx={CANVAS_PAD_X -
-                            24 -
-                            ARROW_OFFSET -
-                            ARROW_SIZE / 2 -
-                            14}
-                        cy={SLOT_Y + NODE_H / 2 + 24}
-                        r="4"
-                        stroke="var(--text-muted)"
-                        stroke-width="1.3"
-                        fill="none"
-                    />
-                    <circle
-                        cx={CANVAS_PAD_X -
-                            24 -
-                            ARROW_OFFSET -
-                            ARROW_SIZE / 2 -
-                            14}
-                        cy={SLOT_Y + NODE_H / 2 + 24}
-                        r="1.4"
-                        fill="var(--text-muted)"
-                    />
                     <text
-                        x={CANVAS_PAD_X -
-                            24 -
-                            ARROW_OFFSET -
-                            ARROW_SIZE / 2 +
-                            9}
-                        y={SLOT_Y + NODE_H / 2 + 28}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
+                        y={SLOT_Y + NODE_H / 2 + 27}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
-                        fill="var(--text-muted)"
+                        fill="var(--accent)"
                         font-weight="600">Peek</text
                     >
                 </g>
@@ -603,7 +568,7 @@
                             font-size="14"
                             fill={isEmpty || isDequeued || isAnimIn
                                 ? "var(--text-muted)"
-                                : "#e8ecf5"}
+                                : "var(--text)"}
                             font-weight={isEmpty || isDequeued || isAnimIn ? "400" : "500"}
                             >{isEmpty || isAnimIn ? "null" : slot.value}</text
                         >
@@ -876,7 +841,7 @@
                             ARROW_OFFSET +
                             ARROW_SIZE / 2 -
                             29}
-                        y={SLOT_Y + NODE_H / 2 - 24}
+                        y={SLOT_Y + NODE_H / 2 - 17}
                         width="58"
                         height="34"
                         rx="5"
@@ -887,7 +852,7 @@
                             24 +
                             ARROW_OFFSET +
                             ARROW_SIZE / 2}
-                        y={SLOT_Y + NODE_H / 2 - 8}
+                        y={SLOT_Y + NODE_H / 2 - 1}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
@@ -900,17 +865,17 @@
                             24 +
                             ARROW_OFFSET +
                             ARROW_SIZE}
-                        y1={SLOT_Y + NODE_H / 2}
+                        y1={SLOT_Y + NODE_H / 2 + 8}
                         x2={CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET}
-                        y2={SLOT_Y + NODE_H / 2}
+                        y2={SLOT_Y + NODE_H / 2 + 8}
                         stroke="var(--accent)"
                         stroke-width="1.8"
                     />
                     <polygon
                         points="
-      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 - 4}
-      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET},{SLOT_Y + NODE_H / 2}
       {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 + 4}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET},{SLOT_Y + NODE_H / 2 + 8}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 + 12}
     "
                         fill="var(--accent)"
                     />
@@ -952,7 +917,7 @@
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="14"
-                            fill="#e8ecf5"
+                            fill="var(--text)"
                             font-weight="600"
                             style="opacity: {animatingDequeue.opacity}">{animatingDequeue.value}</text
                         >
@@ -980,7 +945,7 @@
                             text-anchor="middle"
                             font-family="var(--font-mono)"
                             font-size="14"
-                            fill="#e8ecf5"
+                            fill="var(--text)"
                             font-weight="600">{animatingEnqueue.value}</text
                         >
                     </g>
