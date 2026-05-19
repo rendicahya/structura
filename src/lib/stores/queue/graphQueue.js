@@ -44,14 +44,14 @@ export function initQueue(capacity, varName) {
     queueVarName.set(varName);
     queueSlots.set(Array(capacity).fill(null));
     frontPtr.set(0);
-    rearPtr.set(0);
+    rearPtr.set(-1);
     queueSize.set(0);
     itemCounter = 0;
 
     logOpQueue(
-        `int length = ${capacity};\nString[] ${varName} = new String[length];\nint front = 0, rear = 0;`,
-        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = 0`,
-        `int length = ${capacity};\nstd::string ${varName}[length];\nint front = 0, rear = 0;`
+        `int length = ${capacity};\nString[] ${varName} = new String[length];\nint front = 0;\nint rear = -1;`,
+        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = -1`,
+        `int length = ${capacity};\nstd::string ${varName}[length];\nint front = 0;\nint rear = -1;`
     );
 }
 
@@ -63,7 +63,8 @@ export function enqueue(value) {
     const size = get(queueSize);
     if (size >= capacity) return false;
 
-    const rear = get(rearPtr);
+    const oldRear = get(rearPtr);
+    const rear = (oldRear + 1) % capacity;
     const varName = get(queueVarName);
     const id = `q_${++itemCounter}`;
 
@@ -73,14 +74,13 @@ export function enqueue(value) {
         return updated;
     });
 
-    const newRear = (rear + 1) % capacity;
-    rearPtr.set(newRear);
+    rearPtr.set(rear);
     queueSize.update(s => s + 1);
 
     logOpQueue(
-        `${varName}[rear] = "${value}";\nrear = (rear + 1) % length;`,
-        `${varName}[rear] = "${value}"\nrear = (rear + 1) % length`,
-        `${varName}[rear] = "${value}";\nrear = (rear + 1) % length;`
+        `${varName}[++rear % length] = "${value}";`,
+        `rear = (rear + 1) % length\n${varName}[rear] = "${value}"`,
+        `${varName}[++rear % length] = "${value}";`
     );
 
     return true;
@@ -100,9 +100,9 @@ export function dequeue() {
     queueSize.update(s => s - 1);
 
     logOpQueue(
-        `String dequeued = ${varName}[front]; // "${slot?.value}"\nfront = (front + 1) % length;`,
+        `String dequeued = ${varName}[front++ % length]; // "${slot?.value}"`,
         `dequeued = ${varName}[front]  # "${slot?.value}"\nfront = (front + 1) % length`,
-        `std::string dequeued = ${varName}[front]; // "${slot?.value}"\nfront = (front + 1) % length;`
+        `std::string dequeued = ${varName}[front++ % length]; // "${slot?.value}"`
     );
 
     return true;
@@ -129,7 +129,7 @@ export function clearQueue() {
     queueSlots.set([]);
     queueCapacity.set(0);
     frontPtr.set(0);
-    rearPtr.set(0);
+    rearPtr.set(-1);
     queueSize.set(0);
     queueVarName.set('queue');
     itemCounter = 0;

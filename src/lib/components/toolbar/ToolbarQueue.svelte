@@ -232,29 +232,6 @@
 
         <div class="separator"></div>
 
-        <Tooltip text="Peek front element">
-            <button
-                class="btn btn-primary"
-                onclick={handlePeek}
-                disabled={$queueIsEmpty}
-            >
-                <Icon name="walk" />
-                Peek
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Enqueue value">
-            <button class="btn btn-primary" onclick={handleEnqueue} disabled={$queueIsFull}>
-                <Icon name="push" />
-                Enqueue
-            </button>
-        </Tooltip>
-        <Tooltip text="Dequeue value">
-            <button class="btn btn-primary" onclick={handleDequeue} disabled={$queueIsEmpty}>
-                <Icon name="pop" />
-                Dequeue
-            </button>
-        </Tooltip>
         <Tooltip text="Save to file">
             <button class="btn btn-secondary" onclick={handleSave}>
                 <Icon name="save" />

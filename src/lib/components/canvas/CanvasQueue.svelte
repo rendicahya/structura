@@ -67,7 +67,7 @@
 
         // Animasi Enqueue meluncur dari kanan
         if (currentSize > prevSize && cap > 0) {
-            const targetIndex = (currentRear - 1 + cap) % cap;
+            const targetIndex = currentRear;
             const newValue = slots[targetIndex]?.value;
             if (newValue !== undefined) {
                 const targetX = getSlotX(targetIndex);
@@ -148,8 +148,8 @@
 
         // Animasi REAR bergerak saat Enqueue
         if (currentSize > prevSize && currentSize > 1 && cap > 0) {
-            const fromIndex = (prevRearPtr - 1 + cap) % cap;
-            const toIndex = (currentRear - 1 + cap) % cap;
+            const fromIndex = prevRearPtr;
+            const toIndex = currentRear;
 
             const fromX = getSlotX(fromIndex) + NODE_W / 2;
             const toX = getSlotX(toIndex) + NODE_W / 2;
@@ -339,10 +339,7 @@
     }
 
     function isRearSlot(index) {
-        return (
-            index === ($rearPtr === 0 ? $queueCapacity - 1 : $rearPtr - 1) &&
-            $queueSize > 0
-        );
+        return index === $rearPtr && $queueSize > 0;
     }
 
     const SLOT_Y = CANVAS_PAD_Y;
@@ -407,15 +404,15 @@
                     onmousedown={(e) => e.stopPropagation()}
                 >
                     <rect
-                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 29}
-                        y={SLOT_Y + NODE_H / 2 - 40}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 45}
+                        y={SLOT_Y + NODE_H / 2 - 38}
                         width="58"
                         height="34"
                         rx="5"
                     />
                     <text
-                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
-                        y={SLOT_Y + NODE_H / 2 - 24}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 16}
+                        y={SLOT_Y + NODE_H / 2 - 22}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
@@ -424,19 +421,19 @@
                     >
                     <!-- Garis dari bracket kiri ke ujung kiri -->
                     <line
-                        x1={CANVAS_PAD_X - 24 - ARROW_OFFSET}
-                        y1={SLOT_Y + NODE_H / 2 - 15}
-                        x2={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE}
-                        y2={SLOT_Y + NODE_H / 2 - 15}
+                        x1={CANVAS_PAD_X - 24 - ARROW_OFFSET - 16}
+                        y1={SLOT_Y + NODE_H / 2 - 13}
+                        x2={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 16}
+                        y2={SLOT_Y + NODE_H / 2 - 13}
                         stroke="var(--accent)"
                         stroke-width="1.8"
                     />
                     <!-- Arrowhead mengarah ke kiri -->
                     <polygon
                         points="
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 19}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6},{SLOT_Y + NODE_H / 2 - 15}
-      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE},{SLOT_Y + NODE_H / 2 - 11}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 16},{SLOT_Y + NODE_H / 2 - 17}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 6 - 16},{SLOT_Y + NODE_H / 2 - 13}
+      {CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE - 16},{SLOT_Y + NODE_H / 2 - 9}
     "
                         fill="var(--accent)"
                     />
@@ -462,15 +459,15 @@
                     onmousedown={(e) => e.stopPropagation()}
                 >
                     <rect
-                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 29}
-                        y={SLOT_Y + NODE_H / 2 + 6}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 45}
+                        y={SLOT_Y + NODE_H / 2 + 2}
                         width="58"
                         height="34"
                         rx="5"
                     />
                     <text
-                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2}
-                        y={SLOT_Y + NODE_H / 2 + 27}
+                        x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 16}
+                        y={SLOT_Y + NODE_H / 2 + 22}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
                         font-size="9"
@@ -535,18 +532,6 @@
                                 ? "4 3"
                                 : "none"}
                         />
-
-                        {#if !isEmpty && !isDequeued && (isFront || isRear) && !isPeeking}
-                            <rect
-                                x={x + 1}
-                                y={SLOT_Y + 1}
-                                width={NODE_W - 2}
-                                height="3"
-                                rx="2"
-                                fill={isFront ? "var(--success)" : "#c084fc"}
-                                opacity="0.8"
-                            />
-                        {/if}
 
                         {#if isPeeking}
                             <rect
@@ -840,7 +825,8 @@
                             24 +
                             ARROW_OFFSET +
                             ARROW_SIZE / 2 -
-                            29}
+                            29 +
+                            15}
                         y={SLOT_Y + NODE_H / 2 - 17}
                         width="58"
                         height="34"
@@ -851,7 +837,8 @@
                             totalW +
                             24 +
                             ARROW_OFFSET +
-                            ARROW_SIZE / 2}
+                            ARROW_SIZE / 2 +
+                            15}
                         y={SLOT_Y + NODE_H / 2 - 1}
                         text-anchor="middle"
                         font-family="var(--font-mono)"
@@ -864,18 +851,19 @@
                             totalW +
                             24 +
                             ARROW_OFFSET +
-                            ARROW_SIZE}
+                            ARROW_SIZE +
+                            15}
                         y1={SLOT_Y + NODE_H / 2 + 8}
-                        x2={CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET}
+                        x2={CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 15}
                         y2={SLOT_Y + NODE_H / 2 + 8}
                         stroke="var(--accent)"
                         stroke-width="1.8"
                     />
                     <polygon
                         points="
-      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 + 4}
-      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET},{SLOT_Y + NODE_H / 2 + 8}
-      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6},{SLOT_Y + NODE_H / 2 + 12}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6 + 15},{SLOT_Y + NODE_H / 2 + 4}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 15},{SLOT_Y + NODE_H / 2 + 8}
+      {CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + 6 + 15},{SLOT_Y + NODE_H / 2 + 12}
     "
                         fill="var(--accent)"
                     />
