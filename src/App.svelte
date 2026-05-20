@@ -28,6 +28,7 @@
     import ToolbarLinkedQueue from "./lib/components/toolbar/ToolbarLinkedQueue.svelte";
     import CanvasLinkedQueue from "./lib/components/canvas/CanvasLinkedQueue.svelte";
     import { linkedQueueLog } from "./lib/stores/shared/linkedQueueLog.js";
+    import { initNodeClassLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
 
     import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
     import CanvasTree from "./lib/components/canvas/CanvasTree.svelte";
@@ -93,6 +94,8 @@
             if (get(codeLog).length === 0) initNodeClass();
         } else if (page === "#/doubly-linked-list") {
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
+        } else if (page === "#/linked-queue") {
+            if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree") {
             if (get(treeLog).length === 0) initTree();
         }

@@ -1,5 +1,5 @@
 import { writable, get, derived } from 'svelte/store';
-import { logOpLinkedQueue, linkedQueueLog } from '../shared/linkedQueueLog.js';
+import { logOpLinkedQueue, linkedQueueLog, clearLogLinkedQueue } from '../shared/linkedQueueLog.js';
 
 /**
  * @typedef {{ id: string, varName: string, data: string, nextId: string|null }} LinkedQueueNode
@@ -52,6 +52,14 @@ export const unreachableQueueNodes = derived(
     return $nodes.filter(n => !chainIds.has(n.id));
   }
 );
+
+export function initNodeClassLinkedQueue() {
+  logOpLinkedQueue(
+    `class Node {\n    String data;\n    Node next;\n}`,
+    `class Node:\n    def __init__(self):\n        self.data = None\n        self.next = None`,
+    `struct Node {\n    std::string data;\n    Node* next;\n    Node() : next(nullptr) {}\n};`
+  );
+}
 
 /**
  * @param {string} value
@@ -189,6 +197,8 @@ export function clearLinkedQueue() {
   headId.set(null);
   tailId.set(null);
   nodeCounter = 0;
+  clearLogLinkedQueue();
+  initNodeClassLinkedQueue();
 }
 
 export function getSnapshotLinkedQueue() {

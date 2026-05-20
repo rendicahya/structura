@@ -73,7 +73,6 @@
 
   function confirmNewActual() {
     clearLinkedQueue();
-    clearLogLinkedQueue();
     initHistory();
     showConfirmNew = false;
     toast.success('Queue cleared');

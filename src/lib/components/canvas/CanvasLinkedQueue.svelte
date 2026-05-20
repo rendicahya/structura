@@ -116,16 +116,9 @@
    * @param {string} id
    */
   function getNodeX(id) {
-    const chain = $queueChain;
-    const chainIdx = chain.findIndex(n => n.id === id);
-    if (chainIdx !== -1) return chainIdx * (NODE_W + NODE_GAP);
-
-    const unreachable = $unreachableQueueNodes;
-    const unIdx = unreachable.findIndex(n => n.id === id);
-    if (unIdx !== -1) {
-      // Tampilkan node unreachable di sebelah kiri chain utama
-      return (unIdx - unreachable.length) * (NODE_W + NODE_GAP);
-    }
+    const allNodes = $linkedQueueNodes;
+    const idx = allNodes.findIndex(n => n.id === id);
+    if (idx !== -1) return idx * (NODE_W + NODE_GAP);
     return 0;
   }
 
@@ -134,6 +127,22 @@
 
   const headIdx = $derived($linkedQueueNodes.findIndex(n => n.id === $headNode?.id));
   const tailIdx = $derived($linkedQueueNodes.findIndex(n => n.id === $tailNode?.id));
+
+  let prevNodeCount = 0;
+  let isGCing = $state(false);
+  $effect.pre(() => {
+    const currentCount = $linkedQueueNodes.length;
+    if (currentCount < prevNodeCount && currentCount > 0) {
+      isGCing = true;
+      const diff = prevNodeCount - currentCount;
+      const shift = diff * (NODE_W + NODE_GAP) * zoom;
+      panX += shift;
+      if (panning) panStartX -= shift;
+    } else {
+      isGCing = false;
+    }
+    prevNodeCount = currentCount;
+  });
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
@@ -180,7 +189,7 @@
         {@const firstX = getNodeX($headNode?.id)}
         {@const lastX = getNodeX($tailNode?.id)}
         {@const midX = firstX + (lastX - firstX + NODE_W) / 2}
-        <g transform="translate({midX}, {NODE_H + 45})">
+        <g class="indicator-group" style="transform: translate({midX}px, {NODE_H + 45}px); transition: {isGCing ? 'none' : 'transform 0.4s ease-in-out'};">
           <text text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--accent)" font-weight="700" letter-spacing="1">QUEUE DIRECTION</text>
           <line x1="50" y1="12" x2="-50" y2="12" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrow-lq)" />
         </g>
@@ -195,92 +204,88 @@
         {@const isPeeking = peekingId === node.id}
         {@const isAnimIn = animatingInId === node.id}
 
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <g
-          class="node-group"
-          class:anim-in={isAnimIn}
-          class:unreachable={isUnreachable}
-          oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
-        >
-          <!-- Shadow -->
-          <rect x={x+2} y="4" width={NODE_W} height={NODE_H} rx="10" fill="rgba(0,0,0,0.35)"/>
+        <g style="transform: translateX({x}px); transition: {isGCing ? 'none' : 'transform 0.4s ease-in-out'};">
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <g
+            class="node-group"
+            class:anim-in={isAnimIn}
+            class:unreachable={isUnreachable}
+            oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
+          >
+            <!-- Shadow -->
+            <rect x="2" y="4" width={NODE_W} height={NODE_H} rx="10" fill="rgba(0,0,0,0.35)"/>
 
-          <!-- Main box -->
-          <rect
-            x={x} y="0"
-            width={NODE_W} height={NODE_H}
-            rx="10"
-            fill="var(--node-bg)"
-            stroke={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
-            stroke-width={isHead || isTail || isPeeking ? 1.8 : 1}
-            opacity={isUnreachable ? 0.5 : 1}
-            stroke-dasharray={isUnreachable ? "4 3" : "none"}
-          />
-
-          <!-- Accent bar -->
-          {#if isPeeking}
+            <!-- Main box -->
             <rect
-              x={x+1} y="1" width={NODE_W-2} height="3" rx="2"
-              fill="var(--warning)"
-              opacity="0.8"
+              x="0" y="0"
+              width={NODE_W} height={NODE_H}
+              rx="10"
+              fill="var(--node-bg)"
+              stroke={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
+              stroke-width={isHead || isTail || isPeeking ? 1.8 : 1}
+              opacity={isUnreachable ? 0.5 : 1}
+              stroke-dasharray={isUnreachable ? "4 3" : "none"}
+            />
+
+            <!-- Accent bar -->
+            {#if isPeeking}
+              <rect
+                x="1" y="1" width={NODE_W-2} height="3" rx="2"
+                fill="var(--warning)"
+                opacity="0.8"
+              />
+            {/if}
+
+            <!-- varName -->
+            <text x={NODE_W/2} y="22" text-anchor="middle"
+              font-family="var(--font-mono)" font-size="10"
+              fill={isUnreachable ? 'var(--text-muted)' : 'var(--accent)'} font-weight="500"
+            >{node.varName}</text>
+
+            <!-- divider -->
+            <line x1="12" y1="28" x2={NODE_W-12} y2="28" stroke="var(--border)" stroke-width="1"/>
+
+            <!-- data -->
+            <text x={NODE_W/2} y="50" text-anchor="middle"
+              font-family="var(--font-mono)" font-size="13"
+              fill={isUnreachable ? 'var(--text-muted)' : node.data ? 'var(--text)' : 'var(--text-muted)'}
+              font-weight={node.data && !isUnreachable ? '500' : '400'}
+            >{node.data || 'null'}</text>
+          </g>
+
+          <!-- Arrow ke node berikutnya -->
+          {#if node.nextId && !isUnreachable}
+            {@const nextX = getNodeX(node.nextId)}
+            {@const dx = nextX - x}
+            <line
+              x1={NODE_W} y1={NODE_H/2}
+              x2={dx - 4} y2={NODE_H/2}
+              stroke="var(--accent)" stroke-width="1.8"
+              marker-end="url(#arrow-lq)"
             />
           {/if}
 
-          <!-- varName -->
-          <text x={x + NODE_W/2} y="22" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="10"
-            fill={isUnreachable ? 'var(--text-muted)' : 'var(--accent)'} font-weight="500"
-          >{node.varName}</text>
-
-          <!-- divider -->
-          <line x1={x+12} y1="28" x2={x+NODE_W-12} y2="28" stroke="var(--border)" stroke-width="1"/>
-
-          <!-- data -->
-          <text x={x + NODE_W/2} y="50" text-anchor="middle"
-            font-family="var(--font-mono)" font-size="13"
-            fill={isUnreachable ? 'var(--text-muted)' : node.data ? 'var(--text)' : 'var(--text-muted)'}
-            font-weight={node.data && !isUnreachable ? '500' : '400'}
-          >{node.data || 'null'}</text>
-
-          {#if isUnreachable}
-            <text x={x + NODE_W/2} y={NODE_H + 15} text-anchor="middle"
-              font-family="var(--font-mono)" font-size="9"
-              fill="var(--text-muted)" font-style="italic"
-            >unreachable</text>
+          <!-- Ground symbol untuk node terakhir -->
+          {#if isTail}
+            {@const gx = NODE_W + 6}
+            {@const gy = NODE_H / 2}
+            <line x1={NODE_W - 8} y1={gy} x2={gx + 10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
+            <line x1={gx + 10} y1={gy} x2={gx + 10} y2={gy + GROUND_LEN} stroke="var(--text-muted)" stroke-width="1.5"/>
+            {#each GROUND_LINES as gl, i}
+              <line
+                x1={gx + 10 - gl.w/2} y1={gy + GROUND_LEN + i*7}
+                x2={gx + 10 + gl.w/2} y2={gy + GROUND_LEN + i*7}
+                stroke="var(--text-muted)" stroke-width="1.5"
+              />
+            {/each}
           {/if}
         </g>
-
-        <!-- Arrow ke node berikutnya -->
-        {#if node.nextId}
-          {@const nextX = getNodeX(node.nextId)}
-          <line
-            x1={x + NODE_W} y1={NODE_H/2}
-            x2={nextX - 4} y2={NODE_H/2}
-            stroke="var(--accent)" stroke-width="1.8"
-            marker-end="url(#arrow-lq)"
-          />
-        {/if}
-
-        <!-- Ground symbol untuk node terakhir -->
-        {#if isTail}
-          {@const gx = x + NODE_W + 6}
-          {@const gy = NODE_H / 2}
-          <line x1={x + NODE_W - 8} y1={gy} x2={gx + 10} y2={gy} stroke="var(--text-muted)" stroke-width="1.5"/>
-          <line x1={gx + 10} y1={gy} x2={gx + 10} y2={gy + GROUND_LEN} stroke="var(--text-muted)" stroke-width="1.5"/>
-          {#each GROUND_LINES as gl, i}
-            <line
-              x1={gx + 10 - gl.w/2} y1={gy + GROUND_LEN + i*7}
-              x2={gx + 10 + gl.w/2} y2={gy + GROUND_LEN + i*7}
-              stroke="var(--text-muted)" stroke-width="1.5"
-            />
-          {/each}
-        {/if}
       {/each}
 
       <!-- Pointers layer (animated) -->
       {#if $headNode}
         {@const hx = getNodeX($headNode.id)}
-        <g class="pointer-group" style="transform: translateX({hx}px)">
+        <g class="pointer-group" style="transform: translateX({hx}px); transition: {isGCing ? 'none' : 'transform 0.4s ease-in-out, opacity 0.4s ease-in-out'};">
           <rect x={NODE_W/2 - 22} y="-28" width="44" height="20" rx="5"
             fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2"/>
           <text x={NODE_W/2} y="-13" text-anchor="middle"
@@ -295,7 +300,7 @@
       {#if $tailNode}
         {@const tx = getNodeX($tailNode.id)}
         {@const isStacked = $headNode?.id === $tailNode?.id}
-        <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px)">
+        <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px); transition: {isGCing ? 'none' : 'transform 0.4s ease-in-out, opacity 0.4s ease-in-out'};">
           <rect x={NODE_W/2 - 18} y="-28" width="36" height="20" rx="5"
             fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2"/>
           <text x={NODE_W/2} y="-13" text-anchor="middle"
@@ -344,7 +349,6 @@
             Dequeue {!isHeadNode ? '(head only)' : ''}
           </button>
         {:else}
-          <div class="ctx-label">Unreachable — waiting for GC</div>
           <button class="ctx-item" onclick={handleGCFromMenu}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
               <path d="M6.5 2C4.3 2 2.5 3.8 2.5 6s1.8 4 4 4 4-1.8 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -365,12 +369,13 @@
   .canvas-svg.panning { cursor: grabbing; }
   .node-group { cursor: default; }
   .node-group.unreachable { opacity: 0.5; }
-  .node-group.anim-in { animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .node-group.anim-in { animation: slideIn 0.3s ease-out; }
   @keyframes slideIn {
     from { opacity: 0; transform: translateX(30px); }
     to   { opacity: 1; transform: translateX(0); }
   }
   .pointer-group { transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out; pointer-events: none; }
+  .indicator-group { transition: transform 0.4s ease-in-out; pointer-events: none; }
   .empty-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); }
   .empty-hints-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
