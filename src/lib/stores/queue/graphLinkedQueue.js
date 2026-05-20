@@ -138,10 +138,8 @@ export function dequeueLinked() {
     tailId.set(null);
   }
 
-  // Sever head dari chain tapi tetap di canvas (biar jadi unreachable)
-  linkedQueueNodes.update(ns => ns.map(n =>
-    n.id === hId ? { ...n, nextId: null } : n
-  ));
+  // JANGAN putus nextId di sini agar getNodeX tetap konsisten saat dirender
+  // Node akan tetap unreachable karena sudah keluar dari chain yang dimulai dari headId
 
   return true;
 }

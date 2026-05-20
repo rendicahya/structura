@@ -139,17 +139,17 @@
 
     <div class="separator"></div>
 
-    <Tooltip text="Enqueue node">
-      <button class="btn btn-primary" onclick={handleEnqueue}>
-        <Icon name="enqueue" />
-        Enqueue
-      </button>
-    </Tooltip>
-
     <Tooltip text={$linkedQueueIsEmpty ? 'Queue is empty' : 'Dequeue head node'}>
       <button class="btn btn-primary" onclick={handleDequeue} disabled={$linkedQueueIsEmpty}>
         <Icon name="dequeue" />
         Dequeue
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Enqueue node">
+      <button class="btn btn-primary" onclick={handleEnqueue}>
+        <Icon name="enqueue" />
+        Enqueue
       </button>
     </Tooltip>
 

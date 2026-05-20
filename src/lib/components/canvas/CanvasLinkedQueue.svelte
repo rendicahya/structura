@@ -113,10 +113,20 @@
   }
 
   /**
-   * @param {number} index
+   * @param {string} id
    */
-  function getNodeX(index) {
-    return index * (NODE_W + NODE_GAP);
+  function getNodeX(id) {
+    const chain = $queueChain;
+    const chainIdx = chain.findIndex(n => n.id === id);
+    if (chainIdx !== -1) return chainIdx * (NODE_W + NODE_GAP);
+
+    const unreachable = $unreachableQueueNodes;
+    const unIdx = unreachable.findIndex(n => n.id === id);
+    if (unIdx !== -1) {
+      // Tampilkan node unreachable di sebelah kiri chain utama
+      return (unIdx - unreachable.length) * (NODE_W + NODE_GAP);
+    }
+    return 0;
   }
 
   const GROUND_LEN = 22;
@@ -167,20 +177,18 @@
 
       <!-- Queue direction indicator -->
       {#if $queueChain.length > 0}
-        {@const firstNodeIndex = $linkedQueueNodes.findIndex(n => n.id === $headNode?.id)}
-        {@const lastNodeIndex = $linkedQueueNodes.findIndex(n => n.id === $tailNode?.id)}
-        {@const firstX = getNodeX(firstNodeIndex)}
-        {@const lastX = getNodeX(lastNodeIndex)}
+        {@const firstX = getNodeX($headNode?.id)}
+        {@const lastX = getNodeX($tailNode?.id)}
         {@const midX = firstX + (lastX - firstX + NODE_W) / 2}
         <g transform="translate({midX}, {NODE_H + 45})">
-          <text text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-muted)" font-weight="700" letter-spacing="1">QUEUE DIRECTION</text>
-          <line x1="50" y1="12" x2="-50" y2="12" stroke="var(--text-muted)" stroke-width="1.2" marker-end="url(#arrow-muted)" opacity="0.6" />
+          <text text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--accent)" font-weight="700" letter-spacing="1">QUEUE DIRECTION</text>
+          <line x1="50" y1="12" x2="-50" y2="12" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrow-lq)" />
         </g>
       {/if}
 
       <!-- All Nodes (Queue + Dequeued) -->
-      {#each $linkedQueueNodes as node, index (node.id)}
-        {@const x = getNodeX(index)}
+      {#each $linkedQueueNodes as node (node.id)}
+        {@const x = getNodeX(node.id)}
         {@const isHead = node.id === $headNode?.id}
         {@const isTail = node.id === $tailNode?.id}
         {@const isUnreachable = $unreachableQueueNodes.some(n => n.id === node.id)}
@@ -210,10 +218,10 @@
           />
 
           <!-- Accent bar -->
-          {#if !isUnreachable}
+          {#if isPeeking}
             <rect
               x={x+1} y="1" width={NODE_W-2} height="3" rx="2"
-              fill={isPeeking ? 'var(--warning)' : isHead ? 'var(--success)' : isTail ? '#c084fc' : 'var(--node-border)'}
+              fill="var(--warning)"
               opacity="0.8"
             />
           {/if}
@@ -244,16 +252,13 @@
 
         <!-- Arrow ke node berikutnya -->
         {#if node.nextId}
-          {@const nextNodeIndex = $linkedQueueNodes.findIndex(n => n.id === node.nextId)}
-          {#if nextNodeIndex !== -1}
-            {@const nextX = getNodeX(nextNodeIndex)}
-            <line
-              x1={x + NODE_W} y1={NODE_H/2}
-              x2={nextX - 4} y2={NODE_H/2}
-              stroke="var(--accent)" stroke-width="1.8"
-              marker-end="url(#arrow-lq)"
-            />
-          {/if}
+          {@const nextX = getNodeX(node.nextId)}
+          <line
+            x1={x + NODE_W} y1={NODE_H/2}
+            x2={nextX - 4} y2={NODE_H/2}
+            stroke="var(--accent)" stroke-width="1.8"
+            marker-end="url(#arrow-lq)"
+          />
         {/if}
 
         <!-- Ground symbol untuk node terakhir -->
@@ -273,8 +278,8 @@
       {/each}
 
       <!-- Pointers layer (animated) -->
-      {#if headIdx !== -1}
-        {@const hx = getNodeX(headIdx)}
+      {#if $headNode}
+        {@const hx = getNodeX($headNode.id)}
         <g class="pointer-group" style="transform: translateX({hx}px)">
           <rect x={NODE_W/2 - 22} y="-28" width="44" height="20" rx="5"
             fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2"/>
@@ -287,9 +292,9 @@
         </g>
       {/if}
 
-      {#if tailIdx !== -1}
-        {@const tx = getNodeX(tailIdx)}
-        {@const isStacked = headIdx === tailIdx}
+      {#if $tailNode}
+        {@const tx = getNodeX($tailNode.id)}
+        {@const isStacked = $headNode?.id === $tailNode?.id}
         <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px)">
           <rect x={NODE_W/2 - 18} y="-28" width="36" height="20" rx="5"
             fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2"/>
@@ -313,25 +318,11 @@
       onmousedown={(e) => e.stopPropagation()}
     >
       {#if contextMenu.type === 'canvas'}
-        <button class="ctx-item" onclick={handleEnqueueFromMenu}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Enqueue
-        </button>
-        <button class="ctx-item" onclick={handleDequeueFromMenu} disabled={$linkedQueueIsEmpty}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <button class="ctx-item" onclick={handleDequeueFromMenu} disabled={$linkedQueueIsEmpty}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           Dequeue
-        </button>
-        <div class="ctx-divider"></div>
-        <button class="ctx-item" onclick={() => handlePeekFromMenu(null)} disabled={$linkedQueueIsEmpty}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.3"/>
-            <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor"/>
-          </svg>
-          Peek
         </button>
         <div class="ctx-divider"></div>
         <button class="ctx-item" onclick={handleGCFromMenu}>
@@ -351,13 +342,6 @@
               <path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             Dequeue {!isHeadNode ? '(head only)' : ''}
-          </button>
-          <button class="ctx-item" onclick={() => handlePeekFromMenu(contextMenu?.nodeId)}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.3"/>
-              <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor"/>
-            </svg>
-            Peek
           </button>
         {:else}
           <div class="ctx-label">Unreachable — waiting for GC</div>

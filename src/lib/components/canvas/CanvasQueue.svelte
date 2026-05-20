@@ -981,24 +981,6 @@
                     </svg>
                     Dequeue
                 </button>
-                <div class="ctx-divider"></div>
-                <button
-                    class="ctx-item"
-                    onclick={handlePeekFromMenu}
-                    disabled={$queueIsEmpty}
-                >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <circle
-                            cx="6.5"
-                            cy="6.5"
-                            r="4"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                        />
-                        <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" />
-                    </svg>
-                    Peek
-                </button>
             </div>
         {/if}
     {/if}
