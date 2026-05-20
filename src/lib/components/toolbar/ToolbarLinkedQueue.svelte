@@ -36,10 +36,22 @@
 
   function confirmEnqueue() {
     if (!enqueueValue.trim()) { toast.error('Value cannot be empty'); return; }
+    
+    const values = enqueueValue.split(',').map(v => v.trim()).filter(v => v !== '');
+    if (values.length === 0) { toast.error('Value cannot be empty'); return; }
+
     pushHistory();
-    enqueueLinked(enqueueValue.trim());
+    for (const val of values) {
+      enqueueLinked(val);
+    }
     pushHistory();
-    toast.success(`Enqueued "${enqueueValue.trim()}"`);
+    
+    if (values.length > 1) {
+      toast.success(`Enqueued ${values.length} nodes`);
+    } else {
+      toast.success(`Enqueued "${values[0]}"`);
+    }
+    
     showEnqueue = false;
     enqueueValue = '';
   }
