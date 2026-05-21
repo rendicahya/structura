@@ -1,5 +1,5 @@
 import { writable, get, derived } from 'svelte/store';
-import { logOpLinkedStack, linkedStackLog } from '../shared/linkedStackLog.js';
+import { logOpLinkedStack, linkedStackLog, clearLogLinkedStack } from '../shared/linkedStackLog.js';
 
 /**
  * @typedef {{ id: string, varName: string, data: string, nextId: string|null }} LinkedStackNode
@@ -19,6 +19,14 @@ export const linkedStackIsEmpty = derived(
     ($topId) => $topId === null
 );
 
+export function initNodeClassLinkedStack() {
+    logOpLinkedStack(
+        `class Node {\n    String data;\n    Node next;\n}`,
+        `class Node:\n    def __init__(self):\n        self.data = None\n        self.next = None`,
+        `struct Node {\n    std::string data;\n    Node* next;\n    Node() : next(nullptr) {}\n};`
+    );
+}
+
 /**
  * @param {string} value
  */
@@ -30,7 +38,7 @@ export function pushLinkedStack(value) {
     /** @type {LinkedStackNode} */
     const newNode = { id, varName, data: value, nextId: currentTopId };
 
-    linkedStackNodes.update(ns => [newNode, ...ns]);
+    linkedStackNodes.update(ns => [...ns, newNode]);
     topId.set(id);
 
     logOpLinkedStack(
@@ -119,6 +127,8 @@ export function clearLinkedStack() {
     linkedStackNodes.set([]);
     topId.set(null);
     nodeCounter = 0;
+    clearLogLinkedStack();
+    initNodeClassLinkedStack();
 }
 
 export function getSnapshotLinkedStack() {

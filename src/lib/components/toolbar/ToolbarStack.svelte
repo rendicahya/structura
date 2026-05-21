@@ -88,12 +88,42 @@
             toast.error("Value cannot be empty");
             return;
         }
-        pushHistory();
-        const ok = pushStack(pushValue.trim());
-        if (ok) {
-            pushHistory();
-            toast.success(`Pushed "${pushValue.trim()}"`);
+
+        const values = pushValue
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v !== "");
+        if (values.length === 0) {
+            toast.error("Value cannot be empty");
+            return;
         }
+
+        pushHistory();
+        let pushedCount = 0;
+        for (const val of values) {
+            if ($stackIsFull) {
+                if (pushedCount > 0) {
+                    toast.warning(
+                        `Only ${pushedCount} elements pushed. Stack is full.`,
+                    );
+                } else {
+                    toast.error("Stack overflow — stack is full");
+                }
+                break;
+            }
+            const ok = pushStack(val);
+            if (ok) pushedCount++;
+        }
+
+        if (pushedCount > 0) {
+            pushHistory();
+            if (pushedCount > 1) {
+                toast.success(`Pushed ${pushedCount} elements`);
+            } else {
+                toast.success(`Pushed "${values[0]}"`);
+            }
+        }
+
         showPush = false;
         pushValue = "";
     }

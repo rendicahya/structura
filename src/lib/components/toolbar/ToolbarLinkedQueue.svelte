@@ -67,6 +67,7 @@
   function handlePeek() {
     if ($linkedQueueIsEmpty) { toast.error('Queue is empty'); return; }
     peekLinkedQueue();
+    window.dispatchEvent(new CustomEvent('linkedqueue:peek'));
   }
 
   function handleGC() {
@@ -165,7 +166,7 @@
     </Tooltip>
 
     <Tooltip text={$linkedQueueIsEmpty ? 'Queue is empty' : 'Peek head node'}>
-      <button class="btn btn-secondary" onclick={handlePeek} disabled={$linkedQueueIsEmpty}>
+      <button class="btn btn-primary" onclick={handlePeek} disabled={$linkedQueueIsEmpty}>
         <Icon name="peek" />
         Peek
       </button>

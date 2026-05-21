@@ -23,6 +23,7 @@
     import { initNodeClassDLL } from "./lib/stores/dll/graphDLL.js";
     import { stackLog } from "./lib/stores/shared/stackLog.js";
     import { linkedStackLog } from "./lib/stores/shared/linkedStackLog.js";
+    import { initNodeClassLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
     import { queueLog } from "./lib/stores/shared/queueLog.js";
 
     import ToolbarLinkedQueue from "./lib/components/toolbar/ToolbarLinkedQueue.svelte";
@@ -94,6 +95,8 @@
             if (get(codeLog).length === 0) initNodeClass();
         } else if (page === "#/doubly-linked-list") {
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
+        } else if (page === "#/linked-stack") {
+            if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
         } else if (page === "#/linked-queue") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree") {

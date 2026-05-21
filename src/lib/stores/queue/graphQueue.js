@@ -49,9 +49,9 @@ export function initQueue(capacity, varName) {
     itemCounter = 0;
 
     logOpQueue(
-        `int length = ${capacity};\nString[] ${varName} = new String[length];\nint front = 0;\nint rear = -1;`,
-        `length = ${capacity}\n${varName} = [None] * length\nfront = 0\nrear = -1`,
-        `int length = ${capacity};\nstd::string ${varName}[length];\nint front = 0;\nint rear = -1;`
+        `int capacity = ${capacity};\nString[] ${varName} = new String[capacity];\nint front = 0;\nint rear = -1;`,
+        `capacity = ${capacity}\n${varName} = [None] * capacity\nfront = 0\nrear = -1`,
+        `int capacity = ${capacity};\nstd::string ${varName}[capacity];\nint front = 0;\nint rear = -1;`
     );
 }
 
@@ -78,9 +78,9 @@ export function enqueue(value) {
     queueSize.update(s => s + 1);
 
     logOpQueue(
-        `${varName}[++rear % length] = "${value}";`,
-        `rear = (rear + 1) % length\n${varName}[rear] = "${value}"`,
-        `${varName}[++rear % length] = "${value}";`
+        `${varName}[++rear % capacity] = "${value}";`,
+        `rear = (rear + 1) % capacity\n${varName}[rear] = "${value}"`,
+        `${varName}[++rear % capacity] = "${value}";`
     );
 
     return true;
@@ -100,9 +100,9 @@ export function dequeue() {
     queueSize.update(s => s - 1);
 
     logOpQueue(
-        `String dequeued = ${varName}[front++ % length]; // "${slot?.value}"`,
-        `dequeued = ${varName}[front]  # "${slot?.value}"\nfront = (front + 1) % length`,
-        `std::string dequeued = ${varName}[front++ % length]; // "${slot?.value}"`
+        `String dequeued = ${varName}[front++ % capacity]; // "${slot?.value}"`,
+        `dequeued = ${varName}[front]  # "${slot?.value}"\nfront = (front + 1) % capacity`,
+        `std::string dequeued = ${varName}[front++ % capacity]; // "${slot?.value}"`
     );
 
     return true;

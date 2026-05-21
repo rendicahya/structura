@@ -58,10 +58,28 @@
             toast.error("Value cannot be empty");
             return;
         }
+
+        const values = pushValue
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v !== "");
+        if (values.length === 0) {
+            toast.error("Value cannot be empty");
+            return;
+        }
+
         pushHistory();
-        pushLinkedStack(pushValue.trim());
+        for (const val of values) {
+            pushLinkedStack(val);
+        }
         pushHistory();
-        toast.success(`Pushed "${pushValue.trim()}"`);
+
+        if (values.length > 1) {
+            toast.success(`Pushed ${values.length} nodes`);
+        } else {
+            toast.success(`Pushed "${values[0]}"`);
+        }
+
         showPush = false;
         pushValue = "";
     }
@@ -83,6 +101,7 @@
             return;
         }
         peekLinkedStack();
+        window.dispatchEvent(new CustomEvent("linkedstack:peek"));
     }
 
     function handleGC() {
@@ -103,7 +122,6 @@
 
     function confirmNewStack() {
         clearLinkedStack();
-        clearLogLinkedStack();
         initHistory();
         showConfirmNew = false;
         toast.success("Stack cleared");

@@ -6,6 +6,7 @@
     garbageCollectLinkedQueue
   } from '../../stores/queue/graphLinkedQueue.js';
   import { pushHistory } from '../../stores/shared/history.js';
+  import { onMount } from 'svelte';
 
   const NODE_W = 130;
   const NODE_H = 64;
@@ -143,6 +144,17 @@
     }
     prevNodeCount = currentCount;
   });
+
+  onMount(() => {
+    const onPeek = () => {
+      peekingId = $headNode?.id ?? null;
+      setTimeout(() => { peekingId = null; }, 1500);
+    };
+    window.addEventListener('linkedqueue:peek', onPeek);
+    return () => {
+      window.removeEventListener('linkedqueue:peek', onPeek);
+    };
+  });
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
@@ -226,15 +238,6 @@
               opacity={isUnreachable ? 0.5 : 1}
               stroke-dasharray={isUnreachable ? "4 3" : "none"}
             />
-
-            <!-- Accent bar -->
-            {#if isPeeking}
-              <rect
-                x="1" y="1" width={NODE_W-2} height="3" rx="2"
-                fill="var(--warning)"
-                opacity="0.8"
-              />
-            {/if}
 
             <!-- varName -->
             <text x={NODE_W/2} y="22" text-anchor="middle"

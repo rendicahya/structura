@@ -90,10 +90,28 @@
             toast.error("Value cannot be empty");
             return;
         }
+
+        const values = enqueueValue
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v !== "");
+        if (values.length === 0) {
+            toast.error("Value cannot be empty");
+            return;
+        }
+
         pushHistory();
-        enqueue(enqueueValue.trim());
+        for (const val of values) {
+            enqueue(val);
+        }
         pushHistory();
-        toast.success(`Enqueued "${enqueueValue.trim()}"`);
+
+        if (values.length > 1) {
+            toast.success(`Enqueued ${values.length} elements`);
+        } else {
+            toast.success(`Enqueued "${values[0]}"`);
+        }
+
         showEnqueue = false;
         enqueueValue = "";
     }
@@ -115,6 +133,7 @@
             return;
         }
         peekQueue();
+        window.dispatchEvent(new CustomEvent("queue:peek"));
         toast.success("Peeked front element");
     }
 

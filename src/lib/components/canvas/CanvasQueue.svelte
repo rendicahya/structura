@@ -11,6 +11,7 @@
         peekQueue,
     } from "../../stores/queue/graphQueue.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { onMount } from "svelte";
 
     const NODE_W = 80;
     const NODE_H = 70;
@@ -343,6 +344,19 @@
     }
 
     const SLOT_Y = CANVAS_PAD_Y;
+
+    onMount(() => {
+        const onPeek = () => {
+            peekingIndex = $frontPtr;
+            setTimeout(() => {
+                peekingIndex = null;
+            }, 1500);
+        };
+        window.addEventListener("queue:peek", onPeek);
+        return () => {
+            window.removeEventListener("queue:peek", onPeek);
+        };
+    });
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
@@ -532,18 +546,6 @@
                                 ? "4 3"
                                 : "none"}
                         />
-
-                        {#if isPeeking}
-                            <rect
-                                x={x + 1}
-                                y={SLOT_Y + 1}
-                                width={NODE_W - 2}
-                                height="3"
-                                rx="2"
-                                fill="var(--warning)"
-                                opacity="0.8"
-                            />
-                        {/if}
 
                         <text
                             x={x + NODE_W / 2}
