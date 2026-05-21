@@ -234,10 +234,11 @@
 		: 1}
 		/>
 
-		<!-- var name -->	<text
-		x={W / 2}
-		y="22"
-		text-anchor="middle"
+		<!-- var name -->
+		<text
+			x={W / 2}
+			y="18"
+			text-anchor="middle"
 		font-family="var(--font-mono)"
 		font-size="10"
 		fill="var(--accent)"

@@ -23,34 +23,20 @@
     } = $props();
 
     let menuEl;
-    let varNameInput = $state();
     let dataInput = $state();
-    let editingVarName = $state(false);
     let editingData = $state(false);
-    let tmpVarName = $state("");
     let tmpData = $state("");
 
     $effect(() => {
-        tmpVarName = node?.varName ?? "";
         tmpData = node?.data ?? "";
     });
 
     function close() {
         onclose?.();
     }
-    function handleRename() {
-        editingVarName = true;
-        setTimeout(() => varNameInput?.focus(), 10);
-    }
     function handleEditData() {
         editingData = true;
         setTimeout(() => dataInput?.focus(), 10);
-    }
-
-    function commitVarName() {
-        if (tmpVarName.trim()) onrename?.({ varName: tmpVarName.trim() });
-        editingVarName = false;
-        close();
     }
 
     function commitData() {
@@ -122,21 +108,7 @@
         </div>
     </div>
 
-    {#if editingVarName}
-        <div class="menu-input-row">
-            <label>
-                Variable name
-                <input
-                    bind:this={varNameInput}
-                    bind:value={tmpVarName}
-                    onkeydown={(e) => e.key === "Enter" && commitVarName()}
-                    placeholder="varName"
-                    spellcheck="false"
-                />
-            </label>
-            <button class="btn-confirm" onclick={commitVarName}>Apply</button>
-        </div>
-    {:else if editingData}
+    {#if editingData}
         <div class="menu-input-row">
             <label>
                 Data value
@@ -151,11 +123,6 @@
             <button class="btn-confirm" onclick={commitData}>Apply</button>
         </div>
     {:else}
-        <button class="menu-item" onclick={handleRename}>
-            <Icon name="rename" size={13} />
-            Rename variable
-        </button>
-
         <button class="menu-item" onclick={handleEditData}>
             <Icon name="edit" size={13} />
             Edit data
