@@ -230,33 +230,11 @@
 		fill="var(--node-bg)"
 		stroke={borderColor}
 		stroke-width={selected || connecting || isHead || isTail || isWalk
-			? 1.8
-			: 1}
-	/>
+		? 1.8
+		: 1}
+		/>
 
-	<!-- Top accent bar -->
-	<rect
-		x="1"
-		y="1"
-		width={W - 2}
-		height="3"
-		rx="2"
-		fill={isHead
-			? "var(--success)"
-			: isTail
-				? "#c084fc"
-				: isWalk
-					? "#fb923c"
-					: selected
-						? "var(--accent)"
-						: connecting
-							? "var(--warning)"
-							: "var(--node-border)"}
-		opacity="0.8"
-	/>
-
-	<!-- var name -->
-	<text
+		<!-- var name -->	<text
 		x={W / 2}
 		y="22"
 		text-anchor="middle"

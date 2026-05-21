@@ -302,31 +302,9 @@
                                       ? "var(--accent)"
                                       : "var(--node-border)"}
                                 stroke-width={isPeeking || isTop ? 1.8 : 1}
-                            />
-                            {#if isTop && !isPeeking}
-                                <rect
-                                    x={STACK_X + 1}
-                                    y={y + 1}
-                                    width={NODE_W - 2}
-                                    height="3"
-                                    rx="2"
-                                    fill="var(--accent)"
-                                    opacity="0.8"
                                 />
-                            {/if}
-                            {#if isPeeking}
-                                <rect
-                                    x={STACK_X + 1}
-                                    y={y + 1}
-                                    width={NODE_W - 2}
-                                    height="3"
-                                    rx="2"
-                                    fill="var(--warning)"
-                                    opacity="0.8"
-                                />
-                            {/if}
-                            <text
-                                x={STACK_X + NODE_W / 2}
+
+                                <text                                x={STACK_X + NODE_W / 2}
                                 y={y + NODE_H / 2 + 5}
                                 text-anchor="middle"
                                 font-family="var(--font-mono)"
