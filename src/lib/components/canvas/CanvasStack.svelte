@@ -18,7 +18,11 @@
     const NODE_H = 50;
     const NODE_GAP = 4;
     const CANVAS_PAD_Y = 60;
-    const { zoom = 1 } = $props();
+    const ZOOM_STEP = 0.1;
+    const ZOOM_MIN = 0.3;
+    const ZOOM_MAX = 2;
+
+    let { zoom = $bindable(1) } = $props();
 
     /** @type {SVGSVGElement} */
     let svgEl = $state();
@@ -183,6 +187,33 @@
     }
 
     const STACK_X = 60; // ruang untuk bracket kiri + index label
+
+    let wheelFrame = null;
+    function onWheel(e) {
+        e.preventDefault();
+        if (wheelFrame) return;
+        wheelFrame = requestAnimationFrame(() => {
+            wheelFrame = null;
+            if (!svgEl) return;
+            const rect = svgEl.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+            const newZoom = Math.min(
+                ZOOM_MAX,
+                Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)),
+            );
+            panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+            panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+            zoom = newZoom;
+        });
+    }
+
+    import { onMount } from "svelte";
+    onMount(() => {
+        svgEl.addEventListener("wheel", onWheel, { passive: false });
+        return () => svgEl?.removeEventListener("wheel", onWheel);
+    });
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />

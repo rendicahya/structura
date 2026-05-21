@@ -13,10 +13,11 @@
   const NODE_GAP = 60; // ruang untuk panah
   const CANVAS_PAD_X = 60;
   const CANVAS_PAD_Y = 60;
+  const ZOOM_STEP = 0.1;
+  const ZOOM_MIN = 0.3;
+  const ZOOM_MAX = 2;
 
-  const props = $props();
-  let zoom = $state(props.zoom ?? 1);
-  $effect(() => { zoom = props.zoom ?? 1; });
+  let { zoom = $bindable(1) } = $props();
 
   /** @type {SVGSVGElement} */
   let svgEl = $state();
@@ -146,15 +147,38 @@
   });
 
   onMount(() => {
+    svgEl.addEventListener('wheel', onWheel, { passive: false });
     const onPeek = () => {
       peekingId = $headNode?.id ?? null;
       setTimeout(() => { peekingId = null; }, 1500);
     };
     window.addEventListener('linkedqueue:peek', onPeek);
     return () => {
+      svgEl?.removeEventListener('wheel', onWheel);
       window.removeEventListener('linkedqueue:peek', onPeek);
     };
   });
+
+  let wheelFrame = null;
+  function onWheel(e) {
+    e.preventDefault();
+    if (wheelFrame) return;
+    wheelFrame = requestAnimationFrame(() => {
+      wheelFrame = null;
+      if (!svgEl) return;
+      const rect = svgEl.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      const newZoom = Math.min(
+        ZOOM_MAX,
+        Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2))
+      );
+      panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+      panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+      zoom = newZoom;
+    });
+  }
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />

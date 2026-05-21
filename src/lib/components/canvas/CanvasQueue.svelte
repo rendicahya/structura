@@ -20,8 +20,11 @@
     const CANVAS_PAD_Y = 80;
     const ARROW_SIZE = 40;
     const ARROW_OFFSET = 16;
+    const ZOOM_STEP = 0.1;
+    const ZOOM_MIN = 0.3;
+    const ZOOM_MAX = 2;
 
-    const { zoom = 1 } = $props();
+    let { zoom = $bindable(1) } = $props();
 
     /** @type {SVGSVGElement} */
     let svgEl = $state();
@@ -345,7 +348,29 @@
 
     const SLOT_Y = CANVAS_PAD_Y;
 
+    let wheelFrame = null;
+    function onWheel(e) {
+        e.preventDefault();
+        if (wheelFrame) return;
+        wheelFrame = requestAnimationFrame(() => {
+            wheelFrame = null;
+            if (!svgEl) return;
+            const rect = svgEl.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+            const newZoom = Math.min(
+                ZOOM_MAX,
+                Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)),
+            );
+            panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+            panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+            zoom = newZoom;
+        });
+    }
+
     onMount(() => {
+        svgEl.addEventListener("wheel", onWheel, { passive: false });
         const onPeek = () => {
             peekingIndex = $frontPtr;
             setTimeout(() => {
@@ -354,6 +379,7 @@
         };
         window.addEventListener("queue:peek", onPeek);
         return () => {
+            svgEl?.removeEventListener("wheel", onWheel);
             window.removeEventListener("queue:peek", onPeek);
         };
     });

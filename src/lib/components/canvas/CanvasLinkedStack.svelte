@@ -12,6 +12,9 @@
     const NODE_W = 130;
     const NODE_H = 64;
     const NODE_GAP = 40;
+    const ZOOM_STEP = 0.1;
+    const ZOOM_MIN = 0.3;
+    const ZOOM_MAX = 2;
 
     let { zoom = $bindable(1) } = $props();
 
@@ -124,15 +127,38 @@
     });
 
     onMount(() => {
+        svgEl.addEventListener("wheel", onWheel, { passive: false });
         const onPeek = () => {
             peekingId = $topId;
             setTimeout(() => { peekingId = null; }, 1500);
         };
         window.addEventListener("linkedstack:peek", onPeek);
         return () => {
+            svgEl?.removeEventListener("wheel", onWheel);
             window.removeEventListener("linkedstack:peek", onPeek);
         };
     });
+
+    let wheelFrame = null;
+    function onWheel(e) {
+        e.preventDefault();
+        if (wheelFrame) return;
+        wheelFrame = requestAnimationFrame(() => {
+            wheelFrame = null;
+            if (!svgEl) return;
+            const rect = svgEl.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+            const newZoom = Math.min(
+                ZOOM_MAX,
+                Math.max(ZOOM_MIN, +(zoom + delta).toFixed(2)),
+            );
+            panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+            panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+            zoom = newZoom;
+        });
+    }
 
     const GROUND_LEN = 22;
     const GROUND_LINES = [{ w: 14 }, { w: 9 }, { w: 4 }];
