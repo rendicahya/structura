@@ -211,8 +211,15 @@
 
     import { onMount } from "svelte";
     onMount(() => {
-        svgEl.addEventListener("wheel", onWheel, { passive: false });
+        if (svgEl) svgEl.addEventListener("wheel", onWheel, { passive: false });
         return () => svgEl?.removeEventListener("wheel", onWheel);
+    });
+
+    $effect(() => {
+        if (svgEl && initialized) {
+            svgEl.addEventListener("wheel", onWheel, { passive: false });
+            return () => svgEl?.removeEventListener("wheel", onWheel);
+        }
     });
 </script>
 
@@ -220,35 +227,28 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="stack-canvas">
-    {#if $stackCapacity === 0}
-        <div class="empty-hint">
-            <div class="empty-title">Stack not initialized</div>
-            <div class="empty-sub">
-                Click <strong>New Stack</strong> to get started
-            </div>
-        </div>
-    {:else}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <svg
-            bind:this={svgEl}
-            class="stack-svg"
-            class:panning
-            onmousedown={onSVGMousedown}
-            oncontextmenu={onSVGContextMenu}
-        >
-            <defs>
-                <pattern
-                    id="grid-stack"
-                    width="28"
-                    height="28"
-                    patternUnits="userSpaceOnUse"
-                >
-                    <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
-                </pattern>
-            </defs>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <svg
+        bind:this={svgEl}
+        class="stack-svg"
+        class:panning
+        onmousedown={onSVGMousedown}
+        oncontextmenu={onSVGContextMenu}
+    >
+        <defs>
+            <pattern
+                id="grid-stack"
+                width="28"
+                height="28"
+                patternUnits="userSpaceOnUse"
+            >
+                <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
+            </pattern>
+        </defs>
 
-            <rect width="100%" height="100%" fill="url(#grid-stack)" />
+        <rect width="100%" height="100%" fill="url(#grid-stack)" />
 
+        {#if $stackCapacity > 0}
             <g
                 style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
             >
@@ -455,86 +455,95 @@
                     </g>
                 {/if}
             </g>
-        </svg>
+        {/if}
+    </svg>
 
-        {#if $stackCapacity > 0}
-            <div
-                class="canvas-actions"
-                style="
-                left: {panX + (STACK_X + NODE_W / 2) * zoom}px; 
-                top: {panY + (CANVAS_PAD_Y - 42) * zoom}px;
-                transform: translate(-50%, -50%) scale({zoom});
-            "
-            >
-                <Tooltip text={$stackIsFull ? "Stack is full" : "Push value"}>
-                    <button
-                        class="btn-canvas btn-push"
-                        onclick={handlePushFromMenu}
-                        disabled={$stackIsFull}
-                    >
-                        <Icon name="push" size={14} />
-                        <span>Push</span>
-                    </button>
-                </Tooltip>
-                <Tooltip
-                    text={$stackIsEmpty ? "Stack is empty" : "Pop top element"}
+    {#if $stackCapacity > 0}
+        <div
+            class="canvas-actions"
+            style="
+            left: {panX + (STACK_X + NODE_W / 2) * zoom}px; 
+            top: {panY + (CANVAS_PAD_Y - 42) * zoom}px;
+            transform: translate(-50%, -50%) scale({zoom});
+        "
+        >
+            <Tooltip text={$stackIsFull ? "Stack is full" : "Push value"}>
+                <button
+                    class="btn-canvas btn-push"
+                    onclick={handlePushFromMenu}
+                    disabled={$stackIsFull}
                 >
-                    <button
-                        class="btn-canvas btn-pop"
-                        onclick={handlePopFromMenu}
-                        disabled={$stackIsEmpty}
-                    >
-                        <Icon name="pop" size={14} />
-                        <span>Pop</span>
-                    </button>
-                </Tooltip>
-            </div>
-        {/if}
-
-        {#if contextMenu}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="ctx-menu"
-                style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
-                onmousedown={(e) => e.stopPropagation()}
+                    <Icon name="push" size={14} />
+                    <span>Push</span>
+                </button>
+            </Tooltip>
+            <Tooltip
+                text={$stackIsEmpty ? "Stack is empty" : "Pop top element"}
             >
-                {#if contextMenu.type === "canvas"}
-                    <button class="ctx-item" onclick={handlePushFromMenu}>
-                        <Icon name="push" size={13} />
-                        Push
-                    </button>
-                    <button
-                        class="ctx-item"
-                        onclick={handlePopFromMenu}
-                        disabled={$stackIsEmpty}
-                    >
-                        <Icon name="pop" size={13} />
-                        Pop
-                    </button>
-                    <div class="ctx-divider"></div>
-                    <button
-                        class="ctx-item"
-                        onclick={() => handlePeek(contextMenu?.itemId ?? "")}
-                        disabled={$stackIsEmpty}
-                    >
-                        <Icon name="walk" size={13} />
-                        Peek
-                    </button>
-                {:else}
-                    <button class="ctx-item" onclick={handlePopFromMenu}>
-                        <Icon name="pop" size={13} />
-                        Pop
-                    </button>
-                    <button
-                        class="ctx-item"
-                        onclick={() => handlePeek(contextMenu?.itemId ?? "")}
-                    >
-                        <Icon name="walk" size={13} />
-                        Peek
-                    </button>
-                {/if}
+                <button
+                    class="btn-canvas btn-pop"
+                    onclick={handlePopFromMenu}
+                    disabled={$stackIsEmpty}
+                >
+                    <Icon name="pop" size={14} />
+                    <span>Pop</span>
+                </button>
+            </Tooltip>
+        </div>
+    {/if}
+
+    {#if contextMenu}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="ctx-menu"
+            style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+            onmousedown={(e) => e.stopPropagation()}
+        >
+            {#if contextMenu.type === "canvas"}
+                <button class="ctx-item" onclick={handlePushFromMenu}>
+                    <Icon name="push" size={13} />
+                    Push
+                </button>
+                <button
+                    class="ctx-item"
+                    onclick={handlePopFromMenu}
+                    disabled={$stackIsEmpty}
+                >
+                    <Icon name="pop" size={13} />
+                    Pop
+                </button>
+                <div class="ctx-divider"></div>
+                <button
+                    class="ctx-item"
+                    onclick={() => handlePeek(contextMenu?.itemId ?? "")}
+                    disabled={$stackIsEmpty}
+                >
+                    <Icon name="walk" size={13} />
+                    Peek
+                </button>
+            {:else}
+                <button class="ctx-item" onclick={handlePopFromMenu}>
+                    <Icon name="pop" size={13} />
+                    Pop
+                </button>
+                <button
+                    class="ctx-item"
+                    onclick={() => handlePeek(contextMenu?.itemId ?? "")}
+                >
+                    <Icon name="walk" size={13} />
+                    Peek
+                </button>
+            {/if}
+        </div>
+    {/if}
+
+    {#if $stackCapacity === 0}
+        <div class="empty-hint">
+            <div class="empty-title">Stack not initialized</div>
+            <div class="empty-sub">
+                Click <strong>New Stack</strong> to get started
             </div>
-        {/if}
+        </div>
     {/if}
 </div>
 
@@ -631,6 +640,17 @@
         transform: translate(-50%, -50%);
         text-align: center;
         pointer-events: none;
+        animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -48%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
     }
     .empty-title {
         font-family: var(--font-ui);

@@ -13,9 +13,9 @@ export const rootId = writable(null);
 
 let nodeCounter = 0;
 
-const NODE_W = 60;
-const NODE_H = 60;
-const LEVEL_H = 100;
+const NODE_W = 70;
+const NODE_H = 70;
+const LEVEL_H = 110;
 const MIN_GAP = 20;
 
 export const treeIsEmpty = derived(
@@ -68,11 +68,16 @@ function layoutTree(nodes, rootId) {
     assignDepth(rootId, 0);
 
     // Convert to pixel positions
-    return nodes.map(n => ({
-        ...n,
-        x: (xPos.get(n.id) ?? 0) * (NODE_W + MIN_GAP),
-        y: (depth.get(n.id) ?? 0) * LEVEL_H,
-    }));
+    return nodes.map(n => {
+        if (xPos.has(n.id)) {
+            return {
+                ...n,
+                x: xPos.get(n.id) * (NODE_W + MIN_GAP),
+                y: (depth.get(n.id) ?? 0) * LEVEL_H,
+            };
+        }
+        return n;
+    });
 }
 
 export function initTree() {
@@ -173,53 +178,72 @@ export function removeTreeNode(nodeId) {
     if (!node) return;
 
     const parent = ns.find(n => n.id === node.parentId);
+    const detachedIds = collectSubtreeIds(nodeId, ns);
+    const detachedPositions = new Map(
+        ns
+            .filter(n => detachedIds.has(n.id))
+            .map(n => [n.id, { x: n.x, y: n.y }])
+    );
     const javaOps = [];
     const pyOps = [];
     const cppOps = [];
+    let nextRootId = get(rootId);
 
     if (parent) {
         const side = parent.left === nodeId ? 'left' : 'right';
         javaOps.push(`${parent.varName}.${side} = null;`);
         pyOps.push(`${parent.varName}.${side} = None`);
         cppOps.push(`${parent.varName}->${side} = nullptr;`);
-
-        treeNodes.update(ns => ns.map(n =>
-            n.id === parent.id ? { ...n, [side]: null } : n
-        ));
     } else {
         // Removing root
         javaOps.push(`root = null;`);
         pyOps.push(`root = None`);
         cppOps.push(`root = nullptr;`);
+        nextRootId = null;
         rootId.set(null);
     }
 
-    // Sever node from parent but keep in store (for GC)
-    treeNodes.update(ns => ns.map(n =>
-        n.id === nodeId ? { ...n, parentId: null } : n
-    ));
+    treeNodes.update(ns => {
+        const updated = ns.map(n => {
+            if (parent && n.id === parent.id) {
+                const side = parent.left === nodeId ? 'left' : 'right';
+                return { ...n, [side]: null };
+            }
 
-    // Re-layout remaining connected tree
-    const root = get(rootId);
-    treeNodes.update(ns => layoutTree(ns.filter(n =>
-        n.id === nodeId || !isDescendantOrSelf(n, nodeId, ns)
-            ? n
-            : n
-    ), root));
+            if (n.id === nodeId) {
+                return { ...n, parentId: null };
+            }
+
+            return n;
+        });
+
+        return layoutTree(updated, nextRootId).map(n => {
+            const frozenPosition = detachedPositions.get(n.id);
+            return frozenPosition ? { ...n, ...frozenPosition } : n;
+        });
+    });
 
     logOpTree(javaOps, pyOps, cppOps);
 }
 
 /**
- * @param {TreeNode} node
- * @param {string} ancestorId
  * @param {TreeNode[]} allNodes
+ * @param {string} rootNodeId
  */
-function isDescendantOrSelf(node, ancestorId, allNodes) {
-    if (node.id === ancestorId) return true;
-    if (!node.parentId) return false;
-    const parent = allNodes.find(n => n.id === node.parentId);
-    return parent ? isDescendantOrSelf(parent, ancestorId, allNodes) : false;
+function collectSubtreeIds(rootNodeId, allNodes) {
+    const ids = new Set();
+
+    function visit(id) {
+        if (!id || ids.has(id)) return;
+        ids.add(id);
+        const current = allNodes.find(n => n.id === id);
+        if (!current) return;
+        visit(current.left);
+        visit(current.right);
+    }
+
+    visit(rootNodeId);
+    return ids;
 }
 
 export function garbageCollectTree() {

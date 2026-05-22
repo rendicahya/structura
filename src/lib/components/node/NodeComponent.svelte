@@ -230,8 +230,8 @@
 		fill="var(--node-bg)"
 		stroke={borderColor}
 		stroke-width={selected || connecting || isHead || isTail || isWalk
-		? 1.8
-		: 1}
+		? 2
+		: 1.2}
 		/>
 
 		<!-- var name -->
@@ -262,7 +262,7 @@
 		text-anchor="middle"
 		font-family="var(--font-mono)"
 		font-size="13"
-		fill={node.data ? "#e8ecf5" : "var(--text-muted)"}
+		fill={node.data ? "var(--text)" : "var(--text-muted)"}
 		font-weight={node.data ? "500" : "400"}>{node.data || "null"}</text
 	>
 

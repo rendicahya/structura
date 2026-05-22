@@ -1,4 +1,5 @@
 <script>
+    import { onMount, untrack } from "svelte";
     import {
         treeNodes,
         rootId,
@@ -9,30 +10,19 @@
         garbageCollectTree,
     } from "../../stores/tree/graphTree.js";
     import { pushHistory } from "../../stores/shared/history.js";
-    import {
-        fitToViewTrigger,
-        canvasZoom,
-    } from "../../stores/shared/canvasControl.js";
 
-    const NODE_R = 28; // radius node lingkaran
+    const NODE_R = 34; // radius node lingkaran
     const ZOOM_STEP = 0.1;
     const ZOOM_MIN = 0.3;
     const ZOOM_MAX = 2;
 
-    const props = $props();
-    let zoom = $state(props.zoom ?? 1);
-    $effect(() => {
-        zoom = props.zoom ?? 1;
-    });
-    $effect(() => {
-        canvasZoom.set(zoom);
-    });
+    let { zoom = $bindable(1) } = $props();
 
     /** @type {SVGSVGElement} */
     let svgEl = $state();
 
-    let panX = $state(0);
-    let panY = $state(0);
+    let panX = $state(400);
+    let panY = $state(200);
     let panning = $state(false);
     let panStartX = 0;
     let panStartY = 0;
@@ -45,23 +35,69 @@
     let inlineEdit = $state(null);
     let inlineInputEl = $state();
 
-    // Center saat pertama ada node
+    let prevNodes = [];
+    // Initial centering
     $effect(() => {
-        if ($treeNodes.length > 0 && !initialized && svgEl) {
-            centerTree();
-            initialized = true;
+        const nodes = $treeNodes;
+        if (nodes.length > 0 && !initialized && svgEl) {
+            untrack(() => {
+                const attemptCenter = () => {
+                    if (centerTree()) {
+                        initialized = true;
+                    } else if (!initialized) {
+                        requestAnimationFrame(attemptCenter);
+                    }
+                };
+                attemptCenter();
+            });
+        } else if (nodes.length === 0) {
+            initialized = false;
         }
-        if ($treeNodes.length === 0) initialized = false;
     });
 
-    $effect(() => {
-        if ($fitToViewTrigger === 0) return;
-        centerTree();
+    $effect.pre(() => {
+        const currentNodes = $treeNodes;
+
+        if (prevNodes.length > 0 && currentNodes.length > 0) {
+            const detachedNode = currentNodes.some((node) => {
+                const old = prevNodes.find((prev) => prev.id === node.id);
+                return old?.parentId && node.parentId === null;
+            });
+
+            if (detachedNode) {
+                prevNodes = JSON.parse(JSON.stringify(currentNodes));
+                return;
+            }
+
+            // Find a node that was reachable before and is still reachable now
+            const stableNode = currentNodes.find(n => {
+                const old = prevNodes.find(pn => pn.id === n.id);
+                // We only care about nodes that moved due to layout
+                return old && (old.x !== n.x || old.y !== n.y);
+            });
+
+            if (stableNode) {
+                const old = prevNodes.find(pn => pn.id === stableNode.id);
+                const dx = (old.x - stableNode.x) * zoom;
+                const dy = (old.y - stableNode.y) * zoom;
+                
+                panX += dx;
+                panY += dy;
+                if (panning) {
+                    panStartX -= dx;
+                    panStartY -= dy;
+                }
+            }
+        }
+
+        prevNodes = JSON.parse(JSON.stringify(currentNodes));
     });
 
     function centerTree() {
-        if (!svgEl || $treeNodes.length === 0) return;
+        if (!svgEl || $treeNodes.length === 0) return false;
         const rect = svgEl.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+
         const padding = 80;
         const minX = Math.min(...$treeNodes.map((n) => n.x - NODE_R));
         const maxX = Math.max(...$treeNodes.map((n) => n.x + NODE_R));
@@ -74,6 +110,7 @@
         zoom = Math.min(Math.min(scaleX, scaleY), 1);
         panX = (rect.width - contentW * zoom) / 2 - minX * zoom;
         panY = (rect.height - contentH * zoom) / 2 - minY * zoom + padding / 2;
+        return true;
     }
 
     function onSVGMousedown(e) {
@@ -252,7 +289,6 @@
         });
     }
 
-    import { onMount } from "svelte";
     onMount(() => {
         svgEl.addEventListener("wheel", onWheel, { passive: false });
         return () => svgEl?.removeEventListener("wheel", onWheel);
@@ -325,76 +361,82 @@
                 {@const reachable = isReachable(node.id)}
                 {@const isRoot = node.id === $rootId}
 
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <g
-                    class="tree-node"
-                    class:unreachable={!reachable}
-                    oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
-                    ondblclick={() => onNodeDblClick(node.id)}
-                >
-                    <!-- Shadow -->
-                    <circle
-                        cx={node.x + 2}
-                        cy={node.y + 3}
-                        r={NODE_R}
-                        fill="rgba(0,0,0,0.3)"
-                    />
-
-                    <!-- Main circle -->
-                    <circle
-                        cx={node.x}
-                        cy={node.y}
-                        r={NODE_R}
-                        fill="var(--node-bg)"
-                        stroke={isRoot
-                            ? "var(--success)"
-                            : reachable
-                              ? "var(--node-border)"
-                              : "var(--border)"}
-                        stroke-width={isRoot ? 2 : 1.5}
-                        stroke-dasharray={reachable ? "none" : "4 3"}
-                        opacity={reachable ? 1 : 0.5}
-                    />
-
-                    <!-- Data -->
-                    <text
-                        x={node.x}
-                        y={node.y + 5}
-                        text-anchor="middle"
-                        font-family="var(--font-mono)"
-                        font-size="13"
-                        fill={reachable
-                            ? node.data
-                                ? "var(--text)"
-                                : "var(--text-muted)"
-                            : "var(--text-muted)"}
-                        font-weight={node.data ? "500" : "400"}
-                        >{node.data || "null"}</text
+                <g style="transform: translate({node.x}px, {node.y}px); opacity: {initialized ? 1 : 0};">
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <g
+                        class="tree-node"
+                        class:unreachable={!reachable}
+                        oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
+                        ondblclick={() => onNodeDblClick(node.id)}
                     >
+                        <!-- Shadow -->
+                        <circle
+                            cx="2"
+                            cy="3"
+                            r={NODE_R}
+                            fill="rgba(0,0,0,0.3)"
+                        />
 
-                    <!-- varName label di bawah node -->
-                    <text
-                        x={node.x}
-                        y={node.y + NODE_R + 14}
-                        text-anchor="middle"
-                        font-family="var(--font-mono)"
-                        font-size="9"
-                        fill={reachable ? "var(--accent)" : "var(--text-muted)"}
-                        >{node.varName}</text
-                    >
+                        <!-- Main circle -->
+                        <circle
+                            cx="0"
+                            cy="0"
+                            r={NODE_R}
+                            fill="var(--node-bg)"
+                            stroke={isRoot
+                                ? "var(--success)"
+                                : reachable
+                                  ? "var(--node-border)"
+                                  : "var(--border)"}
+                            stroke-width={isRoot ? 2 : 1.5}
+                            stroke-dasharray={reachable ? "none" : "4 3"}
+                            opacity={reachable ? 1 : 0.5}
+                        />
 
-                    <!-- Unreachable label -->
-                    {#if !reachable}
+                        <!-- Divider -->
+                        <line x1="-18" y1="-4" x2="18" y2="-4" stroke="var(--border)" stroke-width="1" opacity="0.6" />
+
+                        <!-- Data -->
                         <text
-                            x={node.x}
-                            y={node.y + NODE_R + 26}
+                            x="0"
+                            y="12"
                             text-anchor="middle"
                             font-family="var(--font-mono)"
-                            font-size="8"
-                            fill="var(--text-muted)"
-                            font-style="italic">unreachable</text
+                            font-size="13"
+                            fill={reachable
+                                ? node.data
+                                    ? "var(--text)"
+                                    : "var(--text-muted)"
+                                : "var(--text-muted)"}
+                            font-weight={node.data ? "500" : "400"}
+                            >{node.data || "null"}</text
                         >
-                    {/if}
+
+                        <!-- varName label di dalam node -->
+                        <text
+                            x="0"
+                            y="-11"
+                            text-anchor="middle"
+                            font-family="var(--font-mono)"
+                            font-size="8.5"
+                            fill={reachable ? "var(--accent)" : "var(--text-muted)"}
+                            font-weight="500"
+                            >{node.varName}</text
+                        >
+
+                        <!-- Unreachable label -->
+                        {#if !reachable}
+                            <text
+                                x="0"
+                                y={NODE_R + 26}
+                                text-anchor="middle"
+                                font-family="var(--font-mono)"
+                                font-size="8"
+                                fill="var(--text-muted)"
+                                font-style="italic">unreachable</text
+                            >
+                        {/if}
+                    </g>
                 </g>
             {/each}
         </g>
@@ -622,6 +664,17 @@
         flex-direction: column;
         align-items: center;
         gap: 12px;
+        animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -48%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
     }
     .empty-title {
         font-family: var(--font-ui);

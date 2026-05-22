@@ -403,7 +403,8 @@
   }
   .pointer-group { transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out; pointer-events: none; }
   .indicator-group { transition: transform 0.4s ease-in-out; pointer-events: none; }
-  .empty-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .empty-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -48%); } to { opacity: 1; transform: translate(-50%, -50%); } }
   .empty-title { font-family: var(--font-ui); font-size: 16px; font-weight: 700; color: var(--text-muted); }
   .empty-hints-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
   .empty-hint-item { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 12px; color: var(--text-muted); }

@@ -309,15 +309,15 @@
             {:else if page === "#/doubly-linked-list"}
                 <CanvasDLL bind:zoom active={page === "#/doubly-linked-list"} />
             {:else if page === "#/stack"}
-                <CanvasStack {zoom} onzoomchange={(z) => (zoom = z)} />
+                <CanvasStack bind:zoom />
             {:else if page === "#/linked-stack"}
-                <CanvasLinkedStack {zoom} />
+                <CanvasLinkedStack bind:zoom />
             {:else if page === "#/queue"}
-                <CanvasQueue {zoom} />
+                <CanvasQueue bind:zoom />
             {:else if page === "#/linked-queue"}
-                <CanvasLinkedQueue {zoom} />
+                <CanvasLinkedQueue bind:zoom />
             {:else if page === "#/tree"}
-                <CanvasTree {zoom} />
+                <CanvasTree bind:zoom />
             {/if}
         </div>
 

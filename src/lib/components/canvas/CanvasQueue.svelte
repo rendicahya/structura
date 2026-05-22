@@ -370,7 +370,7 @@
     }
 
     onMount(() => {
-        svgEl.addEventListener("wheel", onWheel, { passive: false });
+        if (svgEl) svgEl.addEventListener("wheel", onWheel, { passive: false });
         const onPeek = () => {
             peekingIndex = $frontPtr;
             setTimeout(() => {
@@ -383,41 +383,41 @@
             window.removeEventListener("queue:peek", onPeek);
         };
     });
+
+    $effect(() => {
+        if (svgEl && initialized) {
+            svgEl.addEventListener("wheel", onWheel, { passive: false });
+            return () => svgEl?.removeEventListener("wheel", onWheel);
+        }
+    });
 </script>
 
 <svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
 
 <div class="canvas-wrapper">
-    {#if $queueCapacity === 0}
-        <div class="empty-hint">
-            <div class="empty-title">Queue not initialized</div>
-            <div class="empty-sub">
-                Click <strong>New Queue</strong> to get started
-            </div>
-        </div>
-    {:else}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <svg
-            bind:this={svgEl}
-            class="canvas-svg"
-            class:panning
-            role="application"
-            onmousedown={onSVGMousedown}
-            oncontextmenu={onSVGContextMenu}
-        >
-            <defs>
-                <pattern
-                    id="grid-queue"
-                    width="28"
-                    height="28"
-                    patternUnits="userSpaceOnUse"
-                >
-                    <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
-                </pattern>
-            </defs>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <svg
+        bind:this={svgEl}
+        class="canvas-svg"
+        class:panning
+        role="application"
+        onmousedown={onSVGMousedown}
+        oncontextmenu={onSVGContextMenu}
+    >
+        <defs>
+            <pattern
+                id="grid-queue"
+                width="28"
+                height="28"
+                patternUnits="userSpaceOnUse"
+            >
+                <circle cx="14" cy="14" r="0.8" fill="var(--border)" />
+            </pattern>
+        </defs>
 
-            <rect width="100%" height="100%" fill="url(#grid-queue)" />
+        <rect width="100%" height="100%" fill="url(#grid-queue)" />
 
+        {#if $queueCapacity > 0}
             <g
                 style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
             >
@@ -967,50 +967,59 @@
                     </g>
                 {/if}
             </g>
-        </svg>
-
-        <!-- Context menu -->
-        {#if contextMenu}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="ctx-menu"
-                style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
-                onmousedown={(e) => e.stopPropagation()}
-            >
-                <button
-                    class="ctx-item"
-                    onclick={handleEnqueueFromMenu}
-                    disabled={$queueIsFull}
-                >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <path
-                            d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
-                    Enqueue
-                </button>
-                <button
-                    class="ctx-item"
-                    onclick={handleDequeueFromMenu}
-                    disabled={$queueIsEmpty}
-                >
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                        <path
-                            d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
-                    Dequeue
-                </button>
-            </div>
         {/if}
+    </svg>
+
+    <!-- Context menu -->
+    {#if contextMenu}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="ctx-menu"
+            style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+            onmousedown={(e) => e.stopPropagation()}
+        >
+            <button
+                class="ctx-item"
+                onclick={handleEnqueueFromMenu}
+                disabled={$queueIsFull}
+            >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path
+                        d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+                Enqueue
+            </button>
+            <button
+                class="ctx-item"
+                onclick={handleDequeueFromMenu}
+                disabled={$queueIsEmpty}
+            >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path
+                        d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5"
+                        stroke="currentColor"
+                        stroke-width="1.3"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+                Dequeue
+            </button>
+        </div>
+    {/if}
+
+    {#if $queueCapacity === 0}
+        <div class="empty-hint">
+            <div class="empty-title">Queue not initialized</div>
+            <div class="empty-sub">
+                Click <strong>New Queue</strong> to get started
+            </div>
+        </div>
     {/if}
 </div>
 
@@ -1072,6 +1081,17 @@
         transform: translate(-50%, -50%);
         text-align: center;
         pointer-events: none;
+        animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -48%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
     }
     .empty-title {
         font-family: var(--font-ui);

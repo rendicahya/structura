@@ -7,24 +7,24 @@
 }
 
 :root {
-  --bg: #0d0f14;
-  --surface: #13161e;
-  --surface2: #1a1e2a;
-  --border: #252a38;
-  --border-bright: #353c52;
+  --bg: #050608;
+  --surface: #0f121a;
+  --surface2: #161a26;
+  --border: #3d465c;
+  --border-bright: #5a678a;
   --accent: #5b8fff;
   --accent-dim: #3a5cbf;
   --accent-glow: rgba(91, 143, 255, 0.18);
-  --node-bg: #181c28;
-  --node-border: #2e3650;
+  --node-bg: #111520;
+  --node-border: #a5b4fc;
   --node-selected: #5b8fff;
-  --text: #e8ecf5;
-  --text-dim: #7a8299;
-  --text-muted: #444d66;
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --text-muted: #64748b;
   --danger: #ff5b6e;
   --success: #4ecca3;
   --warning: #f0b429;
-  --code-bg: #0a0c11;
+  --code-bg: #050608;
   --font-ui: 'Syne', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -39,7 +39,7 @@
   --accent-dim: #1d4ed8;
   --accent-glow: rgba(37, 99, 235, 0.1);
   --node-bg: #ffffff;
-  --node-border: #94a3b8;
+  --node-border: #64748b;
   --node-selected: #2563eb;
   --text: #0f172a;
   --text-dim: #475569;

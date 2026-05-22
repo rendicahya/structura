@@ -3,7 +3,6 @@
     import NodeComponent from "../node/NodeComponent.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import ContextMenu from "../ui/ContextMenu.svelte";
-    import EmptyStateSLL from "../ui/EmptyStateSLL.svelte";
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
     import {
         fitToViewTrigger,
@@ -429,7 +428,6 @@
 
     {#if $nodes.length === 0}
         <div class="empty-hint">
-            <EmptyStateSLL />
 
             <div class="empty-title">Canvas is empty</div>
             <div class="empty-hints-list">

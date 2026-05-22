@@ -4,7 +4,6 @@
     import NodeComponent from "../node/NodeComponent.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import ContextMenu from "../ui/ContextMenu.svelte";
-    import EmptyStateDLL from "../ui/EmptyStateDLL.svelte";
     import {
         canvasZoom,
     } from "../../stores/shared/canvasControl.js";
@@ -460,7 +459,6 @@
 
     {#if $nodesDLL.length === 0}
         <div class="empty-hint">
-            <EmptyStateDLL />
 
             <div class="empty-title">Canvas is empty</div>
             <div class="empty-hints-list">
