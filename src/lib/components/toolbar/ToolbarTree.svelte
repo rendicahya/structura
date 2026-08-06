@@ -22,6 +22,16 @@
     } from "../../stores/tree/graphTree.js";
     import { clearLogTree } from "../../stores/shared/treeLog.js";
     import { toast } from "../../stores/shared/toast.js";
+    import {
+        traversalState,
+        startTraversal,
+        stepForward,
+        stepBack,
+        playPause,
+        stopTraversal,
+        resetTraversal,
+        setTraversalSpeed,
+    } from "../../stores/tree/treeTraversal.js";
 
     const {
         zoom = 1,
@@ -51,6 +61,7 @@
     }
 
     function confirmNewActual() {
+        resetTraversal();
         resetTree();
         clearLogTree();
         initHistory();
@@ -60,9 +71,35 @@
     }
 
     function handleGC() {
+        if ($traversalState.playing) {
+            toast.error("Stop traversal playback first");
+            return;
+        }
         pushHistory();
         garbageCollectTree();
         pushHistory();
+    }
+
+    function handleTraversalTypeChange(e) {
+        startTraversal(e.currentTarget.value);
+    }
+
+    function handlePlayPause() {
+        if ($traversalState.order.length === 0) {
+            startTraversal($traversalState.type);
+        }
+        playPause();
+    }
+
+    function handleStepForward() {
+        if ($traversalState.order.length === 0) {
+            startTraversal($traversalState.type);
+        }
+        stepForward();
+    }
+
+    function handleSpeedChange(e) {
+        setTraversalSpeed(Number(e.currentTarget.value));
     }
 
     function handleSave() {
@@ -92,6 +129,7 @@
                 try {
                     const result = /** @type {string} */ (ev.target?.result);
                     const snap = JSON.parse(result);
+                    resetTraversal();
                     pushHistory();
                     applySnapshotTree(snap);
                     toast.success("Loaded successfully");
@@ -168,6 +206,97 @@
                 </svg>
                 Run GC
             </button>
+        </Tooltip>
+
+        <div class="separator"></div>
+
+        <Tooltip text="Traversal order">
+            <select
+                class="traversal-select"
+                value={$traversalState.type}
+                onchange={handleTraversalTypeChange}
+                disabled={$treeIsEmpty}
+            >
+                <option value="inorder">In-order</option>
+                <option value="preorder">Pre-order</option>
+                <option value="postorder">Post-order</option>
+            </select>
+        </Tooltip>
+
+        <Tooltip text={$traversalState.playing ? "Pause" : "Play traversal"}>
+            <button
+                class="btn btn-icon"
+                aria-label={$traversalState.playing ? "Pause" : "Play traversal"}
+                onclick={handlePlayPause}
+                disabled={$treeIsEmpty}
+            >
+                {#if $traversalState.playing}
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <rect x="3" y="2" width="3" height="10" rx="1" fill="currentColor" />
+                        <rect x="8" y="2" width="3" height="10" rx="1" fill="currentColor" />
+                    </svg>
+                {:else}
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M3.5 2.3v9.4c0 .6.6.9 1.1.6l7.6-4.7c.5-.3.5-1 0-1.3L4.6 1.6c-.5-.3-1.1 0-1.1.7z" fill="currentColor" />
+                    </svg>
+                {/if}
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Step back">
+            <button
+                class="btn btn-icon"
+                aria-label="Step back"
+                onclick={stepBack}
+                disabled={$treeIsEmpty || $traversalState.index <= -1}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="2.5" y="2" width="2" height="10" rx="1" fill="currentColor" />
+                    <path d="M11 2.7v8.6c0 .6-.6.9-1.1.6l-5.4-4.3c-.4-.3-.4-1 0-1.3L9.9 2c.5-.3 1.1 0 1.1.7z" fill="currentColor" />
+                </svg>
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Step forward">
+            <button
+                class="btn btn-icon"
+                aria-label="Step forward"
+                onclick={handleStepForward}
+                disabled={$treeIsEmpty ||
+                    ($traversalState.order.length > 0 &&
+                        $traversalState.index >= $traversalState.order.length - 1)}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 2.7v8.6c0 .6.6.9 1.1.6l5.4-4.3c.4-.3.4-1 0-1.3L4.1 2c-.5-.3-1.1 0-1.1.7z" fill="currentColor" />
+                    <rect x="9.5" y="2" width="2" height="10" rx="1" fill="currentColor" />
+                </svg>
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Stop traversal">
+            <button
+                class="btn btn-icon"
+                aria-label="Stop traversal"
+                onclick={stopTraversal}
+                disabled={$traversalState.order.length === 0}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
+                </svg>
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Playback speed">
+            <select
+                class="traversal-select traversal-speed"
+                value={$traversalState.speed}
+                onchange={handleSpeedChange}
+                disabled={$treeIsEmpty}
+            >
+                <option value="1400">0.5x</option>
+                <option value="700">1x</option>
+                <option value="350">2x</option>
+            </select>
         </Tooltip>
 
         <div class="separator"></div>
@@ -549,6 +678,29 @@
     .zoom-label:hover {
         background: var(--border);
         color: var(--text);
+    }
+    .traversal-select {
+        font-family: var(--font-ui);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-dim);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .traversal-select:hover:not(:disabled) {
+        background: var(--border);
+        color: var(--text);
+    }
+    .traversal-select:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    .traversal-speed {
+        width: 58px;
     }
 
     /* Modal */

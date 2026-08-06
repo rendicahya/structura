@@ -10,6 +10,8 @@
         garbageCollectTree,
     } from "../../stores/tree/graphTree.js";
     import { pushHistory } from "../../stores/shared/history.js";
+    import { traversalState } from "../../stores/tree/treeTraversal.js";
+    import { toast } from "../../stores/shared/toast.js";
     import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
 
     const NODE_R = 34; // radius node lingkaran
@@ -144,7 +146,16 @@
         contextMenu = null;
     }
 
+    function blockedByTraversal() {
+        if ($traversalState.playing) {
+            toast.error("Stop traversal playback first");
+            return true;
+        }
+        return false;
+    }
+
     function handleAddRoot() {
+        if (blockedByTraversal()) return;
         pushHistory();
         addTreeNode(null, null);
         pushHistory();
@@ -152,6 +163,7 @@
     }
 
     function handleAddLeft() {
+        if (blockedByTraversal()) return;
         pushHistory();
         addTreeNode(contextMenu?.nodeId ?? null, "left");
         pushHistory();
@@ -159,6 +171,7 @@
     }
 
     function handleAddRight() {
+        if (blockedByTraversal()) return;
         pushHistory();
         addTreeNode(contextMenu?.nodeId ?? null, "right");
         pushHistory();
@@ -166,6 +179,7 @@
     }
 
     function handleRemove() {
+        if (blockedByTraversal()) return;
         pushHistory();
         removeTreeNode(contextMenu?.nodeId ?? "");
         pushHistory();
@@ -173,6 +187,7 @@
     }
 
     function handleGC() {
+        if (blockedByTraversal()) return;
         pushHistory();
         garbageCollectTree();
         pushHistory();
@@ -255,6 +270,13 @@
     function isReachable(nodeId) {
         return reachableIds().has(nodeId);
     }
+
+    let traversalCurrentId = $derived(
+        $traversalState.index >= 0 ? ($traversalState.order[$traversalState.index] ?? null) : null,
+    );
+    let traversalVisitedIds = $derived(
+        new Set($traversalState.order.slice(0, Math.max(0, $traversalState.index))),
+    );
 
     function canAddLeft(nodeId) {
         const node = $treeNodes.find((n) => n.id === nodeId);
@@ -365,6 +387,8 @@
                     <g
                         class="tree-node"
                         class:unreachable={!reachable}
+                        class:traversal-current={node.id === traversalCurrentId}
+                        class:traversal-visited={traversalVisitedIds.has(node.id)}
                         oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
                         ondblclick={() => onNodeDblClick(node.id)}
                     >
@@ -378,16 +402,21 @@
 
                         <!-- Main circle -->
                         <circle
+                            class="node-circle"
                             cx="0"
                             cy="0"
                             r={NODE_R}
-                            fill="var(--node-bg)"
-                            stroke={isRoot
-                                ? "var(--success)"
-                                : reachable
-                                  ? "var(--node-border)"
-                                  : "var(--border)"}
-                            stroke-width={isRoot ? 2 : 1.5}
+                            fill={traversalVisitedIds.has(node.id)
+                                ? "var(--accent-glow)"
+                                : "var(--node-bg)"}
+                            stroke={node.id === traversalCurrentId
+                                ? "var(--warning)"
+                                : isRoot
+                                  ? "var(--success)"
+                                  : reachable
+                                    ? "var(--node-border)"
+                                    : "var(--border)"}
+                            stroke-width={node.id === traversalCurrentId ? 2.5 : isRoot ? 2 : 1.5}
                             stroke-dasharray={reachable ? "none" : "4 3"}
                             opacity={reachable ? 1 : 0.5}
                         />
@@ -632,6 +661,13 @@
     }
     .tree-node.unreachable {
         opacity: 0.5;
+    }
+    .tree-node.traversal-current .node-circle {
+        animation: treeTraversalPulse 900ms ease-in-out infinite;
+    }
+    @keyframes treeTraversalPulse {
+        0%, 100% { filter: drop-shadow(0 0 0 rgba(240, 180, 41, 0)); }
+        50% { filter: drop-shadow(0 0 6px var(--warning)); }
     }
     .inline-edit {
         position: fixed;

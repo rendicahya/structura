@@ -16,6 +16,7 @@
   - **Save/Load**: Export your diagram (and its code log) to JSON and resume later.
 - **Smart Tools**:
   - **Auto GC (Garbage Collection)**: Clean up orphaned/unreachable nodes with one click, and see the generated cleanup code.
+  - **Traversal Playback**: Step or auto-play in-order/pre-order/post-order traversals on the Binary Tree, with the visited node highlighted live and matching code generated as it goes.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
   - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.
 - **User Experience**:
@@ -68,9 +69,12 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 ## 🗺️ Roadmap
 
 All planned data structures (Stack, Queue, Tree) have shipped. Ideas being considered next:
-- [ ] Binary Search Tree-specific operations (search, in-order/pre-order/post-order traversal playback).
+- [x] Binary Search Tree traversal playback (in-order/pre-order/post-order), with play/pause/step controls and matching generated code.
+- [ ] Binary Search Tree search operation.
 - [ ] Additional languages for code generation (e.g. JavaScript, C#).
 - [ ] Exporting the canvas as an image (PNG/SVG).
+- [ ] Graph structure with BFS/DFS traversal playback.
+- [ ] Hash Table structure with collision handling (chaining/open addressing).
 
 ## 🤝 Contributing
 
