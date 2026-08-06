@@ -1054,16 +1054,12 @@
     .queue-action-button.accent rect {
         stroke: color-mix(in srgb, var(--accent) 55%, transparent);
     }
-    .queue-action-button.secondary rect {
-        stroke: color-mix(in srgb, var(--border-bright) 70%, transparent);
-    }
     .queue-action-button:hover:not(.disabled) rect,
     .queue-action-button:focus-visible rect {
         fill: var(--surface2);
         stroke-width: 1.3;
     }
     .queue-action-button text,
-    .queue-action-button circle,
     .queue-action-button line,
     .queue-action-button polygon {
         pointer-events: none;
@@ -1149,10 +1145,5 @@
     .ctx-item:disabled {
         opacity: 0.35;
         cursor: not-allowed;
-    }
-    .ctx-divider {
-        height: 1px;
-        background: var(--border);
-        margin: 4px 0;
     }
 </style>

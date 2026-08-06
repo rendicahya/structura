@@ -413,5 +413,4 @@
   .ctx-item:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
   .ctx-item:disabled { opacity: 0.35; cursor: not-allowed; }
   .ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
-  .ctx-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); padding: 4px 10px 6px; font-style: italic; }
 </style>
