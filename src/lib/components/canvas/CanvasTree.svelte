@@ -10,11 +10,9 @@
         garbageCollectTree,
     } from "../../stores/tree/graphTree.js";
     import { pushHistory } from "../../stores/shared/history.js";
+    import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
 
     const NODE_R = 34; // radius node lingkaran
-    const ZOOM_STEP = 0.1;
-    const ZOOM_MIN = 0.3;
-    const ZOOM_MAX = 2;
 
     let { zoom = $bindable(1) } = $props();
 

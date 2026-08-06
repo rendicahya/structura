@@ -8,7 +8,8 @@
 
 import { writable, get, derived } from 'svelte/store';
 import { logOp, codeLog } from './sllLog.js';
-import { formatValue, formatPythonValue } from '../../utils/formatters.js';
+import { formatValue, formatPythonValue, formatCppValue } from '../../utils/formatters.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /** @type {import('svelte/store').Writable<SLLNode[]>} */
 export const nodes = writable([]);
@@ -277,13 +278,13 @@ export const unreachableCount = derived(
 
 export function getSnapshot() {
     return {
-        nodes: JSON.parse(JSON.stringify(get(nodes))),
-        edges: JSON.parse(JSON.stringify(get(edges))),
+        nodes: cloneStoreValue(nodes),
+        edges: cloneStoreValue(edges),
         headId: get(headId),
         tailId: get(tailId),
         walkId: get(walkId),
         counter: nodeCounter,
-        codeLog: JSON.parse(JSON.stringify(get(codeLog))),
+        codeLog: cloneStoreValue(codeLog),
     };
 }
 

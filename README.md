@@ -1,26 +1,28 @@
 # Structura 🏗️
 
-**Structura** is a powerful, interactive web application designed to help students and educators visualize data structures and generate corresponding code in real-time. Built with a focus on simplicity and educational value, it allows you to build complex diagrams visually and see the implementation logic instantly.
+**Structura** is an interactive web application that helps students and educators visualize data structures and see the corresponding Java, Python, and C++ code generated in real time. Build a structure visually on the canvas — push, enqueue, insert a node — and watch the exact code for that operation appear on the other side.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Svelte](https://img.shields.io/badge/Svelte-5-ff3e00?logo=svelte)](https://svelte.dev/)
-[![Vite](https://img.shields.io/badge/Vite-6-646cff?logo=vite)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite)](https://vitejs.dev/)
 
 ## ✨ Features
 
-- **Interactive Canvas**: Seamlessly drag and drop nodes to build your data structures.
-- **Dual Support**: Full support for both **Singly Linked Lists** and **Doubly Linked Lists**.
-- **Live Code Generation**: Instantly view and copy code in **Java** and **Python** as you modify your diagram.
+- **Seven data structures**: Singly Linked List, Doubly Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, and Binary Tree — each with its own canvas and toolbar.
+- **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
+- **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
-  - **Undo/Redo**: Never worry about mistakes with a robust history system.
-  - **Save/Load**: Export your work to JSON and resume later.
+  - **Undo/Redo**: A full history stack backs every action.
+  - **Save/Load**: Export your diagram (and its code log) to JSON and resume later.
 - **Smart Tools**:
-  - **Auto GC (Garbage Collection)**: Clean up orphaned nodes with one click.
-  - **Zoom & Pan**: Navigate through large structures with ease.
+  - **Auto GC (Garbage Collection)**: Clean up orphaned/unreachable nodes with one click, and see the generated cleanup code.
+  - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
+  - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.
 - **User Experience**:
-  - **Keyboard Shortcuts**: Power-user friendly with a built-in shortcut guide.
-  - **Toast Notifications**: Real-time feedback for all your actions.
-  - **Responsive Splitter**: Customizable workspace for coding and designing.
+  - **Light / Dark Theme**.
+  - **Keyboard Shortcuts**: Built-in shortcut guide (press `?`).
+  - **Toast Notifications**: Real-time feedback for every action.
+  - **Resizable Split View**: Drag the divider to balance canvas vs. code space, or hide the code panel entirely.
 
 ## 🚀 Getting Started
 
@@ -55,18 +57,20 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 ## 📖 How to Use
 
-1. **Add Nodes**: Right-click anywhere on the canvas.
-2. **Connect**: Click a source node, then click a target node to create a link.
-3. **Edit Data**: Double-click any node to change its value.
-4. **Delete**: Use the context menu (right-click) or keyboard shortcuts.
-5. **Shortcuts**: Press `?` to open the Keyboard Shortcut Guide.
+1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly Linked List, Array/Linked-List Stack, Array/Linked-List Queue, and Binary Tree.
+2. **Add Nodes**: Right-click anywhere on the canvas to add a node at that position, or use the toolbar for structure-specific operations (push, enqueue, insert, ...).
+3. **Connect**: Drag from a node's port to another node to link them (drag from the left port for a `prev` pointer on a Doubly Linked List).
+4. **Edit Data**: Double-click any node to change its value.
+5. **Delete / Manage**: Right-click a node for its context menu, or use the toolbar's GC button to sweep up unreachable nodes.
+6. **Pan & Zoom**: Drag the empty canvas to pan, scroll to zoom.
+7. **Shortcuts**: Press `?` to open the Keyboard Shortcut Guide.
 
 ## 🗺️ Roadmap
 
-Future plans for **Structura** include supporting more data structures:
-- [ ] **Stack** visualization and code generation.
-- [ ] **Queue** visualization and code generation.
-- [ ] **Tree** (Binary Search Tree, AVL, etc.) visualization.
+All planned data structures (Stack, Queue, Tree) have shipped. Ideas being considered next:
+- [ ] Binary Search Tree-specific operations (search, in-order/pre-order/post-order traversal playback).
+- [ ] Additional languages for code generation (e.g. JavaScript, C#).
+- [ ] Exporting the canvas as an image (PNG/SVG).
 
 ## 🤝 Contributing
 

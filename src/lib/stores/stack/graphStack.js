@@ -1,5 +1,6 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpStack, stackLog } from '../shared/stackLog.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
  * @typedef {{ id: string, value: string, index: number }} StackItem
@@ -107,13 +108,13 @@ export function initStack(capacity, varName, type) {
 
 export function getSnapshotStack() {
     return {
-        items: JSON.parse(JSON.stringify(get(stackItems))),
+        items: cloneStoreValue(stackItems),
         capacity: get(stackCapacity),
         top: get(topPtr),
         varName: get(stackVarName),
         type: get(stackType),
         counter: itemCounter,
-        codeLog: JSON.parse(JSON.stringify(get(stackLog))),
+        codeLog: cloneStoreValue(stackLog),
         _type: 'stack',
     };
 }

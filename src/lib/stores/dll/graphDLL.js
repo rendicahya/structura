@@ -5,6 +5,7 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpDLL as logOp, codeLogDLL as codeLog } from './dllLog.js';
 import { formatValue, formatPythonValue } from '../../utils/formatters.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /** @type {import('svelte/store').Writable<DLLNode[]>} */
 export const nodesDLL = writable([]);
@@ -370,13 +371,13 @@ export function garbageCollectDLL() {
 
 export function getSnapshotDLL() {
     return {
-        nodes: JSON.parse(JSON.stringify(get(nodesDLL))),
-        edges: JSON.parse(JSON.stringify(get(edgesDLL))),
+        nodes: cloneStoreValue(nodesDLL),
+        edges: cloneStoreValue(edgesDLL),
         headId: get(headIdDLL),
         tailId: get(tailIdDLL),
         walkId: get(walkIdDLL),
         counter: nodeCounter,
-        codeLog: JSON.parse(JSON.stringify(get(codeLog))),
+        codeLog: cloneStoreValue(codeLog),
     };
 }
 

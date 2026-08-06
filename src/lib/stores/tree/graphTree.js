@@ -1,5 +1,6 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpTree, treeLog } from '../shared/treeLog.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
  * @typedef {{ id: string, varName: string, data: string, parentId: string|null, left: string|null, right: string|null, x: number, y: number }} TreeNode
@@ -289,10 +290,10 @@ export function clearTree() {
 
 export function getSnapshotTree() {
     return {
-        nodes: JSON.parse(JSON.stringify(get(treeNodes))),
+        nodes: cloneStoreValue(treeNodes),
         rootId: get(rootId),
         counter: nodeCounter,
-        codeLog: JSON.parse(JSON.stringify(get(treeLog))),
+        codeLog: cloneStoreValue(treeLog),
         _type: 'tree',
     };
 }

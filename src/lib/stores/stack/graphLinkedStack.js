@@ -1,5 +1,8 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpLinkedStack, linkedStackLog, clearLogLinkedStack } from '../shared/linkedStackLog.js';
+import { formatLiteral, formatPythonLiteral } from '../../utils/formatters.js';
+import { reachableIds } from '../../utils/linkedList.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
  * @typedef {{ id: string, varName: string, data: string, nextId: string|null }} LinkedStackNode
@@ -42,9 +45,9 @@ export function pushLinkedStack(value) {
     topId.set(id);
 
     logOpLinkedStack(
-        [`Node ${varName} = new Node(${formatVal(value)});`, `${varName}.next = top;`, `top = ${varName};`],
-        [`${varName} = Node(${formatPyVal(value)})`, `${varName}.next = top`, `top = ${varName}`],
-        [`Node* ${varName} = new Node(${formatVal(value)});`, `${varName}->next = top;`, `top = ${varName};`]
+        [`Node ${varName} = new Node(${formatLiteral(value)});`, `${varName}.next = top;`, `top = ${varName};`],
+        [`${varName} = Node(${formatPythonLiteral(value)})`, `${varName}.next = top`, `top = ${varName}`],
+        [`Node* ${varName} = new Node(${formatLiteral(value)});`, `${varName}->next = top;`, `top = ${varName};`]
     );
 
     return true;
@@ -94,15 +97,7 @@ export function peekLinkedStack() {
 
 export function garbageCollectLinkedStack() {
     const allNodes = get(linkedStackNodes);
-    const reachable = new Set();
-
-    let currentId = get(topId);
-    while (currentId) {
-        reachable.add(currentId);
-        const node = allNodes.find(n => n.id === currentId);
-        currentId = node?.nextId ?? null;
-    }
-
+    const reachable = reachableIds(allNodes, get(topId));
     const toRemove = allNodes.filter(n => !reachable.has(n.id));
 
     if (toRemove.length === 0) {
@@ -133,10 +128,10 @@ export function clearLinkedStack() {
 
 export function getSnapshotLinkedStack() {
     return {
-        nodes: JSON.parse(JSON.stringify(get(linkedStackNodes))),
+        nodes: cloneStoreValue(linkedStackNodes),
         topId: get(topId),
         counter: nodeCounter,
-        codeLog: JSON.parse(JSON.stringify(get(linkedStackLog))),
+        codeLog: cloneStoreValue(linkedStackLog),
         _type: 'linked-stack',
     };
 }
@@ -149,18 +144,4 @@ export function applySnapshotLinkedStack(snapshot) {
     linkedStackNodes.set(snapshot.nodes ?? []);
     topId.set(snapshot.topId ?? null);
     linkedStackLog.set(snapshot.codeLog ?? []);
-}
-
-/** @param {string} val */
-function formatVal(val) {
-    if (!val) return '';
-    if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-    return `"${val}"`;
-}
-
-/** @param {string} val */
-function formatPyVal(val) {
-    if (!val) return '';
-    if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-    return `"${val}"`;
 }

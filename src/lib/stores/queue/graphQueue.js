@@ -1,5 +1,6 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpQueue, queueLog } from '../shared/queueLog.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
  * @typedef {{ id: string, value: string, index: number }} QueueItem
@@ -137,14 +138,14 @@ export function clearQueue() {
 
 export function getSnapshotQueue() {
     return {
-        slots: JSON.parse(JSON.stringify(get(queueSlots))),
+        slots: cloneStoreValue(queueSlots),
         capacity: get(queueCapacity),
         front: get(frontPtr),
         rear: get(rearPtr),
         size: get(queueSize),
         varName: get(queueVarName),
         counter: itemCounter,
-        codeLog: JSON.parse(JSON.stringify(get(queueLog))),
+        codeLog: cloneStoreValue(queueLog),
         _type: 'queue',
     };
 }

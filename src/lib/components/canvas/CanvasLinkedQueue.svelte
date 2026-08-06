@@ -7,15 +7,13 @@
   } from '../../stores/queue/graphLinkedQueue.js';
   import { pushHistory } from '../../stores/shared/history.js';
   import { onMount } from 'svelte';
+  import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from '../../utils/canvasConstants.js';
 
   const NODE_W = 130;
   const NODE_H = 64;
   const NODE_GAP = 60; // ruang untuk panah
   const CANVAS_PAD_X = 60;
   const CANVAS_PAD_Y = 60;
-  const ZOOM_STEP = 0.1;
-  const ZOOM_MIN = 0.3;
-  const ZOOM_MAX = 2;
 
   let { zoom = $bindable(1) } = $props();
 

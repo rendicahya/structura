@@ -8,13 +8,11 @@
         peekLinkedStack,
     } from "../../stores/stack/graphLinkedStack.js";
     import { pushHistory } from "../../stores/shared/history.js";
+    import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
 
     const NODE_W = 130;
     const NODE_H = 64;
     const NODE_GAP = 40;
-    const ZOOM_STEP = 0.1;
-    const ZOOM_MIN = 0.3;
-    const ZOOM_MAX = 2;
 
     let { zoom = $bindable(1) } = $props();
 

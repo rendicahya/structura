@@ -1,5 +1,8 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpLinkedQueue, linkedQueueLog, clearLogLinkedQueue } from '../shared/linkedQueueLog.js';
+import { formatLiteral, formatPythonLiteral } from '../../utils/formatters.js';
+import { walkChain, reachableIds } from '../../utils/linkedList.js';
+import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
  * @typedef {{ id: string, varName: string, data: string, nextId: string|null }} LinkedQueueNode
@@ -17,18 +20,6 @@ export const linkedQueueIsEmpty = derived(
   ($headId) => !$headId
 );
 
-function getQueueChain(nodes, hId) {
-  if (!hId) return [];
-  const result = [];
-  let current = nodes.find(n => n.id === hId);
-  while (current) {
-    result.push(current);
-    const nextId = current.nextId;
-    current = nextId ? nodes.find(n => n.id === nextId) : null;
-  }
-  return result;
-}
-
 export const headNode = derived(
   [linkedQueueNodes, headId],
   ([$nodes, $headId]) => $nodes.find(n => n.id === $headId) || null
@@ -41,14 +32,13 @@ export const tailNode = derived(
 
 export const queueChain = derived(
   [linkedQueueNodes, headId],
-  ([$nodes, $headId]) => getQueueChain($nodes, $headId)
+  ([$nodes, $headId]) => walkChain($nodes, $headId)
 );
 
 export const unreachableQueueNodes = derived(
   [linkedQueueNodes, headId],
   ([$nodes, $headId]) => {
-    const chain = getQueueChain($nodes, $headId);
-    const chainIds = new Set(chain.map(n => n.id));
+    const chainIds = reachableIds($nodes, $headId);
     return $nodes.filter(n => !chainIds.has(n.id));
   }
 );
@@ -76,13 +66,13 @@ export function enqueueLinked(value) {
   linkedQueueNodes.update(ns => [...ns, newNode]);
 
   const javaOps = [
-    `Node ${varName} = new Node(${formatVal(value)});`,
+    `Node ${varName} = new Node(${formatLiteral(value)});`,
   ];
   const pyOps = [
-    `${varName} = Node(${formatPyVal(value)})`,
+    `${varName} = Node(${formatPythonLiteral(value)})`,
   ];
   const cppOps = [
-    `Node* ${varName} = new Node(${formatVal(value)});`,
+    `Node* ${varName} = new Node(${formatLiteral(value)});`,
   ];
 
   if (tId) {
@@ -171,8 +161,7 @@ export function peekLinkedQueue() {
 export function garbageCollectLinkedQueue() {
   const nodes = get(linkedQueueNodes);
   const hId = get(headId);
-  const chain = getQueueChain(nodes, hId);
-  const chainIds = new Set(chain.map(n => n.id));
+  const chainIds = reachableIds(nodes, hId);
   const toRemove = nodes.filter(n => !chainIds.has(n.id));
 
   if (toRemove.length === 0) {
@@ -203,11 +192,11 @@ export function clearLinkedQueue() {
 
 export function getSnapshotLinkedQueue() {
   return {
-    nodes: JSON.parse(JSON.stringify(get(linkedQueueNodes))),
+    nodes: cloneStoreValue(linkedQueueNodes),
     headId: get(headId),
     tailId: get(tailId),
     counter: nodeCounter,
-    codeLog: JSON.parse(JSON.stringify(get(linkedQueueLog))),
+    codeLog: cloneStoreValue(linkedQueueLog),
     _type: 'linked-queue',
   };
 }
@@ -221,18 +210,4 @@ export function applySnapshotLinkedQueue(snapshot) {
   headId.set(snapshot.headId ?? null);
   tailId.set(snapshot.tailId ?? null);
   linkedQueueLog.set(snapshot.codeLog ?? []);
-}
-
-/** @param {string} val */
-function formatVal(val) {
-  if (!val) return '';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
-}
-
-/** @param {string} val */
-function formatPyVal(val) {
-  if (!val) return '';
-  if (/^-?\d+(\.\d+)?$/.test(val.trim())) return val.trim();
-  return `"${val}"`;
 }

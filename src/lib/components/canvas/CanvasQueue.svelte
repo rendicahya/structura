@@ -12,6 +12,7 @@
     } from "../../stores/queue/graphQueue.js";
     import { toast } from "../../stores/shared/toast.js";
     import { onMount } from "svelte";
+    import { ZOOM_STEP, ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
 
     const NODE_W = 80;
     const NODE_H = 70;
@@ -20,9 +21,6 @@
     const CANVAS_PAD_Y = 80;
     const ARROW_SIZE = 40;
     const ARROW_OFFSET = 16;
-    const ZOOM_STEP = 0.1;
-    const ZOOM_MIN = 0.3;
-    const ZOOM_MAX = 2;
 
     let { zoom = $bindable(1) } = $props();
 
