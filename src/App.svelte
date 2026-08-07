@@ -95,6 +95,18 @@
         localStorage.setItem("structura-theme", theme);
     });
 
+    // GA4's automatic history-based page_view tracking doesn't catch this
+    // app's direct `location.hash =` navigation (no pushState/popstate), so
+    // page views are fired manually on every hash change instead.
+    $effect(() => {
+        if (typeof window.gtag === "function") {
+            window.gtag("event", "page_view", {
+                page_path: page,
+                page_title: page.replace("#/", "") || "linked-list",
+            });
+        }
+    });
+
     $effect(() => {
         if (page === "#/linked-list") {
             if (get(codeLog).length === 0) initNodeClass();
