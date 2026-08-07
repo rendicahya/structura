@@ -26,5 +26,8 @@
     "prettier-plugin-svelte": "^3.3.3",
     "svelte": "^5.55.1",
     "vite": "^8.0.4"
+  },
+  "dependencies": {
+    "@xyflow/svelte": "^1.6.2"
   }
 }
