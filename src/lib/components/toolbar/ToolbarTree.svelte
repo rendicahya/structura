@@ -26,6 +26,7 @@
     import {
         traversalState,
         startTraversal,
+        startSearch,
         stepForward,
         stepBack,
         playPause,
@@ -47,6 +48,7 @@
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
 
     let showConfirmNew = $state(false);
+    let searchInput = $state("");
 
     // Register history handlers
     $effect(() => {
@@ -93,14 +95,14 @@
     }
 
     function handlePlayPause() {
-        if ($traversalState.order.length === 0) {
+        if ($traversalState.order.length === 0 && $traversalState.type !== "search") {
             startTraversal($traversalState.type);
         }
         playPause();
     }
 
     function handleStepForward() {
-        if ($traversalState.order.length === 0) {
+        if ($traversalState.order.length === 0 && $traversalState.type !== "search") {
             startTraversal($traversalState.type);
         }
         stepForward();
@@ -108,6 +110,19 @@
 
     function handleSpeedChange(e) {
         setTraversalSpeed(Number(e.currentTarget.value));
+    }
+
+    function handleSearch() {
+        const target = searchInput.trim();
+        if ($treeIsEmpty || !target) return;
+        startSearch(target);
+    }
+
+    function handleSearchKeydown(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleSearch();
+        }
     }
 
     function handleSave() {
@@ -231,12 +246,39 @@
             </select>
         </Tooltip>
 
+        <Tooltip text="Search value">
+            <input
+                class="traversal-select traversal-search-input"
+                type="text"
+                placeholder="Search…"
+                bind:value={searchInput}
+                onkeydown={handleSearchKeydown}
+                disabled={$treeIsEmpty}
+            />
+        </Tooltip>
+
+        <Tooltip text="Search">
+            <button
+                class="btn btn-icon"
+                aria-label="Search"
+                onclick={handleSearch}
+                disabled={$treeIsEmpty || !searchInput.trim()}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M9.2 9.2L12 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+            </button>
+        </Tooltip>
+
         <Tooltip text={$traversalState.playing ? "Pause" : "Play traversal"}>
             <button
                 class="btn btn-icon"
                 aria-label={$traversalState.playing ? "Pause" : "Play traversal"}
                 onclick={handlePlayPause}
-                disabled={$treeIsEmpty}
+                disabled={$treeIsEmpty ||
+                    ($traversalState.order.length > 0 &&
+                        $traversalState.index >= $traversalState.order.length - 1)}
             >
                 {#if $traversalState.playing}
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -710,6 +752,10 @@
     }
     .traversal-speed {
         width: 58px;
+    }
+    .traversal-search-input {
+        width: 84px;
+        cursor: text;
     }
 
     /* Modal */

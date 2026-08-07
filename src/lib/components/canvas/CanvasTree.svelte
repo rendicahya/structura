@@ -277,6 +277,13 @@
     let traversalVisitedIds = $derived(
         new Set($traversalState.order.slice(0, Math.max(0, $traversalState.index))),
     );
+    let searchOutcomeId = $derived(
+        $traversalState.type === "search" &&
+            $traversalState.order.length > 0 &&
+            $traversalState.index === $traversalState.order.length - 1
+            ? traversalCurrentId
+            : null,
+    );
 
     function canAddLeft(nodeId) {
         const node = $treeNodes.find((n) => n.id === nodeId);
@@ -381,14 +388,17 @@
             {#each $treeNodes as node (node.id)}
                 {@const reachable = isReachable(node.id)}
                 {@const isRoot = node.id === $rootId}
+                {@const isSearchOutcome = node.id === searchOutcomeId}
 
                 <g style="transform: translate({node.x}px, {node.y}px); opacity: {initialized ? 1 : 0};">
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <g
                         class="tree-node"
                         class:unreachable={!reachable}
-                        class:traversal-current={node.id === traversalCurrentId}
+                        class:traversal-current={node.id === traversalCurrentId && !isSearchOutcome}
                         class:traversal-visited={traversalVisitedIds.has(node.id)}
+                        class:traversal-found={isSearchOutcome && $traversalState.searchFound}
+                        class:traversal-not-found={isSearchOutcome && !$traversalState.searchFound}
                         oncontextmenu={(e) => onNodeContextMenu(e, node.id)}
                         ondblclick={() => onNodeDblClick(node.id)}
                     >
@@ -406,17 +416,25 @@
                             cx="0"
                             cy="0"
                             r={NODE_R}
-                            fill={traversalVisitedIds.has(node.id)
-                                ? "var(--accent-glow)"
-                                : "var(--node-bg)"}
-                            stroke={node.id === traversalCurrentId
-                                ? "var(--warning)"
-                                : isRoot
-                                  ? "var(--success)"
-                                  : reachable
-                                    ? "var(--node-border)"
-                                    : "var(--border)"}
-                            stroke-width={node.id === traversalCurrentId ? 2.5 : isRoot ? 2 : 1.5}
+                            fill={isSearchOutcome
+                                ? $traversalState.searchFound
+                                    ? "color-mix(in srgb, var(--success) 18%, var(--node-bg))"
+                                    : "color-mix(in srgb, var(--danger) 18%, var(--node-bg))"
+                                : traversalVisitedIds.has(node.id)
+                                  ? "var(--accent-glow)"
+                                  : "var(--node-bg)"}
+                            stroke={isSearchOutcome
+                                ? $traversalState.searchFound
+                                    ? "var(--success)"
+                                    : "var(--danger)"
+                                : node.id === traversalCurrentId
+                                  ? "var(--warning)"
+                                  : isRoot
+                                    ? "var(--success)"
+                                    : reachable
+                                      ? "var(--node-border)"
+                                      : "var(--border)"}
+                            stroke-width={isSearchOutcome || node.id === traversalCurrentId ? 2.5 : isRoot ? 2 : 1.5}
                             stroke-dasharray={reachable ? "none" : "4 3"}
                             opacity={reachable ? 1 : 0.5}
                         />
@@ -668,6 +686,12 @@
     @keyframes treeTraversalPulse {
         0%, 100% { filter: drop-shadow(0 0 0 rgba(240, 180, 41, 0)); }
         50% { filter: drop-shadow(0 0 6px var(--warning)); }
+    }
+    .tree-node.traversal-found .node-circle {
+        filter: drop-shadow(0 0 6px var(--success));
+    }
+    .tree-node.traversal-not-found .node-circle {
+        filter: drop-shadow(0 0 6px var(--danger));
     }
     .inline-edit {
         position: fixed;

@@ -17,6 +17,7 @@
 - **Smart Tools**:
   - **Auto GC (Garbage Collection)**: Clean up orphaned/unreachable nodes with one click, and see the generated cleanup code.
   - **Traversal Playback**: Step or auto-play in-order/pre-order/post-order traversals on the Binary Tree, with the visited node highlighted live and matching code generated as it goes.
+  - **BST Search**: Search for a value with a true comparison-based BST walk — highlights the path node by node, generates the matching search code, and flags found/not-found on the final node.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
   - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.
 - **User Experience**:
@@ -70,7 +71,7 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 All planned data structures (Stack, Queue, Tree) have shipped. Ideas being considered next:
 - [x] Binary Search Tree traversal playback (in-order/pre-order/post-order), with play/pause/step controls and matching generated code.
-- [ ] Binary Search Tree search operation.
+- [x] Binary Search Tree search operation.
 - [ ] Additional languages for code generation (e.g. JavaScript, C#).
 - [ ] Exporting the canvas as an image (PNG/SVG).
 - [ ] Graph structure with BFS/DFS traversal playback.
