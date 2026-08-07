@@ -88,10 +88,12 @@ function closeSession() {
  * @param {TraversalType} type
  */
 export function startTraversal(type) {
-    closeSession();
+    stopInterval();
 
-    pushHistory();
-    sessionActive = true;
+    if (!sessionActive) {
+        pushHistory();
+        sessionActive = true;
+    }
 
     const order = computeOrder(get(treeNodes), get(rootId), type);
     const method = METHODS[type];

@@ -1,4 +1,5 @@
 <script>
+    import { onDestroy } from "svelte";
     import Tooltip from "../ui/Tooltip.svelte";
     import BrandLogo from "../ui/BrandLogo.svelte";
     import {
@@ -52,6 +53,13 @@
         registerHistoryHandlers(getSnapshotTree, applySnapshotTree);
     });
 
+    // Navigating away from the Tree page unmounts this component, but the
+    // traversal interval is module-level state and would otherwise keep
+    // ticking in the background indefinitely.
+    onDestroy(() => {
+        stopTraversal();
+    });
+
     function handleNew() {
         if ($treeNodes.length > 0) {
             showConfirmNew = true;
@@ -71,7 +79,7 @@
     }
 
     function handleGC() {
-        if ($traversalState.playing) {
+        if ($traversalState.order.length > 0) {
             toast.error("Stop traversal playback first");
             return;
         }
@@ -248,7 +256,7 @@
                 class="btn btn-icon"
                 aria-label="Step back"
                 onclick={stepBack}
-                disabled={$treeIsEmpty || $traversalState.index <= -1}
+                disabled={$treeIsEmpty || $traversalState.playing || $traversalState.index <= -1}
             >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <rect x="2.5" y="2" width="2" height="10" rx="1" fill="currentColor" />
@@ -263,6 +271,7 @@
                 aria-label="Step forward"
                 onclick={handleStepForward}
                 disabled={$treeIsEmpty ||
+                    $traversalState.playing ||
                     ($traversalState.order.length > 0 &&
                         $traversalState.index >= $traversalState.order.length - 1)}
             >

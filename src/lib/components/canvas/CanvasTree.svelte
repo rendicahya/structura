@@ -147,7 +147,7 @@
     }
 
     function blockedByTraversal() {
-        if ($traversalState.playing) {
+        if ($traversalState.order.length > 0) {
             toast.error("Stop traversal playback first");
             return true;
         }
