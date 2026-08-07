@@ -36,6 +36,11 @@
     import { treeLog } from "./lib/stores/shared/treeLog.js";
     import { initTree } from "./lib/stores/tree/graphTree.js";
 
+    import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
+    import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
+    import { graphLog } from "./lib/stores/shared/graphLog.js";
+    import { initGraph } from "./lib/stores/graph/graphGraph.js";
+
     onMount(() => {
         initHistory();
 
@@ -101,6 +106,8 @@
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree") {
             if (get(treeLog).length === 0) initTree();
+        } else if (page === "#/graph") {
+            if (get(graphLog).length === 0) initGraph();
         }
 
         zoom = $canvasZoom;
@@ -224,6 +231,14 @@
             Binary Tree
         </button>
 
+        <button
+            class="nav-tab"
+            class:active={page === "#/graph"}
+            onclick={() => navigate("#/graph")}
+        >
+            Graph
+        </button>
+
         <div class="nav-spacer"></div>
 
         <button
@@ -296,6 +311,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/graph"}
+        <ToolbarGraph
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -318,6 +343,8 @@
                 <CanvasLinkedQueue bind:zoom />
             {:else if page === "#/tree"}
                 <CanvasTree bind:zoom />
+            {:else if page === "#/graph"}
+                <CanvasGraph bind:zoom />
             {/if}
         </div>
 
@@ -347,7 +374,9 @@
                                 ? queueLog
                                 : page === "#/linked-queue"
                                   ? linkedQueueLog
-                                  : treeLog}
+                                  : page === "#/graph"
+                                    ? graphLog
+                                    : treeLog}
                 />
             </div>
         {/if}
