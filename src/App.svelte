@@ -45,12 +45,16 @@
     // only the canvas renderer differs (Svelte Flow instead of the
     // hand-rolled SVG canvas) — see plan for rationale.
     import CanvasSLLFlow from "./lib/components/canvas/CanvasSLLFlow.svelte";
+    import CanvasDLLFlow from "./lib/components/canvas/CanvasDLLFlow.svelte";
 
     // The Svelte Flow SLL POC reached feature parity with the old
     // hand-rolled canvas, so the old tab is hidden from the nav (route,
     // component, and store are all still intact — just not linked to from
     // the tab bar). Flip back to true to bring the old tab back.
     const SHOW_OLD_SLL_TAB = false;
+    // Same treatment for the old hand-rolled DLL canvas now that the Svelte
+    // Flow DLL canvas is in place — route, component, and store stay intact.
+    const SHOW_OLD_DLL_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -121,7 +125,10 @@
     $effect(() => {
         if (page === "#/linked-list" || page === "#/linked-list-flow") {
             if (get(codeLog).length === 0) initNodeClass();
-        } else if (page === "#/doubly-linked-list") {
+        } else if (
+            page === "#/doubly-linked-list" ||
+            page === "#/doubly-linked-list-flow"
+        ) {
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
         } else if (page === "#/linked-stack") {
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
@@ -219,10 +226,19 @@
         >
             Singly-linked List
         </button>
+        {#if SHOW_OLD_DLL_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/doubly-linked-list"}
+                onclick={() => navigate("#/doubly-linked-list")}
+            >
+                Doubly-linked List (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
-            class:active={page === "#/doubly-linked-list"}
-            onclick={() => navigate("#/doubly-linked-list")}
+            class:active={page === "#/doubly-linked-list-flow"}
+            onclick={() => navigate("#/doubly-linked-list-flow")}
         >
             Doubly-linked List
         </button>
@@ -282,9 +298,9 @@
         </button>
     </nav>
 
-    {#if page === "#/linked-list" || page === "#/linked-list-flow" || page === "#/doubly-linked-list"}
+    {#if page === "#/linked-list" || page === "#/linked-list-flow" || page === "#/doubly-linked-list" || page === "#/doubly-linked-list-flow"}
         <Toolbar
-            mode={page === "#/doubly-linked-list" ? "dll" : "sll"}
+            mode={page === "#/doubly-linked-list" || page === "#/doubly-linked-list-flow" ? "dll" : "sll"}
             {zoom}
             {zoomIn}
             {zoomOut}
@@ -367,6 +383,8 @@
                 <CanvasSLLFlow bind:zoom />
             {:else if page === "#/doubly-linked-list"}
                 <CanvasDLL bind:zoom active={page === "#/doubly-linked-list"} />
+            {:else if page === "#/doubly-linked-list-flow"}
+                <CanvasDLLFlow bind:zoom />
             {:else if page === "#/stack"}
                 <CanvasStack bind:zoom />
             {:else if page === "#/linked-stack"}
@@ -398,7 +416,8 @@
                 <CodePanel
                     log={page === "#/linked-list" || page === "#/linked-list-flow"
                         ? codeLog
-                        : page === "#/doubly-linked-list"
+                        : page === "#/doubly-linked-list" ||
+                            page === "#/doubly-linked-list-flow"
                           ? codeLogDLL
                           : page === "#/stack"
                             ? stackLog
