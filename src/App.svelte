@@ -48,6 +48,7 @@
     import CanvasDLLFlow from "./lib/components/canvas/CanvasDLLFlow.svelte";
     import CanvasStackFlow from "./lib/components/canvas/CanvasStackFlow.svelte";
     import CanvasLinkedStackFlow from "./lib/components/canvas/CanvasLinkedStackFlow.svelte";
+    import CanvasQueueFlow from "./lib/components/canvas/CanvasQueueFlow.svelte";
 
     // The Svelte Flow SLL POC reached feature parity with the old
     // hand-rolled canvas, so the old tab is hidden from the nav (route,
@@ -65,6 +66,10 @@
     // that the Svelte Flow canvas is in place — route, component, and store
     // stay intact.
     const SHOW_OLD_LINKED_STACK_TAB = false;
+    // Same treatment for the old hand-rolled Array Queue canvas now that the
+    // Svelte Flow queue canvas is in place — route, component, and store
+    // stay intact.
+    const SHOW_OLD_QUEUE_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -287,10 +292,19 @@
         >
             Linked-List Stack
         </button>
+        {#if SHOW_OLD_QUEUE_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/queue"}
+                onclick={() => navigate("#/queue")}
+            >
+                Array Queue (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
-            class:active={page === "#/queue"}
-            onclick={() => navigate("#/queue")}
+            class:active={page === "#/queue-flow"}
+            onclick={() => navigate("#/queue-flow")}
         >
             Array Queue
         </button>
@@ -360,7 +374,7 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
-    {:else if page === "#/queue"}
+    {:else if page === "#/queue" || page === "#/queue-flow"}
         <ToolbarQueue
             {zoom}
             {zoomIn}
@@ -426,6 +440,8 @@
                 <CanvasLinkedStackFlow bind:zoom />
             {:else if page === "#/queue"}
                 <CanvasQueue bind:zoom />
+            {:else if page === "#/queue-flow"}
+                <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
                 <CanvasLinkedQueue bind:zoom />
             {:else if page === "#/tree"}
@@ -459,7 +475,7 @@
                             : page === "#/linked-stack" ||
                                 page === "#/linked-stack-flow"
                               ? linkedStackLog
-                              : page === "#/queue"
+                              : page === "#/queue" || page === "#/queue-flow"
                                 ? queueLog
                                 : page === "#/linked-queue"
                                   ? linkedQueueLog
