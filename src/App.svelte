@@ -40,6 +40,10 @@
     import { treeLog } from "./lib/stores/shared/treeLog.js";
     import { initTree } from "./lib/stores/tree/graphTree.js";
 
+    // Svelte Flow rebuild of the Binary Tree canvas, kept side-by-side with
+    // the legacy tab (not hidden) so they can be compared directly.
+    import CanvasTreeFlow from "./lib/components/canvas/CanvasTreeFlow.svelte";
+
     import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
     import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
     import { graphLog } from "./lib/stores/shared/graphLog.js";
@@ -78,6 +82,10 @@
     // that the Svelte Flow canvas is in place — route, component, and store
     // stay intact.
     const SHOW_OLD_LINKED_QUEUE_TAB = false;
+    // Same treatment for the old hand-rolled Binary Tree canvas now that the
+    // Svelte Flow canvas is in place — route, component, and store stay
+    // intact.
+    const SHOW_OLD_TREE_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -160,7 +168,7 @@
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
         } else if (page === "#/linked-queue" || page === "#/linked-queue-flow") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
-        } else if (page === "#/tree") {
+        } else if (page === "#/tree" || page === "#/tree-flow") {
             if (get(treeLog).length === 0) initTree();
         } else if (page === "#/graph") {
             if (get(graphLog).length === 0) initGraph();
@@ -333,10 +341,19 @@
             Linked-List Queue
         </button>
 
+        {#if SHOW_OLD_TREE_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/tree"}
+                onclick={() => navigate("#/tree")}
+            >
+                Binary Tree (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
-            class:active={page === "#/tree"}
-            onclick={() => navigate("#/tree")}
+            class:active={page === "#/tree-flow"}
+            onclick={() => navigate("#/tree-flow")}
         >
             Binary Tree
         </button>
@@ -411,7 +428,7 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
-    {:else if page === "#/tree"}
+    {:else if page === "#/tree" || page === "#/tree-flow"}
         <ToolbarTree
             {zoom}
             {zoomIn}
@@ -465,6 +482,8 @@
                 <CanvasLinkedQueueFlow bind:zoom />
             {:else if page === "#/tree"}
                 <CanvasTree bind:zoom />
+            {:else if page === "#/tree-flow"}
+                <CanvasTreeFlow bind:zoom />
             {:else if page === "#/graph"}
                 <CanvasGraph bind:zoom />
             {/if}
