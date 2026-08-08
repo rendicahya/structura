@@ -49,6 +49,10 @@
     import { graphLog } from "./lib/stores/shared/graphLog.js";
     import { initGraph } from "./lib/stores/graph/graphGraph.js";
 
+    // Svelte Flow rebuild of the Graph canvas, kept side-by-side with the
+    // legacy tab (not hidden) so they can be compared directly.
+    import CanvasGraphFlow from "./lib/components/canvas/CanvasGraphFlow.svelte";
+
     // Proof of concept: same SLL store/toolbar/code-log as "#/linked-list",
     // only the canvas renderer differs (Svelte Flow instead of the
     // hand-rolled SVG canvas) — see plan for rationale.
@@ -86,6 +90,10 @@
     // Svelte Flow canvas is in place — route, component, and store stay
     // intact.
     const SHOW_OLD_TREE_TAB = false;
+    // Same treatment for the old hand-rolled Graph canvas now that the
+    // Svelte Flow canvas is in place — route, component, and store stay
+    // intact. This was the last structure to migrate.
+    const SHOW_OLD_GRAPH_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -170,7 +178,7 @@
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree" || page === "#/tree-flow") {
             if (get(treeLog).length === 0) initTree();
-        } else if (page === "#/graph") {
+        } else if (page === "#/graph" || page === "#/graph-flow") {
             if (get(graphLog).length === 0) initGraph();
         }
 
@@ -358,10 +366,19 @@
             Binary Tree
         </button>
 
+        {#if SHOW_OLD_GRAPH_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/graph"}
+                onclick={() => navigate("#/graph")}
+            >
+                Graph (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
-            class:active={page === "#/graph"}
-            onclick={() => navigate("#/graph")}
+            class:active={page === "#/graph-flow"}
+            onclick={() => navigate("#/graph-flow")}
         >
             Graph
         </button>
@@ -438,7 +455,7 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
-    {:else if page === "#/graph"}
+    {:else if page === "#/graph" || page === "#/graph-flow"}
         <ToolbarGraph
             {zoom}
             {zoomIn}
@@ -486,6 +503,8 @@
                 <CanvasTreeFlow bind:zoom />
             {:else if page === "#/graph"}
                 <CanvasGraph bind:zoom />
+            {:else if page === "#/graph-flow"}
+                <CanvasGraphFlow bind:zoom />
             {/if}
         </div>
 
@@ -517,7 +536,7 @@
                                 ? queueLog
                                 : page === "#/linked-queue" || page === "#/linked-queue-flow"
                                   ? linkedQueueLog
-                                  : page === "#/graph"
+                                  : page === "#/graph" || page === "#/graph-flow"
                                     ? graphLog
                                     : treeLog}
                 />
