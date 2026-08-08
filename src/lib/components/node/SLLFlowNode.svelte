@@ -117,9 +117,12 @@
     }
     .ground-symbol {
         position: absolute;
-        right: -30px;
-        top: 50%;
-        transform: translateY(-50%);
+        right: -25px;
+        /* The wire stub inside the icon sits at local y=4, not at the
+           viewBox's vertical center, so align by that point rather than
+           centering the whole 26px box — otherwise the wire misses the
+           node's port height and the icon reads as floating/detached. */
+        top: calc(50% - 4px);
         pointer-events: none;
     }
     .badges {

@@ -298,6 +298,7 @@
                 <button class="ctx-item" onclick={handleDequeueFromMenu} disabled={$linkedQueueIsEmpty}>
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4 6.5h5M6.5 4l-2.5 2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     Dequeue
+                    <kbd class="ctx-shortcut">M</kbd>
                 </button>
                 <div class="ctx-divider"></div>
                 <button class="ctx-item" onclick={handleGCFromMenu}>
@@ -439,6 +440,16 @@
     .ctx-item:disabled {
         opacity: 0.35;
         cursor: not-allowed;
+    }
+    .ctx-shortcut {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
     }
     .ctx-divider {
         height: 1px;

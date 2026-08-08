@@ -21,6 +21,7 @@
     import { pushHistory } from "../../stores/shared/history.js";
     import { toast } from "../../stores/shared/toast.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { isTypingTarget } from "../../utils/keyboard.js";
 
     const NODE_R = 28;
 
@@ -148,9 +149,23 @@
         return { fromX: start.x, fromY: start.y, toX: end.x, toY: end.y };
     }
 
+    // The graph-decor overlay draws edges from $graphNodes (app state), not
+    // from Svelte Flow's own live drag position, so the store must be kept
+    // in sync on every drag frame (not just on drop) for edges to visually
+    // follow the node while dragging. The undo snapshot is taken once at
+    // drag start (before any movement) and once at drag stop, so the
+    // continuous updates in between don't flood the history stack.
+    function onNodeDrag({ targetNode }) {
+        if (!targetNode) return;
+        updateGraphNode(
+            targetNode.id,
+            { x: targetNode.position.x + NODE_R, y: targetNode.position.y + NODE_R },
+            true,
+        );
+    }
+
     function onNodeDragStop({ targetNode }) {
         if (!targetNode) return;
-        pushHistory();
         updateGraphNode(
             targetNode.id,
             { x: targetNode.position.x + NODE_R, y: targetNode.position.y + NODE_R },
@@ -164,6 +179,7 @@
     }
 
     function onNodeDragStart({ node }) {
+        pushHistory();
         if ($traversalState.order.length === 0) setStartNode(node.id);
     }
 
@@ -188,6 +204,28 @@
         addGraphNode({ x: contextMenu.flowX, y: contextMenu.flowY });
         pushHistory();
         contextMenu = null;
+    }
+
+    // "N" shortcut has no cursor position to anchor to (unlike the
+    // right-click "Add a node" menu), so it drops the new node at the
+    // center of the current viewport instead.
+    function handleAddNodeShortcut() {
+        if (!wrapperEl) return;
+        const rect = wrapperEl.getBoundingClientRect();
+        const pt = clientToFlow(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        pushHistory();
+        addGraphNode(pt);
+        pushHistory();
+    }
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if (isTypingTarget(e) || e.repeat) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.toLowerCase() === "n") {
+            e.preventDefault();
+            handleAddNodeShortcut();
+        }
     }
 
     function handleDeleteNode() {
@@ -215,7 +253,11 @@
     }
 </script>
 
-<svelte:window onmousemove={onWindowMousemove} onmouseup={onWindowMouseup} />
+<svelte:window
+    onmousemove={onWindowMousemove}
+    onmouseup={onWindowMouseup}
+    onkeydown={onKeydown}
+/>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
     <SvelteFlow
@@ -225,6 +267,7 @@
         bind:viewport
         minZoom={ZOOM_MIN}
         maxZoom={ZOOM_MAX}
+        onnodedrag={onNodeDrag}
         onnodedragstop={onNodeDragStop}
         onnodedragstart={onNodeDragStart}
         onnodeclick={onNodeClick}
@@ -302,6 +345,7 @@
                         <path d="M6.5 4v5M4 6.5h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                     </svg>
                     Add a node
+                    <kbd class="ctx-shortcut">N</kbd>
                 </button>
             {:else}
                 <button class="ctx-item danger" onclick={handleDeleteNode}>
@@ -422,6 +466,16 @@
     }
     .ctx-item.danger {
         color: var(--danger);
+    }
+    .ctx-shortcut {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
     }
     .ctx-item.danger:hover {
         background: rgba(255, 91, 110, 0.1);

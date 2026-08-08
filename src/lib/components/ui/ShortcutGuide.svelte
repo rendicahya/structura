@@ -22,6 +22,8 @@
         { key: "Drag port →", desc: "Connect next pointer" },
         { key: "Drag port ←", desc: "Connect prev pointer (DLL)" },
         { category: "Keyboard" },
+        { key: "N", desc: "Add node / Push / Enqueue" },
+        { key: "M", desc: "Pop / Dequeue (stack & queue pages)" },
         { key: "Ctrl + Z", desc: "Undo" },
         { key: "Ctrl + Y", desc: "Redo" },
         { key: "Escape", desc: "Close menu / cancel edit" },

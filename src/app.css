@@ -25,29 +25,167 @@
   --success: #4ecca3;
   --warning: #f0b429;
   --code-bg: #050608;
+  /* Top nav/toolbar background. Dark themes already read as tinted at
+     --surface, so this just mirrors it; light themes override it below
+     to something more saturated than their near-white --surface. */
+  --toolbar-bg: var(--surface);
   --font-ui: 'Syne', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-.light-theme {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface2: #f1f5f9;
-  --border: #e2e8f0;
-  --border-bright: #cbd5e1;
-  --accent: #2563eb;
-  --accent-dim: #1d4ed8;
-  --accent-glow: rgba(37, 99, 235, 0.1);
-  --node-bg: #ffffff;
-  --node-border: #64748b;
-  --node-selected: #2563eb;
-  --text: #0f172a;
-  --text-dim: #475569;
-  --text-muted: #94a3b8;
-  --danger: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --code-bg: #fdfdfd;
+/* Named themes: applied via [data-theme="..."] on <html>, set from the
+   theme picker in App.svelte. The default dark palette above is the bare
+   :root and needs no attribute — every other theme redefines the same
+   token set. */
+:root[data-theme="light"] {
+  --bg: #faf3ea;
+  --surface: #fffaf3;
+  --surface2: #f3e6d5;
+  --border: #e6d3ba;
+  --border-bright: #d3b78e;
+  --accent: #c2611f;
+  --accent-dim: #9c4d18;
+  --accent-glow: rgba(194, 97, 31, 0.14);
+  --node-bg: #fffaf3;
+  --node-border: #8a7256;
+  --node-selected: #c2611f;
+  --text: #2b1d10;
+  --text-dim: #6b5541;
+  --text-muted: #a3876a;
+  --danger: #d64545;
+  --success: #3f8f5f;
+  --warning: #d1900a;
+  --code-bg: #fff7ec;
+  --toolbar-bg: var(--surface2);
+}
+
+:root[data-theme="ocean"] {
+  --bg: #06100f;
+  --surface: #0c1a1a;
+  --surface2: #122426;
+  --border: #234145;
+  --border-bright: #35636a;
+  --accent: #1fb8a6;
+  --accent-dim: #158f81;
+  --accent-glow: rgba(31, 184, 166, 0.18);
+  --node-bg: #0c1f1f;
+  --node-border: #7fd4c9;
+  --node-selected: #1fb8a6;
+  --text: #eef7f6;
+  --text-dim: #93b3b0;
+  --text-muted: #5f7c79;
+  --danger: #ff5b6e;
+  --success: #34d399;
+  --warning: #f0b429;
+  --code-bg: #050e0d;
+}
+
+:root[data-theme="forest"] {
+  --bg: #070a06;
+  --surface: #0f150e;
+  --surface2: #16200f;
+  --border: #33472e;
+  --border-bright: #4d6b43;
+  --accent: #3fae6a;
+  --accent-dim: #2d8752;
+  --accent-glow: rgba(63, 174, 106, 0.18);
+  --node-bg: #0f1a10;
+  --node-border: #9bcf9f;
+  --node-selected: #3fae6a;
+  --text: #eef7ec;
+  --text-dim: #9db89a;
+  --text-muted: #647a61;
+  --danger: #ff5b6e;
+  --success: #4ecca3;
+  --warning: #f0b429;
+  --code-bg: #0a0f09;
+}
+
+:root[data-theme="grape"] {
+  --bg: #0a0710;
+  --surface: #140f1e;
+  --surface2: #1c1530;
+  --border: #423359;
+  --border-bright: #614a80;
+  --accent: #8b6fe0;
+  --accent-dim: #6b4fc4;
+  --accent-glow: rgba(139, 111, 224, 0.2);
+  --node-bg: #150f22;
+  --node-border: #c4b0f5;
+  --node-selected: #8b6fe0;
+  --text: #f3eefc;
+  --text-dim: #a999c2;
+  --text-muted: #6d5f85;
+  --danger: #ff5b6e;
+  --success: #4ecca3;
+  --warning: #f0b429;
+  --code-bg: #0a0710;
+}
+
+:root[data-theme="rose"] {
+  --bg: #fbf1f2;
+  --surface: #fffafb;
+  --surface2: #f6e5e8;
+  --border: #ecd3d8;
+  --border-bright: #ddb4bd;
+  --accent: #b8496a;
+  --accent-dim: #953a56;
+  --accent-glow: rgba(184, 73, 106, 0.14);
+  --node-bg: #fffafb;
+  --node-border: #8a6670;
+  --node-selected: #b8496a;
+  --text: #2b1a1f;
+  --text-dim: #6b4b53;
+  --text-muted: #a3808a;
+  --danger: #c94a4a;
+  --success: #3f8f5f;
+  --warning: #c98a1f;
+  --code-bg: #fff7f8;
+  --toolbar-bg: var(--surface2);
+}
+
+:root[data-theme="sky"] {
+  --bg: #f3f6fb;
+  --surface: #fbfdff;
+  --surface2: #e7edf7;
+  --border: #d3ddf0;
+  --border-bright: #b6c6e8;
+  --accent: #3568d4;
+  --accent-dim: #274ea8;
+  --accent-glow: rgba(53, 104, 212, 0.14);
+  --node-bg: #fbfdff;
+  --node-border: #6b7ba3;
+  --node-selected: #3568d4;
+  --text: #131b2e;
+  --text-dim: #48547a;
+  --text-muted: #8792ad;
+  --danger: #c94a4a;
+  --success: #2f8f5f;
+  --warning: #b9860a;
+  --code-bg: #f7f9fd;
+  --toolbar-bg: var(--surface2);
+}
+
+:root[data-theme="sage"] {
+  --bg: #f3f7f0;
+  --surface: #fbfdf9;
+  --surface2: #e6efe0;
+  --border: #d2e0c8;
+  --border-bright: #b3c9a3;
+  --accent: #4f7a3f;
+  --accent-dim: #3c5f30;
+  --accent-glow: rgba(79, 122, 63, 0.14);
+  --node-bg: #fbfdf9;
+  --node-border: #7c9268;
+  --node-selected: #4f7a3f;
+  --text: #1c2416;
+  --text-dim: #4f5c44;
+  --text-muted: #8a9880;
+  --danger: #c1503f;
+  --success: #2a8f7a;
+  --warning: #b9860a;
+  --code-bg: #f7faf5;
+  --toolbar-bg: var(--surface2);
 }
 
 html, body {
@@ -64,6 +202,27 @@ html, body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* @xyflow/svelte's <Controls/> defaults to `color: inherit` unless given
+   its `.dark` class, which on this app's dark theme resolves to near-white
+   text on the library's own near-white button background — invisible
+   icons. Override with the app's own theme tokens so it tracks light/dark
+   mode correctly instead of hardcoding one variant. */
+.svelte-flow {
+  --xy-controls-button-background-color: var(--surface2);
+  --xy-controls-button-background-color-hover: var(--border);
+  --xy-controls-button-color: var(--text-dim);
+  --xy-controls-button-color-hover: var(--text);
+  --xy-controls-button-border-color: var(--border);
+  --xy-attribution-background-color: var(--surface2);
+}
+
+/* Same problem for the "Svelte Flow" attribution badge that renders on
+   every canvas: its link color is hardcoded to #999 (built for a light,
+   near-white pill), which barely reads against this app's dark surfaces. */
+.svelte-flow__attribution a {
+  color: var(--text-dim);
 }
 
 ::-webkit-scrollbar {

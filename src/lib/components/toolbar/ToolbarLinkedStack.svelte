@@ -30,6 +30,7 @@
     registerHistoryHandlers(getSnapshotLinkedStack, applySnapshotLinkedStack);
     import { clearLogLinkedStack } from "../../stores/shared/linkedStackLog.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { isTypingTarget } from "../../utils/keyboard.js";
 
     const {
         zoom = 1,
@@ -176,7 +177,22 @@
             window.removeEventListener("linkedstack:pop", onPop);
         };
     });
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if (isTypingTarget(e) || e.repeat) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.toLowerCase() === "n") {
+            e.preventDefault();
+            handlePush();
+        } else if (e.key.toLowerCase() === "m") {
+            e.preventDefault();
+            handlePop();
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="toolbar">
     <div class="brand">
@@ -405,7 +421,7 @@
         justify-content: space-between;
         padding: 0 20px;
         height: 52px;
-        background: var(--surface);
+        background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
         gap: 12px;

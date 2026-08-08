@@ -27,6 +27,7 @@
     } from "../../stores/queue/graphQueue.js";
     import { clearLogQueue } from "../../stores/shared/queueLog.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { isTypingTarget } from "../../utils/keyboard.js";
 
     const {
         zoom = 1,
@@ -45,21 +46,30 @@
     let enqueueInputEl = $state();
     let newCapacity = $state(5);
     let newVarName = $state("queue");
+    let capacityInputEl = $state();
 
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
+
+    function openNewQueueModal() {
+        showNewQueue = true;
+        setTimeout(() => {
+            capacityInputEl?.focus();
+            capacityInputEl?.select();
+        }, 50);
+    }
 
     function handleNewQueue() {
         const slots = $queueSlots;
         if (slots.length > 0) {
             showConfirmNew = true;
         } else {
-            showNewQueue = true;
+            openNewQueueModal();
         }
     }
 
     function confirmNewQueueActual() {
         showConfirmNew = false;
-        showNewQueue = true;
+        openNewQueueModal();
     }
 
     function confirmNewQueue() {
@@ -186,7 +196,23 @@
             window.removeEventListener("queue:dequeue", onDequeue);
         };
     });
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if (isTypingTarget(e) || e.repeat) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if ($queueSlots.length === 0) return;
+        if (e.key.toLowerCase() === "n") {
+            e.preventDefault();
+            handleEnqueue();
+        } else if (e.key.toLowerCase() === "m") {
+            e.preventDefault();
+            handleDequeue();
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="toolbar">
     <div class="brand">
@@ -343,7 +369,9 @@
                     <input
                         id="queue-capacity"
                         type="number"
+                        bind:this={capacityInputEl}
                         bind:value={newCapacity}
+                        onkeydown={(e) => e.key === "Enter" && confirmNewQueue()}
                         min="1"
                         max="20"
                     />
@@ -410,7 +438,7 @@
         justify-content: space-between;
         padding: 0 20px;
         height: 52px;
-        background: var(--surface);
+        background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
         gap: 12px;

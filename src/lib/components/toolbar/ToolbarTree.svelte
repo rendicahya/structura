@@ -635,7 +635,7 @@
         justify-content: space-between;
         padding: 0 20px;
         height: 52px;
-        background: var(--surface);
+        background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
         gap: 12px;

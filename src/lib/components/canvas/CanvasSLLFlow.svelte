@@ -20,7 +20,7 @@
         setTail,
         setWalk,
     } from "../../stores/sll/graph.js";
-    import { pushHistory } from "../../stores/shared/history.js";
+    import { pushHistory, undo, redo } from "../../stores/shared/history.js";
 
     let { zoom = $bindable(1) } = $props();
 
@@ -200,7 +200,24 @@
         removeNodeFromList(contextMenu.node.id);
         pushHistory();
     }
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+            e.preventDefault();
+            undo();
+        }
+        if (
+            (e.ctrlKey || e.metaKey) &&
+            (e.key === "y" || (e.shiftKey && e.key === "z"))
+        ) {
+            e.preventDefault();
+            redo();
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
     <SvelteFlow

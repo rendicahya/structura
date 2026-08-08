@@ -334,10 +334,12 @@
                 <button class="ctx-item" onclick={handlePushFromMenu}>
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 9V4M4 6.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Push
+                    <kbd class="ctx-shortcut">N</kbd>
                 </button>
                 <button class="ctx-item" onclick={handlePopFromMenu} disabled={$linkedStackIsEmpty}>
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 4v5M4 6.5l2.5-2.5 2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Pop
+                    <kbd class="ctx-shortcut">M</kbd>
                 </button>
                 <div class="ctx-divider"></div>
                 <button class="ctx-item" onclick={handleGCFromMenu}>
@@ -483,6 +485,16 @@
     .ctx-item:disabled {
         opacity: 0.35;
         cursor: not-allowed;
+    }
+    .ctx-shortcut {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
     }
     .ctx-divider {
         height: 1px;

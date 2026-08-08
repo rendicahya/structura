@@ -39,6 +39,7 @@
         arrangeNodesDLL,
     } from "../../stores/dll/graphDLL.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { isTypingTarget } from "../../utils/keyboard.js";
 
     const {
         mode = "sll",
@@ -165,7 +166,19 @@
         };
         input.click();
     }
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if (isTypingTarget(e) || e.repeat) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.toLowerCase() === "n") {
+            e.preventDefault();
+            handleAddNode();
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="toolbar">
     <div class="brand">
@@ -174,10 +187,12 @@
     </div>
 
     <div class="actions">
-        <button class="btn btn-primary" onclick={handleAddNode}>
-            <Icon name="plus" />
-            Add Node
-        </button>
+        <Tooltip text="Add a node" shortcut="N">
+            <button class="btn btn-primary" onclick={handleAddNode}>
+                <Icon name="plus" />
+                Add Node
+            </button>
+        </Tooltip>
 
         <Tooltip text="Auto-arrange all nodes in a row">
             <button
@@ -350,7 +365,7 @@
         justify-content: space-between;
         padding: 0 20px;
         height: 52px;
-        background: var(--surface);
+        background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
         gap: 12px;

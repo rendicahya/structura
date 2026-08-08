@@ -10,6 +10,7 @@
   import { clearLogLinkedQueue } from '../../stores/shared/linkedQueueLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { onMount } from 'svelte';
+  import { isTypingTarget } from '../../utils/keyboard.js';
 
   const {
     zoom = 1,
@@ -133,7 +134,22 @@
       window.removeEventListener('linkedqueue:dequeue', onDequeue);
     };
   });
+
+  /** @param {KeyboardEvent} e */
+  function onKeydown(e) {
+    if (isTypingTarget(e) || e.repeat) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      handleEnqueue();
+    } else if (e.key.toLowerCase() === 'm') {
+      e.preventDefault();
+      handleDequeue();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="toolbar">
   <div class="brand">
@@ -295,7 +311,7 @@
 {/if}
 
 <style>
-  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; background: var(--toolbar-bg); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand-name { font-family: var(--font-ui); font-weight: 800; font-size: 18px; letter-spacing: -0.5px; color: var(--text); }
   .actions { display: flex; align-items: center; gap: 6px; }

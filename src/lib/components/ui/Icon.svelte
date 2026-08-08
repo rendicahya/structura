@@ -109,6 +109,13 @@
         `,
         moon: `
             <path d="M11 9.5C10.2 9.8 9.4 10 8.5 10 5.5 10 3 7.5 3 4.5c0-.9.2-1.7.5-2.5C2 3 1 5 1 7.5 1 10.5 3.5 13 6.5 13c2.5 0 4.5-1 5.5-2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        `,
+        system: `
+            <rect x="1.5" y="2.5" width="11" height="7.5" rx="1.2" stroke="currentColor" stroke-width="1.3" />
+            <path d="M5 12.5h4M7 10v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+        `,
+        check: `
+            <path d="M3 7.2l2.6 2.6L11 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         `
     };
 

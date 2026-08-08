@@ -381,6 +381,7 @@
                     }}
                     onmousedown={(e) => e.stopPropagation()}
                 >
+                    <title>Dequeue front element (M)</title>
                     <rect
                         x={CANVAS_PAD_X - 24 - ARROW_OFFSET - ARROW_SIZE / 2 - 45}
                         y={SLOT_Y + NODE_H / 2 - 38}
@@ -541,6 +542,7 @@
                     }}
                     onmousedown={(e) => e.stopPropagation()}
                 >
+                    <title>Enqueue value (N)</title>
                     <rect
                         x={CANVAS_PAD_X + totalW + 24 + ARROW_OFFSET + ARROW_SIZE / 2 - 29 + 15}
                         y={SLOT_Y + NODE_H / 2 - 17}

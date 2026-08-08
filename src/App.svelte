@@ -111,9 +111,16 @@
         window.addEventListener("hashchange", onHashChange);
         window.addEventListener("wheel", onWindowWheel, { passive: false });
 
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+        const onMediaChange = (e) => {
+            systemPrefersLight = e.matches;
+        };
+        media.addEventListener("change", onMediaChange);
+
         return () => {
             window.removeEventListener("hashchange", onHashChange);
             window.removeEventListener("wheel", onWindowWheel);
+            media.removeEventListener("change", onMediaChange);
         };
     });
 
@@ -131,7 +138,72 @@
     let zoom = $state(1);
     let canvasFitToView = $state(null);
 
-    let theme = $state(localStorage.getItem("structura-theme") ?? "dark");
+    // Themes are grouped into "dark" and "light" categories; each category
+    // has exactly one default (isDefault: true), which is what "System"
+    // resolves to for that OS color-scheme preference.
+    const THEME_GROUPS = [
+        {
+            id: "dark",
+            label: "Dark",
+            themes: [
+                { id: "dark", label: "Dark", swatch: "#5b8fff", isDefault: true },
+                { id: "ocean", label: "Ocean", swatch: "#1fb8a6" },
+                { id: "forest", label: "Forest", swatch: "#3fae6a" },
+                { id: "grape", label: "Grape", swatch: "#8b6fe0" },
+            ],
+        },
+        {
+            id: "light",
+            label: "Light",
+            themes: [
+                { id: "light", label: "Light", swatch: "#c2611f", isDefault: true },
+                { id: "rose", label: "Rose", swatch: "#b8496a" },
+                { id: "sky", label: "Sky", swatch: "#3568d4" },
+                { id: "sage", label: "Sage", swatch: "#4f7a3f" },
+            ],
+        },
+    ];
+    const THEME_LOOKUP = new Map(
+        THEME_GROUPS.flatMap((g) => g.themes.map((t) => [t.id, t])),
+    );
+
+    function groupDefaultTheme(groupId) {
+        const group = THEME_GROUPS.find((g) => g.id === groupId);
+        return group.themes.find((t) => t.isDefault)?.id ?? group.themes[0].id;
+    }
+
+    let themePref = $state(localStorage.getItem("structura-theme") ?? "system");
+    let systemPrefersLight = $state(
+        typeof window !== "undefined" && window.matchMedia
+            ? window.matchMedia("(prefers-color-scheme: light)").matches
+            : false,
+    );
+    // "system" resolves to the current OS category's default theme; every
+    // other named theme is an explicit choice and passes through unchanged.
+    let effectiveTheme = $derived(
+        themePref === "system"
+            ? groupDefaultTheme(systemPrefersLight ? "light" : "dark")
+            : themePref,
+    );
+    let activeThemeSwatch = $derived(THEME_LOOKUP.get(effectiveTheme)?.swatch);
+    let themeMenuOpen = $state(false);
+    let themePickerEl = $state();
+
+    $effect(() => {
+        if (!themeMenuOpen) return;
+        function onDocMousedown(e) {
+            if (themePickerEl && !themePickerEl.contains(e.target)) {
+                themeMenuOpen = false;
+            }
+        }
+        window.addEventListener("mousedown", onDocMousedown);
+        return () => window.removeEventListener("mousedown", onDocMousedown);
+    });
+
+    function selectTheme(pref) {
+        themePref = pref;
+        themeMenuOpen = false;
+    }
 
     const ZOOM_STEP = 0.1;
 
@@ -141,12 +213,12 @@
     });
 
     $effect(() => {
-        if (theme === "light") {
-            document.documentElement.classList.add("light-theme");
+        if (effectiveTheme === "dark") {
+            document.documentElement.removeAttribute("data-theme");
         } else {
-            document.documentElement.classList.remove("light-theme");
+            document.documentElement.setAttribute("data-theme", effectiveTheme);
         }
-        localStorage.setItem("structura-theme", theme);
+        localStorage.setItem("structura-theme", themePref);
     });
 
     // GA4's automatic history-based page_view tracking doesn't catch this
@@ -385,13 +457,69 @@
 
         <div class="nav-spacer"></div>
 
-        <button
-            class="theme-toggle"
-            onclick={() => (theme = theme === "dark" ? "light" : "dark")}
-            title="Toggle light/dark mode"
-        >
-            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
-        </button>
+        <div class="theme-picker" bind:this={themePickerEl}>
+            <button
+                class="theme-toggle"
+                onclick={() => (themeMenuOpen = !themeMenuOpen)}
+                title="Theme"
+                aria-haspopup="true"
+                aria-expanded={themeMenuOpen}
+            >
+                {#if themePref === "system"}
+                    <Icon name="system" size={16} />
+                {:else}
+                    <span
+                        class="theme-swatch"
+                        style="background: {activeThemeSwatch}"
+                    ></span>
+                {/if}
+            </button>
+            {#if themeMenuOpen}
+                <div class="theme-menu">
+                    {#each THEME_GROUPS as group (group.id)}
+                        <div class="theme-menu-heading">{group.label}</div>
+                        {#each group.themes as opt (opt.id)}
+                            <button
+                                class="theme-menu-item"
+                                class:active={themePref === opt.id}
+                                onclick={() => selectTheme(opt.id)}
+                            >
+                                <span
+                                    class="theme-swatch"
+                                    style="background: {opt.swatch}"
+                                ></span>
+                                {opt.label}
+                                <span class="theme-menu-trail">
+                                    {#if opt.isDefault}<span
+                                            class="theme-default-tag"
+                                            >Default</span
+                                        >{/if}
+                                    {#if themePref === opt.id}<Icon
+                                            name="check"
+                                            size={13}
+                                        />{/if}
+                                </span>
+                            </button>
+                        {/each}
+                    {/each}
+                    <div class="theme-menu-divider"></div>
+                    <button
+                        class="theme-menu-item"
+                        class:active={themePref === "system"}
+                        onclick={() => selectTheme("system")}
+                    >
+                        <Icon name="system" size={13} />
+                        System
+                        <span class="theme-menu-trail">
+                            {#if themePref === "system"}<Icon
+                                    name="check"
+                                    size={13}
+                                />{/if}
+                        </span>
+                    </button>
+                </div>
+            {/if}
+        </div>
     </nav>
 
     {#if page === "#/linked-list" || page === "#/linked-list-flow" || page === "#/doubly-linked-list" || page === "#/doubly-linked-list-flow"}
@@ -565,7 +693,7 @@
         align-items: center;
         gap: 2px;
         padding: 6px 20px 0;
-        background: var(--surface);
+        background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
     }
@@ -596,13 +724,17 @@
         flex: 1;
     }
 
+    .theme-picker {
+        position: relative;
+        margin-bottom: 6px;
+    }
+
     .theme-toggle {
         display: flex;
         align-items: center;
         justify-content: center;
         width: 32px;
         height: 32px;
-        margin-bottom: 6px;
         background: none;
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -614,6 +746,97 @@
         background: var(--surface2);
         color: var(--accent);
         border-color: var(--accent);
+    }
+
+    .theme-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        min-width: 178px;
+        padding: 5px;
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        animation: themeMenuIn 0.12s ease;
+    }
+    @keyframes themeMenuIn {
+        from {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.97);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    .theme-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 7px 9px;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-family: var(--font-ui);
+        font-size: 12.5px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+    .theme-menu-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+    }
+    .theme-menu-item.active {
+        color: var(--accent);
+    }
+    .theme-menu-trail {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .theme-default-tag {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        color: var(--text-muted);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+    }
+    .theme-menu-heading {
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 6px 9px 3px;
+    }
+    .theme-menu-heading:first-child {
+        padding-top: 3px;
+    }
+    .theme-menu-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 4px 2px;
+    }
+    .theme-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        border: 1px solid rgba(0, 0, 0, 0.2);
     }
 
     .workspace {

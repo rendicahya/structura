@@ -383,7 +383,10 @@
             transform: translate(-50%, -50%) scale({viewport.zoom});
         "
         >
-            <Tooltip text={$stackIsFull ? "Stack is full" : "Push value"}>
+            <Tooltip
+                text={$stackIsFull ? "Stack is full" : "Push value"}
+                shortcut="N"
+            >
                 <button
                     class="btn-canvas btn-push"
                     onclick={handlePushFromMenu}
@@ -395,6 +398,7 @@
             </Tooltip>
             <Tooltip
                 text={$stackIsEmpty ? "Stack is empty" : "Pop top element"}
+                shortcut="M"
             >
                 <button
                     class="btn-canvas btn-pop"
