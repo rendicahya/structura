@@ -31,6 +31,10 @@
     import { linkedQueueLog } from "./lib/stores/shared/linkedQueueLog.js";
     import { initNodeClassLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
 
+    // Svelte Flow rebuild of the Linked-List Queue canvas, kept side-by-side
+    // with the legacy tab (not hidden) so they can be compared directly.
+    import CanvasLinkedQueueFlow from "./lib/components/canvas/CanvasLinkedQueueFlow.svelte";
+
     import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
     import CanvasTree from "./lib/components/canvas/CanvasTree.svelte";
     import { treeLog } from "./lib/stores/shared/treeLog.js";
@@ -70,6 +74,10 @@
     // Svelte Flow queue canvas is in place — route, component, and store
     // stay intact.
     const SHOW_OLD_QUEUE_TAB = false;
+    // Same treatment for the old hand-rolled Linked-List Queue canvas now
+    // that the Svelte Flow canvas is in place — route, component, and store
+    // stay intact.
+    const SHOW_OLD_LINKED_QUEUE_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -150,7 +158,7 @@
             page === "#/linked-stack-flow"
         ) {
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
-        } else if (page === "#/linked-queue") {
+        } else if (page === "#/linked-queue" || page === "#/linked-queue-flow") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree") {
             if (get(treeLog).length === 0) initTree();
@@ -308,10 +316,19 @@
         >
             Array Queue
         </button>
+        {#if SHOW_OLD_LINKED_QUEUE_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/linked-queue"}
+                onclick={() => navigate("#/linked-queue")}
+            >
+                Linked-List Queue (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
-            class:active={page === "#/linked-queue"}
-            onclick={() => navigate("#/linked-queue")}
+            class:active={page === "#/linked-queue-flow"}
+            onclick={() => navigate("#/linked-queue-flow")}
         >
             Linked-List Queue
         </button>
@@ -384,7 +401,7 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
-    {:else if page === "#/linked-queue"}
+    {:else if page === "#/linked-queue" || page === "#/linked-queue-flow"}
         <ToolbarLinkedQueue
             {zoom}
             {zoomIn}
@@ -444,6 +461,8 @@
                 <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
                 <CanvasLinkedQueue bind:zoom />
+            {:else if page === "#/linked-queue-flow"}
+                <CanvasLinkedQueueFlow bind:zoom />
             {:else if page === "#/tree"}
                 <CanvasTree bind:zoom />
             {:else if page === "#/graph"}
@@ -477,7 +496,7 @@
                               ? linkedStackLog
                               : page === "#/queue" || page === "#/queue-flow"
                                 ? queueLog
-                                : page === "#/linked-queue"
+                                : page === "#/linked-queue" || page === "#/linked-queue-flow"
                                   ? linkedQueueLog
                                   : page === "#/graph"
                                     ? graphLog
