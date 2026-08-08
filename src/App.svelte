@@ -61,6 +61,10 @@
     // Svelte Flow stack canvas is in place — route, component, and store
     // stay intact.
     const SHOW_OLD_STACK_TAB = false;
+    // Same treatment for the old hand-rolled Linked-List Stack canvas now
+    // that the Svelte Flow canvas is in place — route, component, and store
+    // stay intact.
+    const SHOW_OLD_LINKED_STACK_TAB = false;
 
     onMount(() => {
         initHistory();
@@ -267,13 +271,15 @@
         >
             Array Stack
         </button>
-        <button
-            class="nav-tab"
-            class:active={page === "#/linked-stack"}
-            onclick={() => navigate("#/linked-stack")}
-        >
-            Linked-List Stack (legacy canvas)
-        </button>
+        {#if SHOW_OLD_LINKED_STACK_TAB}
+            <button
+                class="nav-tab"
+                class:active={page === "#/linked-stack"}
+                onclick={() => navigate("#/linked-stack")}
+            >
+                Linked-List Stack (legacy canvas)
+            </button>
+        {/if}
         <button
             class="nav-tab"
             class:active={page === "#/linked-stack-flow"}
