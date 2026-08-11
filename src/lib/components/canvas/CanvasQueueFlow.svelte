@@ -34,6 +34,10 @@
     let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = false;
     let centeredSlotsRef = null;
+    // See CanvasStackFlow.svelte: remount Svelte Flow whenever we recenter so
+    // its internal pan/zoom transform reseeds from the corrected viewport
+    // instead of snapping back to the stale pre-center one on the next drag.
+    let flowGen = $state(0);
     let peekingIndex = $state(null);
     let animatingEnqueueIndex = $state(null);
     let animatingEnqueue = $state(null);
@@ -264,6 +268,7 @@
             x: (rect.width - queueW) / 2 - CANVAS_PAD_X,
             y: (rect.height - NODE_H) / 2 - SLOT_Y,
         };
+        flowGen++;
     }
 
     let flowNodes = $derived(
@@ -340,20 +345,22 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    <SvelteFlow
-        nodes={flowNodes}
-        edges={[]}
-        {nodeTypes}
-        bind:viewport
-        minZoom={ZOOM_MIN}
-        maxZoom={ZOOM_MAX}
-        onnodecontextmenu={onNodeContextMenu}
-        onpanecontextmenu={onPaneContextMenu}
-        onpaneclick={closeContextMenu}
-        onmoveend={onMoveEnd}
-    >
-        <Background />
-    </SvelteFlow>
+    {#key flowGen}
+        <SvelteFlow
+            nodes={flowNodes}
+            edges={[]}
+            {nodeTypes}
+            bind:viewport
+            minZoom={ZOOM_MIN}
+            maxZoom={ZOOM_MAX}
+            onnodecontextmenu={onNodeContextMenu}
+            onpanecontextmenu={onPaneContextMenu}
+            onpaneclick={closeContextMenu}
+            onmoveend={onMoveEnd}
+        >
+            <Background />
+        </SvelteFlow>
+    {/key}
 
     {#if $queueCapacity > 0}
         <svg class="queue-decor">

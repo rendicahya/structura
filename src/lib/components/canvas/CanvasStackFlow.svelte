@@ -33,6 +33,14 @@
 
     let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
+    // Svelte Flow's own pan/zoom gesture seeds its internal transform once,
+    // at mount, from whatever `viewport` holds at that instant. Recentering
+    // after mount (e.g. after navigating here or creating a new stack) only
+    // updates the value we render from, not that internal transform, so the
+    // next drag would otherwise snap back to a transform based on the stale
+    // pre-center position. Remounting Svelte Flow whenever we recenter forces
+    // it to reseed from the now-correct `viewport`, keeping the two in sync.
+    let flowGen = $state(0);
 
     /** @type {{ x: number, y: number, type: 'canvas' | 'item', itemId?: string } | null} */
     let contextMenu = $state(null);
@@ -72,6 +80,7 @@
             x: rect.width / 2 - stackWidth / 2 - 20,
             y: rect.height / 2 - stackHeight / 2,
         };
+        flowGen++;
     }
 
     $effect(() => {
@@ -218,20 +227,22 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    <SvelteFlow
-        nodes={flowNodes}
-        edges={[]}
-        {nodeTypes}
-        bind:viewport
-        minZoom={ZOOM_MIN}
-        maxZoom={ZOOM_MAX}
-        onnodecontextmenu={onNodeContextMenu}
-        onpanecontextmenu={onPaneContextMenu}
-        onpaneclick={closeContextMenu}
-        onmoveend={onMoveEnd}
-    >
-        <Background />
-    </SvelteFlow>
+    {#key flowGen}
+        <SvelteFlow
+            nodes={flowNodes}
+            edges={[]}
+            {nodeTypes}
+            bind:viewport
+            minZoom={ZOOM_MIN}
+            maxZoom={ZOOM_MAX}
+            onnodecontextmenu={onNodeContextMenu}
+            onpanecontextmenu={onPaneContextMenu}
+            onpaneclick={closeContextMenu}
+            onmoveend={onMoveEnd}
+        >
+            <Background />
+        </SvelteFlow>
+    {/key}
 
     {#if $stackCapacity > 0}
         <svg class="stack-decor">

@@ -47,18 +47,27 @@
     let showPush = $state(false);
     let pushValue = $state("");
     let newCapacity = $state(5);
+    let capacityInputEl = $state();
+
+    function openNewStackModal() {
+        showNewStack = true;
+        setTimeout(() => {
+            capacityInputEl?.focus();
+            capacityInputEl?.select();
+        }, 50);
+    }
 
     function handleNewStack() {
         if (!$stackIsEmpty) {
             showConfirmNew = true;
         } else {
-            showNewStack = true;
+            openNewStackModal();
         }
     }
 
     function confirmNewStackActual() {
         showConfirmNew = false;
-        showNewStack = true;
+        openNewStackModal();
     }
 
     function confirmNewStack() {
@@ -385,6 +394,8 @@
                         id="stack-capacity"
                         type="number"
                         bind:value={newCapacity}
+                        bind:this={capacityInputEl}
+                        onkeydown={(e) => e.key === "Enter" && confirmNewStack()}
                         min="1"
                         max="20"
                     />

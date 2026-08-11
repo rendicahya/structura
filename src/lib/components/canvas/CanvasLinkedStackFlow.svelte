@@ -29,6 +29,10 @@
     let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
     let peekingId = $state(null);
+    // See CanvasStackFlow.svelte: remount Svelte Flow whenever we recenter so
+    // its internal pan/zoom transform reseeds from the corrected viewport
+    // instead of snapping back to the stale pre-center one on the next drag.
+    let flowGen = $state(0);
 
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
@@ -64,6 +68,7 @@
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
         viewport = { ...viewport, x: rect.width / 2 - NODE_W / 2, y: 120 };
+        flowGen++;
     }
 
     $effect(() => {
@@ -216,20 +221,22 @@
         </div>
     {/if}
 
-    <SvelteFlow
-        nodes={flowNodes}
-        edges={[]}
-        {nodeTypes}
-        bind:viewport
-        minZoom={ZOOM_MIN}
-        maxZoom={ZOOM_MAX}
-        onnodecontextmenu={onNodeContextMenu}
-        onpanecontextmenu={onPaneContextMenu}
-        onpaneclick={closeContextMenu}
-        onmoveend={onMoveEnd}
-    >
-        <Background />
-    </SvelteFlow>
+    {#key flowGen}
+        <SvelteFlow
+            nodes={flowNodes}
+            edges={[]}
+            {nodeTypes}
+            bind:viewport
+            minZoom={ZOOM_MIN}
+            maxZoom={ZOOM_MAX}
+            onnodecontextmenu={onNodeContextMenu}
+            onpanecontextmenu={onPaneContextMenu}
+            onpaneclick={closeContextMenu}
+            onmoveend={onMoveEnd}
+        >
+            <Background />
+        </SvelteFlow>
+    {/key}
 
     <svg class="ls-decor">
         <defs>
