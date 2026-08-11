@@ -1,7 +1,6 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, untrack } from "svelte";
     import { get } from "svelte/store";
-    import { canvasZoom } from "./lib/stores/shared/canvasControl.js";
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
@@ -136,6 +135,9 @@
     let draggingSplitter = $state(false);
     let containerEl = $state();
     let zoom = $state(1);
+    // Each page remembers its own zoom level independently, so zooming in
+    // one structure's canvas never bleeds into another's.
+    let zoomByPage = $state({});
     let canvasFitToView = $state(null);
 
     // Themes are grouped into "dark" and "light" categories; each category
@@ -254,7 +256,20 @@
             if (get(graphLog).length === 0) initGraph();
         }
 
-        zoom = $canvasZoom;
+        const p = page;
+        untrack(() => {
+            zoom = zoomByPage[p] ?? 1;
+        });
+    });
+
+    // Whenever the zoom level changes (via the toolbar buttons or the
+    // canvas's own pan/zoom gestures), remember it per-page so switching
+    // pages and coming back restores the zoom that page was left at.
+    $effect(() => {
+        const z = zoom;
+        untrack(() => {
+            zoomByPage[page] = z;
+        });
     });
 
     function zoomIn() {
@@ -288,7 +303,6 @@
 
     function navigate(hash) {
         location.hash = hash;
-        zoom = 1;
     }
 
     function onKeydown(e) {
