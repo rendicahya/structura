@@ -14,6 +14,7 @@
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
     import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
     import Icon from "./lib/components/ui/Icon.svelte";
+    import { isTypingTarget } from "./lib/utils/keyboard.js";
 
     import { initHistory } from "./lib/stores/shared/history.js";
     import { codeLog } from "./lib/stores/sll/sllLog.js";
@@ -305,9 +306,32 @@
         location.hash = hash;
     }
 
+    // Tab order for Ctrl+1..Ctrl+8 page switching, matching the nav bar.
+    const PAGE_ORDER = [
+        "#/linked-list-flow",
+        "#/doubly-linked-list-flow",
+        "#/stack-flow",
+        "#/linked-stack-flow",
+        "#/queue-flow",
+        "#/linked-queue-flow",
+        "#/tree-flow",
+        "#/graph-flow",
+    ];
+
     function onKeydown(e) {
+        if (isTypingTarget(e)) return;
+
         if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
             showShortcuts = !showShortcuts;
+            return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            const pageIndex = Number(e.key) - 1;
+            if (pageIndex >= 0 && pageIndex < PAGE_ORDER.length) {
+                e.preventDefault();
+                navigate(PAGE_ORDER[pageIndex]);
+            }
         }
     }
 

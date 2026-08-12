@@ -21,6 +21,7 @@
     } from "../../stores/graph/graphGraph.js";
     import { clearLogGraph } from "../../stores/shared/graphLog.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { isTypingTarget } from "../../utils/keyboard.js";
     import {
         traversalState,
         startTraversal,
@@ -145,7 +146,27 @@
         };
         input.click();
     }
+
+    /** @param {KeyboardEvent} e */
+    function onKeydown(e) {
+        if (isTypingTarget(e) || e.repeat) return;
+        if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+
+        const key = e.key.toLowerCase();
+        if (key === "s") {
+            e.preventDefault();
+            if (!$graphIsEmpty) handleSave();
+        } else if (key === "o") {
+            e.preventDefault();
+            handleLoad();
+        } else if (e.key === "\\") {
+            e.preventDefault();
+            ontoggleCode?.();
+        }
+    }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="toolbar">
     <div class="brand">
@@ -399,7 +420,7 @@
 
         <div class="separator"></div>
 
-        <Tooltip text="Save to file">
+        <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button
                 class="btn btn-secondary"
                 onclick={handleSave}
@@ -423,7 +444,7 @@
                 Save
             </button>
         </Tooltip>
-        <Tooltip text="Load from file">
+        <Tooltip text="Load from file" shortcut="Ctrl+O">
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
@@ -446,7 +467,10 @@
 
         <div class="separator"></div>
 
-        <Tooltip text={codeHidden ? "Show code panel" : "Hide code panel"}>
+        <Tooltip
+            text={codeHidden ? "Show code panel" : "Hide code panel"}
+            shortcut="Ctrl+\"
+        >
             <button
                 class="btn btn-icon"
                 aria-label={codeHidden ? "Show code panel" : "Hide code panel"}

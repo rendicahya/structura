@@ -138,7 +138,23 @@
   /** @param {KeyboardEvent} e */
   function onKeydown(e) {
     if (isTypingTarget(e) || e.repeat) return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 's') {
+        e.preventDefault();
+        handleSave();
+      } else if (key === 'o') {
+        e.preventDefault();
+        handleLoad();
+      } else if (e.key === '\\') {
+        e.preventDefault();
+        ontoggleCode?.();
+      }
+      return;
+    }
+
+    if (e.altKey) return;
     if (e.key.toLowerCase() === 'n') {
       e.preventDefault();
       handleEnqueue();
@@ -226,13 +242,13 @@
 
     <div class="separator"></div>
 
-    <Tooltip text="Save to file">
+    <Tooltip text="Save to file" shortcut="Ctrl+S">
       <button class="btn btn-secondary" onclick={handleSave}>
         <Icon name="save" />
         Save
       </button>
     </Tooltip>
-    <Tooltip text="Load from file">
+    <Tooltip text="Load from file" shortcut="Ctrl+O">
       <button class="btn btn-secondary" onclick={handleLoad}>
         <Icon name="load" />
         Load
@@ -241,7 +257,7 @@
 
     <div class="separator"></div>
 
-    <Tooltip text={codeHidden ? 'Show code panel' : 'Hide code panel'}>
+    <Tooltip text={codeHidden ? 'Show code panel' : 'Hide code panel'} shortcut="Ctrl+\">
       <button class="btn btn-icon" aria-label={codeHidden ? 'Show code panel' : 'Hide code panel'}
         class:active={codeHidden} onclick={() => ontoggleCode?.()}>
         <Icon name="code" {codeHidden} />

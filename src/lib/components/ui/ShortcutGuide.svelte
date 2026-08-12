@@ -24,8 +24,13 @@
         { category: "Keyboard" },
         { key: "N", desc: "Add node / Push / Enqueue" },
         { key: "M", desc: "Pop / Dequeue (stack & queue pages)" },
+        { key: "A", desc: "Arrange nodes (linked list pages)" },
         { key: "Ctrl + Z", desc: "Undo" },
         { key: "Ctrl + Y", desc: "Redo" },
+        { key: "Ctrl + S", desc: "Save to file" },
+        { key: "Ctrl + O", desc: "Load from file" },
+        { key: "Ctrl + \\", desc: "Toggle code panel" },
+        { key: "Ctrl + 1…8", desc: "Switch page" },
         { key: "Escape", desc: "Close menu / cancel edit" },
     ];
 </script>

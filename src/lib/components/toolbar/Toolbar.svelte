@@ -170,10 +170,30 @@
     /** @param {KeyboardEvent} e */
     function onKeydown(e) {
         if (isTypingTarget(e) || e.repeat) return;
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        if (e.key.toLowerCase() === "n") {
+
+        if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            const key = e.key.toLowerCase();
+            if (key === "s") {
+                e.preventDefault();
+                if (currentNodes.length > 0) handleSave();
+            } else if (key === "o") {
+                e.preventDefault();
+                handleLoad();
+            } else if (e.key === "\\") {
+                e.preventDefault();
+                ontoggleCode?.();
+            }
+            return;
+        }
+
+        if (e.altKey) return;
+        const key = e.key.toLowerCase();
+        if (key === "n") {
             e.preventDefault();
             handleAddNode();
+        } else if (key === "a") {
+            e.preventDefault();
+            if (currentNodes.length > 0) handleArrange();
         }
     }
 </script>
@@ -194,7 +214,7 @@
             </button>
         </Tooltip>
 
-        <Tooltip text="Auto-arrange all nodes in a row">
+        <Tooltip text="Auto-arrange all nodes in a row" shortcut="A">
             <button
                 class="btn btn-secondary"
                 onclick={handleArrange}
@@ -282,7 +302,7 @@
             </button>
         </Tooltip>
 
-        <Tooltip text="Save to file">
+        <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button
                 class="btn btn-secondary"
                 onclick={handleSave}
@@ -293,7 +313,7 @@
             </button>
         </Tooltip>
 
-        <Tooltip text="Load from file">
+        <Tooltip text="Load from file" shortcut="Ctrl+O">
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <Icon name="load" />
                 Load
@@ -302,7 +322,10 @@
 
         <div class="separator"></div>
 
-        <Tooltip text={codeHidden ? "Show Code Panel" : "Hide Code Panel"}>
+        <Tooltip
+            text={codeHidden ? "Show Code Panel" : "Hide Code Panel"}
+            shortcut="Ctrl+\"
+        >
             <button
                 class="btn btn-icon"
                 aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
