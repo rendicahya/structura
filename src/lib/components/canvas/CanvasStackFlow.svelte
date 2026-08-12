@@ -1,7 +1,7 @@
 <script>
     import { untrack } from "svelte";
     import { get } from "svelte/store";
-    import { SvelteFlow, Background } from "@xyflow/svelte";
+    import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import StackFlowNode from "../node/StackFlowNode.svelte";
     import Tooltip from "../ui/Tooltip.svelte";
@@ -257,6 +257,7 @@
             onmoveend={onMoveEnd}
         >
             <Background />
+            <Controls />
         </SvelteFlow>
     {/key}
 

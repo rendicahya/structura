@@ -1,6 +1,6 @@
 <script>
     import { untrack, onMount } from "svelte";
-    import { SvelteFlow, Background } from "@xyflow/svelte";
+    import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import LinkedStackFlowNode from "../node/LinkedStackFlowNode.svelte";
     import {
@@ -251,6 +251,7 @@
             onmoveend={onMoveEnd}
         >
             <Background />
+            <Controls />
         </SvelteFlow>
     {/key}
 

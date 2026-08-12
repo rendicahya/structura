@@ -1,6 +1,6 @@
 <script>
     import { untrack } from "svelte";
-    import { SvelteFlow, Background } from "@xyflow/svelte";
+    import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import TreeFlowNode from "../node/TreeFlowNode.svelte";
     import {
@@ -262,6 +262,7 @@
             onmoveend={onMoveEnd}
         >
             <Background />
+            <Controls />
         </SvelteFlow>
     {/key}
 
