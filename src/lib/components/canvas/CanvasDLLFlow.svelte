@@ -35,6 +35,24 @@
     let wrapperEl = $state();
 
     let viewport = $state({ x: 0, y: 0, zoom: 1 });
+    // Svelte Flow's own pan/zoom gesture seeds its internal transform once,
+    // at mount, from whatever `viewport` holds at that instant, and never
+    // re-reads it afterward. Pushing a new zoom into `viewport` from outside
+    // (restoring a remembered per-page zoom on mount, or the toolbar's zoom
+    // buttons) only updates the value we render from, not that internal
+    // transform, so the next drag would otherwise snap back to a transform
+    // based on the stale pre-update zoom. Remounting Svelte Flow whenever we
+    // push an externally-driven zoom forces it to reseed from the corrected
+    // `viewport`, keeping the two in sync. See CanvasSLLFlow.svelte for why
+    // `initialViewport` is also wired below: without it, the outgoing
+    // instance's own teardown resets `viewport` back to the library default
+    // right before the new instance reads it, clobbering our correction.
+    let flowGen = $state(0);
+    // Only reseed automatically, before the user has touched this mounted
+    // instance's pan/zoom directly — once they have, its internal transform
+    // is live and trustworthy, and remounting on every toolbar zoom-in/out
+    // click would flicker the canvas for no benefit.
+    let userInteracted = false;
 
     /** @type {{ x: number, y: number, node: any }|null} */
     let contextMenu = $state(null);
@@ -43,18 +61,24 @@
     let canvasContextMenu = $state(null);
 
     // The shared App-level zoom (driven by the reused toolbar's zoom
-    // buttons) is applied into Svelte Flow's own viewport. The reverse
-    // direction (scrolling/pinching directly on the canvas updating the
-    // shared `zoom` number) is handled event-driven via onMoveEnd below,
-    // not reactively, to avoid a bidirectional-effect feedback loop.
+    // buttons, or restored per-page on navigation) is applied into Svelte
+    // Flow's own viewport. The reverse direction (scrolling/pinching
+    // directly on the canvas updating the shared `zoom` number) is handled
+    // event-driven via onMoveEnd below, not reactively, to avoid a
+    // bidirectional-effect feedback loop — onMoveEnd's echo lands here with
+    // `z` already equal to `viewport.zoom` (Svelte Flow already applied it
+    // live), so the equality guard below skips it regardless.
     $effect(() => {
         const z = zoom;
         untrack(() => {
+            if (z === viewport.zoom) return;
             viewport = { ...viewport, zoom: z };
+            if (!userInteracted) flowGen++;
         });
     });
 
     function onMoveEnd(event, vp) {
+        userInteracted = true;
         zoom = vp.zoom;
     }
 
@@ -241,25 +265,28 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    <SvelteFlow
-        nodes={flowNodes}
-        edges={flowEdges}
-        {nodeTypes}
-        {isValidConnection}
-        bind:viewport
-        minZoom={0.3}
-        maxZoom={2}
-        onnodedragstop={onNodeDragStop}
-        onconnect={onConnect}
-        ondelete={onDelete}
-        onnodecontextmenu={onNodeContextMenu}
-        onpanecontextmenu={onPaneContextMenu}
-        onpaneclick={closeAllMenus}
-        onmoveend={onMoveEnd}
-    >
-        <Background />
-        <Controls />
-    </SvelteFlow>
+    {#key flowGen}
+        <SvelteFlow
+            nodes={flowNodes}
+            edges={flowEdges}
+            {nodeTypes}
+            {isValidConnection}
+            bind:viewport
+            initialViewport={viewport}
+            minZoom={0.3}
+            maxZoom={2}
+            onnodedragstop={onNodeDragStop}
+            onconnect={onConnect}
+            ondelete={onDelete}
+            onnodecontextmenu={onNodeContextMenu}
+            onpanecontextmenu={onPaneContextMenu}
+            onpaneclick={closeAllMenus}
+            onmoveend={onMoveEnd}
+        >
+            <Background />
+            <Controls />
+        </SvelteFlow>
+    {/key}
 
     {#if $nodesDLL.length === 0}
         <div class="empty-hint">

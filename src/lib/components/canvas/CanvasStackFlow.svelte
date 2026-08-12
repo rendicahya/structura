@@ -40,7 +40,16 @@
     // next drag would otherwise snap back to a transform based on the stale
     // pre-center position. Remounting Svelte Flow whenever we recenter forces
     // it to reseed from the now-correct `viewport`, keeping the two in sync.
+    // (See CanvasSLLFlow.svelte for why `initialViewport` is also wired
+    // below: without it, the outgoing instance's own teardown resets
+    // `viewport` back to the library default right before the new instance
+    // reads it, clobbering our correction.)
     let flowGen = $state(0);
+    // Only reseed automatically, before the user has touched this mounted
+    // instance's pan/zoom directly — once they have, its internal transform
+    // is live and trustworthy, and remounting on every toolbar zoom-in/out
+    // click would flicker the canvas for no benefit.
+    let userInteracted = false;
 
     /** @type {{ x: number, y: number, type: 'canvas' | 'item', itemId?: string } | null} */
     let contextMenu = $state(null);
@@ -52,16 +61,22 @@
     let animatingPop = $state(null);
 
     // Same one-way-reactive/one-way-event zoom sync as CanvasSLLFlow/CanvasDLLFlow:
-    // the shared toolbar's zoom buttons push into Svelte Flow's viewport; the
-    // reverse direction (wheel/pinch on canvas) is captured via onMoveEnd.
+    // the shared toolbar's zoom buttons (or a restored per-page zoom on
+    // mount) push into Svelte Flow's viewport; the reverse direction
+    // (wheel/pinch on canvas) is captured via onMoveEnd, which lands here
+    // with `z` already equal to `viewport.zoom`, so the equality guard skips
+    // it regardless.
     $effect(() => {
         const z = zoom;
         untrack(() => {
+            if (z === viewport.zoom) return;
             viewport = { ...viewport, zoom: z };
+            if (!userInteracted) flowGen++;
         });
     });
 
     function onMoveEnd(event, vp) {
+        userInteracted = true;
         zoom = vp.zoom;
     }
 
@@ -233,6 +248,7 @@
             edges={[]}
             {nodeTypes}
             bind:viewport
+            initialViewport={viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}

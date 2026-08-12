@@ -29,10 +29,17 @@
     let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
     let peekingId = $state(null);
-    // See CanvasStackFlow.svelte: remount Svelte Flow whenever we recenter so
-    // its internal pan/zoom transform reseeds from the corrected viewport
-    // instead of snapping back to the stale pre-center one on the next drag.
+    // See CanvasSLLFlow.svelte: remount Svelte Flow whenever we recenter or
+    // push an externally-driven zoom so its internal pan/zoom transform
+    // reseeds from the corrected viewport, and wire `initialViewport` to the
+    // live `viewport` so the outgoing instance's own teardown-triggered
+    // reset can't clobber that correction before the new instance reads it.
     let flowGen = $state(0);
+    // Only reseed automatically, before the user has touched this mounted
+    // instance's pan/zoom directly — once they have, its internal transform
+    // is live and trustworthy, and remounting on every toolbar zoom-in/out
+    // click would flicker the canvas for no benefit.
+    let userInteracted = false;
 
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
@@ -40,14 +47,22 @@
     let animatingInId = $state(null);
     let prevLength = $linkedStackNodes.length;
 
+    // The shared toolbar's zoom buttons (or a restored per-page zoom on
+    // mount) push into Svelte Flow's viewport; the reverse direction
+    // (wheel/pinch on canvas) is captured via onMoveEnd, which lands here
+    // with `z` already equal to `viewport.zoom`, so the equality guard skips
+    // it regardless.
     $effect(() => {
         const z = zoom;
         untrack(() => {
+            if (z === viewport.zoom) return;
             viewport = { ...viewport, zoom: z };
+            if (!userInteracted) flowGen++;
         });
     });
 
     function onMoveEnd(event, vp) {
+        userInteracted = true;
         zoom = vp.zoom;
     }
 
@@ -227,6 +242,7 @@
             edges={[]}
             {nodeTypes}
             bind:viewport
+            initialViewport={viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
