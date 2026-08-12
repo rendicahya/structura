@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && gh-pages -d dist",
+    "deploy": "vite build && gh-pages -d dist -u \"Randy Cahya Wihandika <693535+rendicahya@users.noreply.github.com>\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
