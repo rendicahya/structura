@@ -8,7 +8,7 @@
 
 ## ✨ Features
 
-- **Eight data structures**: Singly Linked List, Doubly Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, and Graph — each with its own canvas and toolbar.
+- **Nine data structures**: Singly Linked List, Doubly Linked List, Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, and Graph — each with its own canvas and toolbar.
 - **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
 - **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
@@ -60,7 +60,7 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 ## 📖 How to Use
 
-1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Binary Tree, and Graph.
+1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Binary Tree, and Graph.
 2. **Add Nodes**: Right-click anywhere on the canvas to add a node at that position, or use the toolbar for structure-specific operations (push, enqueue, insert, ...).
 3. **Connect**: Drag from a node's port to another node to link them (drag from the left port for a `prev` pointer on a Doubly Linked List).
 4. **Edit Data**: Double-click any node to change its value.
@@ -76,7 +76,29 @@ All planned data structures (Stack, Queue, Tree) have shipped. Ideas being consi
 - [ ] Additional languages for code generation (e.g. JavaScript, C#).
 - [ ] Exporting the canvas as an image (PNG/SVG).
 - [x] Graph structure with BFS/DFS traversal playback.
+- [x] Circular Linked List, with Insert/Delete Head & Tail and a ring-traversal playback that generates the matching do-while code.
 - [ ] Hash Table structure with collision handling (chaining/open addressing).
+
+### Coverage against a typical Data Structures & Algorithms syllabus
+
+Structura's structures were checked against a standard ASD (Algoritma & Struktur Data) course outline covering linear structures, trees, graphs, searching, and hashing. Gaps identified, roughly in priority order:
+
+| Topic | Status |
+|---|---|
+| Array, singly/doubly/circular linked list | ✅ covered ([x] circular linked list added) |
+| Stack & Queue (array and linked-list backed) | ✅ covered |
+| Stack application: postfix/infix expression evaluation | ❌ not yet |
+| Priority Queue (basic and heap-backed) | ❌ not yet |
+| Binary Tree, Binary Search Tree traversal/search | ✅ covered — BST insertion is not yet rule-enforced (nodes are placed freely) |
+| Complete Binary Tree | ❌ not yet |
+| Heap Tree (min/max-heap, heapify) | ❌ not yet |
+| AVL Tree (rotations/rebalancing) | ❌ not yet |
+| Graph ADT (adjacency list/matrix) + BFS/DFS | ⚠️ BFS/DFS playback covered; adjacency list/matrix representation isn't shown |
+| Linear search (array/list/queue/linked list) | ❌ not yet |
+| Binary search (sorted array) | ❌ not yet |
+| Hashing (hash functions, collision handling) | ❌ not yet, tracked above |
+
+Contributions targeting any of the ❌ items are especially welcome.
 
 ## 🤝 Contributing
 

@@ -31,3 +31,40 @@ export function walkChain(nodes, startId) {
 export function reachableIds(nodes, startId) {
     return new Set(walkChain(nodes, startId).map(n => n.id));
 }
+
+/**
+ * Walks a circular singly-linked ring of `{ id, nextId }`-shaped nodes
+ * starting from `startId`, following `nextId` until it loops back to
+ * `startId`. Unlike {@link walkChain}, a ring never dead-ends on `null` by
+ * design — the `seen` guard instead protects against a malformed ring
+ * (e.g. mid-edit while a save file is being applied) looping forever.
+ * @template {{ id: string, nextId: string|null }} Node
+ * @param {Node[]} nodes
+ * @param {string|null} startId
+ * @returns {Node[]}
+ */
+export function walkRing(nodes, startId) {
+    if (!startId) return [];
+    const result = [];
+    const seen = new Set();
+    let current = nodes.find(n => n.id === startId);
+    while (current && !seen.has(current.id)) {
+        result.push(current);
+        seen.add(current.id);
+        if (current.nextId === startId) break;
+        current = current.nextId ? nodes.find(n => n.id === current.nextId) : undefined;
+    }
+    return result;
+}
+
+/**
+ * Same traversal as {@link walkRing}, but returns just the reachable ids
+ * as a Set — handy for partitioning nodes into ring/unreachable.
+ * @template {{ id: string, nextId: string|null }} Node
+ * @param {Node[]} nodes
+ * @param {string|null} startId
+ * @returns {Set<string>}
+ */
+export function reachableRingIds(nodes, startId) {
+    return new Set(walkRing(nodes, startId).map(n => n.id));
+}

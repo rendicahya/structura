@@ -23,6 +23,8 @@
         "head",
         "tail",
         "walk",
+        "do",
+        "while",
     ]);
 
     const PYTHON_KW = new Set([
@@ -42,6 +44,7 @@
         "or",
         "not",
         "in",
+        "break",
     ]);
 
     const CPP_KW = new Set([
@@ -63,6 +66,7 @@
         "if",
         "else",
         "while",
+        "do",
         "for",
         "true",
         "false",
