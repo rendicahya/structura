@@ -22,9 +22,9 @@
         { key: "Drag port →", desc: "Connect next pointer" },
         { key: "Drag port ←", desc: "Connect prev pointer (DLL)" },
         { category: "Keyboard" },
-        { key: "N", desc: "Add node / Push / Enqueue / Insert Tail" },
+        { key: "N", desc: "Add node / Push / Enqueue / Insert Tail / Insert (BST, Heap)" },
         { key: "Shift + N", desc: "Insert Head (circular list page)" },
-        { key: "M", desc: "Pop / Dequeue / Delete Head" },
+        { key: "M", desc: "Pop / Dequeue / Delete Head / Extract Root (Heap)" },
         { key: "Shift + M", desc: "Delete Tail (circular list page)" },
         { key: "T", desc: "Traverse ring (circular list page)" },
         { key: "A", desc: "Arrange nodes (linked list pages)" },
@@ -33,7 +33,7 @@
         { key: "Ctrl + S", desc: "Save to file" },
         { key: "Ctrl + O", desc: "Load from file" },
         { key: "Ctrl + \\", desc: "Toggle code panel" },
-        { key: "Ctrl + 1…8", desc: "Switch page" },
+        { key: "Ctrl + 1…9", desc: "Switch page" },
         { key: "Escape", desc: "Close menu / cancel edit" },
     ];
 </script>

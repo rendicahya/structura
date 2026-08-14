@@ -49,6 +49,19 @@
     // the legacy tab (not hidden) so they can be compared directly.
     import CanvasTreeFlow from "./lib/components/canvas/CanvasTreeFlow.svelte";
 
+    import ToolbarBST from "./lib/components/toolbar/ToolbarBST.svelte";
+    import CanvasBSTFlow from "./lib/components/canvas/CanvasBSTFlow.svelte";
+    import { bstLog } from "./lib/stores/shared/bstLog.js";
+    import { initBST } from "./lib/stores/tree/graphBST.js";
+
+    // Array-backed, like Array Stack: nothing to log until the user picks
+    // a capacity via the New modal, so (unlike BST) this doesn't need an
+    // entry in the init-on-first-visit effect below — initHeap() is called
+    // from ToolbarHeap.svelte's New-modal confirm handler instead.
+    import ToolbarHeap from "./lib/components/toolbar/ToolbarHeap.svelte";
+    import CanvasHeapFlow from "./lib/components/canvas/CanvasHeapFlow.svelte";
+    import { heapLog } from "./lib/stores/shared/heapLog.js";
+
     import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
     import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
     import { graphLog } from "./lib/stores/shared/graphLog.js";
@@ -262,6 +275,8 @@
             if (get(treeLog).length === 0) initTree();
         } else if (page === "#/graph" || page === "#/graph-flow") {
             if (get(graphLog).length === 0) initGraph();
+        } else if (page === "#/bst-flow") {
+            if (get(bstLog).length === 0) initBST();
         }
 
         const p = page;
@@ -324,6 +339,8 @@
         "#/linked-queue-flow",
         "#/tree-flow",
         "#/graph-flow",
+        "#/bst-flow",
+        "#/heap-flow",
     ];
 
     function onKeydown(e) {
@@ -376,7 +393,7 @@
                 class:active={page === "#/linked-list"}
                 onclick={() => navigate("#/linked-list")}
             >
-                Singly-linked List (legacy canvas)
+                Singly Linked List (legacy canvas)
             </button>
         {/if}
         <button
@@ -384,7 +401,7 @@
             class:active={page === "#/linked-list-flow"}
             onclick={() => navigate("#/linked-list-flow")}
         >
-            Singly-linked List
+            Singly Linked List
         </button>
         {#if SHOW_OLD_DLL_TAB}
             <button
@@ -392,7 +409,7 @@
                 class:active={page === "#/doubly-linked-list"}
                 onclick={() => navigate("#/doubly-linked-list")}
             >
-                Doubly-linked List (legacy canvas)
+                Doubly Linked List (legacy canvas)
             </button>
         {/if}
         <button
@@ -400,7 +417,7 @@
             class:active={page === "#/doubly-linked-list-flow"}
             onclick={() => navigate("#/doubly-linked-list-flow")}
         >
-            Doubly-linked List
+            Doubly Linked List
         </button>
         <button
             class="nav-tab"
@@ -506,6 +523,22 @@
             onclick={() => navigate("#/graph-flow")}
         >
             Graph
+        </button>
+
+        <button
+            class="nav-tab"
+            class:active={page === "#/bst-flow"}
+            onclick={() => navigate("#/bst-flow")}
+        >
+            Binary Search Tree
+        </button>
+
+        <button
+            class="nav-tab"
+            class:active={page === "#/heap-flow"}
+            onclick={() => navigate("#/heap-flow")}
+        >
+            Heap / Priority Queue
         </button>
 
         <div class="nav-spacer"></div>
@@ -656,6 +689,26 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/bst-flow"}
+        <ToolbarBST
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
+    {:else if page === "#/heap-flow"}
+        <ToolbarHeap
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -698,6 +751,10 @@
                 <CanvasGraph bind:zoom />
             {:else if page === "#/graph-flow"}
                 <CanvasGraphFlow bind:zoom />
+            {:else if page === "#/bst-flow"}
+                <CanvasBSTFlow bind:zoom />
+            {:else if page === "#/heap-flow"}
+                <CanvasHeapFlow bind:zoom />
             {/if}
         </div>
 
@@ -733,7 +790,11 @@
                                   ? linkedQueueLog
                                   : page === "#/graph" || page === "#/graph-flow"
                                     ? graphLog
-                                    : treeLog}
+                                    : page === "#/tree" || page === "#/tree-flow"
+                                      ? treeLog
+                                      : page === "#/heap-flow"
+                                        ? heapLog
+                                        : bstLog}
                 />
             </div>
         {/if}
