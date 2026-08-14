@@ -1,5 +1,5 @@
 <script>
-    import { untrack, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import QueueFlowNode from "../node/QueueFlowNode.svelte";
@@ -14,6 +14,7 @@
         peekQueue,
     } from "../../stores/queue/graphQueue.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_W = 80;
     const NODE_H = 70;
@@ -31,7 +32,6 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = false;
     let centeredSlotsRef = null;
     // See CanvasSLLFlow.svelte: remount Svelte Flow whenever we recenter or
@@ -39,12 +39,10 @@
     // reseeds from the corrected viewport, and wire `initialViewport` to the
     // live `viewport` so the outgoing instance's own teardown-triggered
     // reset can't clobber that correction before the new instance reads it.
-    let flowGen = $state(0);
-    // Only reseed automatically, before the user has touched this mounted
-    // instance's pan/zoom directly — once they have, its internal transform
-    // is live and trustworthy, and remounting on every toolbar zoom-in/out
-    // click would flicker the canvas for no benefit.
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
     let peekingIndex = $state(null);
     let animatingEnqueueIndex = $state(null);
     let animatingEnqueue = $state(null);
@@ -70,20 +68,6 @@
     // (wheel/pinch on canvas) is captured via onMoveEnd, which lands here
     // with `z` already equal to `viewport.zoom`, so the equality guard skips
     // it regardless.
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
-
     function getSlotX(index) {
         return CANVAS_PAD_X + index * (NODE_W + NODE_GAP);
     }
@@ -278,12 +262,12 @@
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
         const queueW = $queueCapacity * (NODE_W + NODE_GAP) - NODE_GAP;
-        viewport = {
-            ...viewport,
+        flow.viewport = {
+            ...flow.viewport,
             x: (rect.width - queueW) / 2 - CANVAS_PAD_X,
             y: (rect.height - NODE_H) / 2 - SLOT_Y,
         };
-        flowGen++;
+        flow.remount();
     }
 
     let flowNodes = $derived(
@@ -360,19 +344,19 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -382,7 +366,7 @@
     {#if $queueCapacity > 0}
         <svg class="queue-decor">
             <g
-                style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+                style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
             >
                 <!-- Dequeue & Peek buttons (left) -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->

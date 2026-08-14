@@ -1,5 +1,4 @@
 <script>
-    import { untrack } from "svelte";
     import { get } from "svelte/store";
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
@@ -18,6 +17,7 @@
     import { logOpStack } from "../../stores/shared/stackLog.js";
     import { expressionState } from "../../stores/stack/stackExpression.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     let expressionActive = $derived($expressionState.tokens.length > 0);
     let currentTokenIndex = $derived(
@@ -37,7 +37,6 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
     // Svelte Flow's own pan/zoom gesture seeds its internal transform once,
     // at mount, from whatever `viewport` holds at that instant. Recentering
@@ -50,12 +49,10 @@
     // below: without it, the outgoing instance's own teardown resets
     // `viewport` back to the library default right before the new instance
     // reads it, clobbering our correction.)
-    let flowGen = $state(0);
-    // Only reseed automatically, before the user has touched this mounted
-    // instance's pan/zoom directly — once they have, its internal transform
-    // is live and trustworthy, and remounting on every toolbar zoom-in/out
-    // click would flicker the canvas for no benefit.
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {{ x: number, y: number, type: 'canvas' | 'item', itemId?: string } | null} */
     let contextMenu = $state(null);
@@ -65,26 +62,6 @@
     let animatingInId = $state(null);
     /** @type {{ value: any, x: number, y: number, opacity: number } | null} */
     let animatingPop = $state(null);
-
-    // Same one-way-reactive/one-way-event zoom sync as CanvasSLLFlow/CanvasDLLFlow:
-    // the shared toolbar's zoom buttons (or a restored per-page zoom on
-    // mount) push into Svelte Flow's viewport; the reverse direction
-    // (wheel/pinch on canvas) is captured via onMoveEnd, which lands here
-    // with `z` already equal to `viewport.zoom`, so the equality guard skips
-    // it regardless.
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
 
     function getItemY(index, capacity) {
         const stackHeight = capacity * (NODE_H + NODE_GAP);
@@ -96,12 +73,12 @@
         const rect = wrapperEl.getBoundingClientRect();
         const stackHeight = $stackCapacity * (NODE_H + NODE_GAP) + CANVAS_PAD_Y * 2;
         const stackWidth = NODE_W + 200; // NODE_W + TOP badge space + bracket
-        viewport = {
-            ...viewport,
+        flow.viewport = {
+            ...flow.viewport,
             x: rect.width / 2 - stackWidth / 2 - 20,
             y: rect.height / 2 - stackHeight / 2,
         };
-        flowGen++;
+        flow.remount();
     }
 
     $effect(() => {
@@ -275,19 +252,19 @@
         </div>
     {/if}
 
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -297,7 +274,7 @@
     {#if $stackCapacity > 0}
         <svg class="stack-decor">
             <g
-                style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+                style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
             >
                 <!-- Array bracket kiri -->
                 <path
@@ -439,9 +416,9 @@
         <div
             class="canvas-actions"
             style="
-            left: {viewport.x + (STACK_X + NODE_W / 2) * viewport.zoom}px;
-            top: {viewport.y + (CANVAS_PAD_Y - 42) * viewport.zoom}px;
-            transform: translate(-50%, -50%) scale({viewport.zoom});
+            left: {flow.viewport.x + (STACK_X + NODE_W / 2) * flow.viewport.zoom}px;
+            top: {flow.viewport.y + (CANVAS_PAD_Y - 42) * flow.viewport.zoom}px;
+            transform: translate(-50%, -50%) scale({flow.viewport.zoom});
         "
         >
             <Tooltip

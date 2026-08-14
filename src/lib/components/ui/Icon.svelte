@@ -116,6 +116,9 @@
         `,
         check: `
             <path d="M3 7.2l2.6 2.6L11 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        `,
+        chevronDown: `
+            <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         `
     };
 

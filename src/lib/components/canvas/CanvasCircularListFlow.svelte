@@ -1,5 +1,5 @@
 <script>
-    import { untrack, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import CircularListFlowNode from "../node/CircularListFlowNode.svelte";
@@ -14,6 +14,7 @@
     } from "../../stores/list/graphCircularList.js";
     import { pushHistory } from "../../stores/shared/history.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_W = 130;
     const NODE_H = 64;
@@ -26,13 +27,14 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
     // See CanvasSLLFlow.svelte: remount Svelte Flow whenever we recenter or
     // push an externally-driven zoom so its internal pan/zoom transform
     // reseeds from the corrected viewport.
-    let flowGen = $state(0);
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
@@ -42,20 +44,6 @@
 
     let visitingId = $state(null);
     let traverseTimer = null;
-
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
 
     $effect(() => {
         const ring = $listRing;
@@ -71,8 +59,8 @@
     function centerList() {
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
-        viewport = { ...viewport, x: 60, y: rect.height / 2 - NODE_H / 2 - 30 };
-        flowGen++;
+        flow.viewport = { ...flow.viewport, x: 60, y: rect.height / 2 - NODE_H / 2 - 30 };
+        flow.remount();
     }
 
     $effect(() => {
@@ -230,19 +218,19 @@
         </div>
     {/if}
 
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -259,7 +247,7 @@
             </marker>
         </defs>
         <g
-            style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
         >
             {#each $circularListNodes as node, idx (node.id)}
                 {@const x = idx * (NODE_W + NODE_GAP)}

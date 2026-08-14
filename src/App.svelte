@@ -5,11 +5,6 @@
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
     import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
-    import Canvas from "./lib/components/canvas/Canvas.svelte";
-    import CanvasDLL from "./lib/components/canvas/CanvasDLL.svelte";
-    import CanvasStack from "./lib/components/canvas/CanvasStack.svelte";
-    import CanvasLinkedStack from "./lib/components/canvas/CanvasLinkedStack.svelte";
-    import CanvasQueue from "./lib/components/canvas/CanvasQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
     import ShortcutGuide from "./lib/components/ui/ShortcutGuide.svelte";
@@ -41,7 +36,6 @@
     import { initNodeClassCircularList } from "./lib/stores/list/graphCircularList.js";
 
     import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
-    import CanvasTree from "./lib/components/canvas/CanvasTree.svelte";
     import { treeLog } from "./lib/stores/shared/treeLog.js";
     import { initTree } from "./lib/stores/tree/graphTree.js";
 
@@ -77,7 +71,6 @@
     import { hashLog } from "./lib/stores/shared/hashLog.js";
 
     import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
-    import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
     import { graphLog } from "./lib/stores/shared/graphLog.js";
     import { initGraph } from "./lib/stores/graph/graphGraph.js";
 
@@ -94,44 +87,16 @@
     import CanvasLinkedStackFlow from "./lib/components/canvas/CanvasLinkedStackFlow.svelte";
     import CanvasQueueFlow from "./lib/components/canvas/CanvasQueueFlow.svelte";
 
-    // The Svelte Flow SLL POC reached feature parity with the old
-    // hand-rolled canvas, so the old tab is hidden from the nav (route,
-    // component, and store are all still intact — just not linked to from
-    // the tab bar). Flip back to true to bring the old tab back.
-    const SHOW_OLD_SLL_TAB = false;
-    // Same treatment for the old hand-rolled DLL canvas now that the Svelte
-    // Flow DLL canvas is in place — route, component, and store stay intact.
-    const SHOW_OLD_DLL_TAB = false;
-    // Same treatment for the old hand-rolled Array Stack canvas now that the
-    // Svelte Flow stack canvas is in place — route, component, and store
-    // stay intact.
-    const SHOW_OLD_STACK_TAB = false;
-    // Same treatment for the old hand-rolled Linked-List Stack canvas now
-    // that the Svelte Flow canvas is in place — route, component, and store
-    // stay intact.
-    const SHOW_OLD_LINKED_STACK_TAB = false;
-    // Same treatment for the old hand-rolled Array Queue canvas now that the
-    // Svelte Flow queue canvas is in place — route, component, and store
-    // stay intact.
-    const SHOW_OLD_QUEUE_TAB = false;
     // Same treatment for the old hand-rolled Linked-List Queue canvas now
     // that the Svelte Flow canvas is in place — route, component, and store
     // stay intact.
     const SHOW_OLD_LINKED_QUEUE_TAB = false;
-    // Same treatment for the old hand-rolled Binary Tree canvas now that the
-    // Svelte Flow canvas is in place — route, component, and store stay
-    // intact.
-    const SHOW_OLD_TREE_TAB = false;
-    // Same treatment for the old hand-rolled Graph canvas now that the
-    // Svelte Flow canvas is in place — route, component, and store stay
-    // intact. This was the last structure to migrate.
-    const SHOW_OLD_GRAPH_TAB = false;
 
     onMount(() => {
         initHistory();
 
         if (!location.hash || location.hash === "#") {
-            location.hash = SHOW_OLD_SLL_TAB ? "#/linked-list" : "#/linked-list-flow";
+            location.hash = "#/linked-list-flow";
         }
 
         page = location.hash;
@@ -234,6 +199,30 @@
         window.addEventListener("mousedown", onDocMousedown);
         return () => window.removeEventListener("mousedown", onDocMousedown);
     });
+
+    // Which NAV_CATEGORIES dropdown (if any) is currently open, by id.
+    let openNavCategory = $state(null);
+    let navCategoriesEl = $state();
+
+    $effect(() => {
+        if (!openNavCategory) return;
+        function onDocMousedown(e) {
+            if (navCategoriesEl && !navCategoriesEl.contains(e.target)) {
+                openNavCategory = null;
+            }
+        }
+        window.addEventListener("mousedown", onDocMousedown);
+        return () => window.removeEventListener("mousedown", onDocMousedown);
+    });
+
+    function toggleNavCategory(id) {
+        openNavCategory = openNavCategory === id ? null : id;
+    }
+
+    function navigateFromCategory(href) {
+        navigate(href);
+        openNavCategory = null;
+    }
 
     function selectTheme(pref) {
         themePref = pref;
@@ -344,22 +333,60 @@
         location.hash = hash;
     }
 
-    // Tab order for Ctrl+1..Ctrl+8 page switching, matching the nav bar.
-    const PAGE_ORDER = [
-        "#/linked-list-flow",
-        "#/doubly-linked-list-flow",
-        "#/circular-linked-list",
-        "#/stack-flow",
-        "#/linked-stack-flow",
-        "#/queue-flow",
-        "#/linked-queue-flow",
-        "#/tree-flow",
-        "#/graph-flow",
-        "#/bst-flow",
-        "#/heap-flow",
-        "#/avl-flow",
-        "#/hash-flow",
+    // Categorized nav menu data — each category renders as a dropdown in
+    // the nav bar. PAGE_ORDER (for Ctrl+1..Ctrl+9 page switching) is derived
+    // from the same list so the two can never drift apart.
+    const NAV_CATEGORIES = [
+        {
+            id: "lists",
+            label: "Linked Lists",
+            items: [
+                { href: "#/linked-list-flow", label: "Singly Linked List" },
+                { href: "#/doubly-linked-list-flow", label: "Doubly Linked List" },
+                { href: "#/circular-linked-list", label: "Circular Linked List" },
+            ],
+        },
+        {
+            id: "stacks-queues",
+            label: "Stacks & Queues",
+            items: [
+                { href: "#/stack-flow", label: "Array Stack" },
+                { href: "#/linked-stack-flow", label: "Linked-List Stack" },
+                { href: "#/queue-flow", label: "Array Queue" },
+                ...(SHOW_OLD_LINKED_QUEUE_TAB
+                    ? [
+                          {
+                              href: "#/linked-queue",
+                              label: "Linked-List Queue (legacy canvas)",
+                          },
+                      ]
+                    : []),
+                { href: "#/linked-queue-flow", label: "Linked-List Queue" },
+            ],
+        },
+        {
+            id: "trees",
+            label: "Trees",
+            items: [
+                { href: "#/tree-flow", label: "Binary Tree" },
+                { href: "#/bst-flow", label: "Binary Search Tree" },
+                { href: "#/avl-flow", label: "AVL Tree" },
+                { href: "#/heap-flow", label: "Heap / Priority Queue" },
+            ],
+        },
+        {
+            id: "graph-hash",
+            label: "Graph & Hash",
+            items: [
+                { href: "#/graph-flow", label: "Graph" },
+                { href: "#/hash-flow", label: "Hash Table" },
+            ],
+        },
     ];
+
+    const PAGE_ORDER = NAV_CATEGORIES.flatMap((category) =>
+        category.items.map((item) => item.href),
+    );
 
     function onKeydown(e) {
         if (isTypingTarget(e)) return;
@@ -405,175 +432,37 @@
 <div id="app">
     <!-- Nav tabs -->
     <nav class="page-nav">
-        {#if SHOW_OLD_SLL_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/linked-list"}
-                onclick={() => navigate("#/linked-list")}
-            >
-                Singly Linked List (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/linked-list-flow"}
-            onclick={() => navigate("#/linked-list-flow")}
-        >
-            Singly Linked List
-        </button>
-        {#if SHOW_OLD_DLL_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/doubly-linked-list"}
-                onclick={() => navigate("#/doubly-linked-list")}
-            >
-                Doubly Linked List (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/doubly-linked-list-flow"}
-            onclick={() => navigate("#/doubly-linked-list-flow")}
-        >
-            Doubly Linked List
-        </button>
-        <button
-            class="nav-tab"
-            class:active={page === "#/circular-linked-list"}
-            onclick={() => navigate("#/circular-linked-list")}
-        >
-            Circular Linked List
-        </button>
-        {#if SHOW_OLD_STACK_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/stack"}
-                onclick={() => navigate("#/stack")}
-            >
-                Array Stack (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/stack-flow"}
-            onclick={() => navigate("#/stack-flow")}
-        >
-            Array Stack
-        </button>
-        {#if SHOW_OLD_LINKED_STACK_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/linked-stack"}
-                onclick={() => navigate("#/linked-stack")}
-            >
-                Linked-List Stack (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/linked-stack-flow"}
-            onclick={() => navigate("#/linked-stack-flow")}
-        >
-            Linked-List Stack
-        </button>
-        {#if SHOW_OLD_QUEUE_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/queue"}
-                onclick={() => navigate("#/queue")}
-            >
-                Array Queue (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/queue-flow"}
-            onclick={() => navigate("#/queue-flow")}
-        >
-            Array Queue
-        </button>
-        {#if SHOW_OLD_LINKED_QUEUE_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/linked-queue"}
-                onclick={() => navigate("#/linked-queue")}
-            >
-                Linked-List Queue (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/linked-queue-flow"}
-            onclick={() => navigate("#/linked-queue-flow")}
-        >
-            Linked-List Queue
-        </button>
-
-        {#if SHOW_OLD_TREE_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/tree"}
-                onclick={() => navigate("#/tree")}
-            >
-                Binary Tree (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/tree-flow"}
-            onclick={() => navigate("#/tree-flow")}
-        >
-            Binary Tree
-        </button>
-
-        {#if SHOW_OLD_GRAPH_TAB}
-            <button
-                class="nav-tab"
-                class:active={page === "#/graph"}
-                onclick={() => navigate("#/graph")}
-            >
-                Graph (legacy canvas)
-            </button>
-        {/if}
-        <button
-            class="nav-tab"
-            class:active={page === "#/graph-flow"}
-            onclick={() => navigate("#/graph-flow")}
-        >
-            Graph
-        </button>
-
-        <button
-            class="nav-tab"
-            class:active={page === "#/bst-flow"}
-            onclick={() => navigate("#/bst-flow")}
-        >
-            Binary Search Tree
-        </button>
-
-        <button
-            class="nav-tab"
-            class:active={page === "#/heap-flow"}
-            onclick={() => navigate("#/heap-flow")}
-        >
-            Heap / Priority Queue
-        </button>
-
-        <button
-            class="nav-tab"
-            class:active={page === "#/avl-flow"}
-            onclick={() => navigate("#/avl-flow")}
-        >
-            AVL Tree
-        </button>
-
-        <button
-            class="nav-tab"
-            class:active={page === "#/hash-flow"}
-            onclick={() => navigate("#/hash-flow")}
-        >
-            Hash Table
-        </button>
+        <div class="nav-categories" bind:this={navCategoriesEl}>
+            {#each NAV_CATEGORIES as category (category.id)}
+                <div class="nav-category">
+                    <button
+                        class="nav-tab nav-category-toggle"
+                        class:active={category.items.some(
+                            (item) => item.href === page,
+                        )}
+                        onclick={() => toggleNavCategory(category.id)}
+                        aria-haspopup="true"
+                        aria-expanded={openNavCategory === category.id}
+                    >
+                        {category.label}
+                        <Icon name="chevronDown" size={11} />
+                    </button>
+                    {#if openNavCategory === category.id}
+                        <div class="nav-category-menu">
+                            {#each category.items as item (item.href)}
+                                <button
+                                    class="nav-category-item"
+                                    class:active={page === item.href}
+                                    onclick={() => navigateFromCategory(item.href)}
+                                >
+                                    {item.label}
+                                </button>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {/each}
+        </div>
 
         <div class="nav-spacer"></div>
 
@@ -771,38 +660,24 @@
             class="panel canvas-panel"
             style={codeHidden ? "width:100%" : `width:${splitPos}%`}
         >
-            {#if page === "#/linked-list"}
-                <Canvas bind:zoom active={page === "#/linked-list"} />
-            {:else if page === "#/linked-list-flow"}
+            {#if page === "#/linked-list-flow"}
                 <CanvasSLLFlow bind:zoom />
-            {:else if page === "#/doubly-linked-list"}
-                <CanvasDLL bind:zoom active={page === "#/doubly-linked-list"} />
             {:else if page === "#/doubly-linked-list-flow"}
                 <CanvasDLLFlow bind:zoom />
             {:else if page === "#/circular-linked-list"}
                 <CanvasCircularListFlow bind:zoom />
-            {:else if page === "#/stack"}
-                <CanvasStack bind:zoom />
             {:else if page === "#/stack-flow"}
                 <CanvasStackFlow bind:zoom />
-            {:else if page === "#/linked-stack"}
-                <CanvasLinkedStack bind:zoom />
             {:else if page === "#/linked-stack-flow"}
                 <CanvasLinkedStackFlow bind:zoom />
-            {:else if page === "#/queue"}
-                <CanvasQueue bind:zoom />
             {:else if page === "#/queue-flow"}
                 <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
                 <CanvasLinkedQueue bind:zoom />
             {:else if page === "#/linked-queue-flow"}
                 <CanvasLinkedQueueFlow bind:zoom />
-            {:else if page === "#/tree"}
-                <CanvasTree bind:zoom />
             {:else if page === "#/tree-flow"}
                 <CanvasTreeFlow bind:zoom />
-            {:else if page === "#/graph"}
-                <CanvasGraph bind:zoom />
             {:else if page === "#/graph-flow"}
                 <CanvasGraphFlow bind:zoom />
             {:else if page === "#/bst-flow"}
@@ -908,6 +783,62 @@
     .nav-tab.active {
         color: var(--accent);
         border-bottom-color: var(--accent);
+    }
+
+    .nav-categories {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .nav-category {
+        position: relative;
+    }
+
+    .nav-category-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .nav-category-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+        padding: 5px;
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        animation: themeMenuIn 0.12s ease;
+    }
+
+    .nav-category-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 7px 9px;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        color: var(--text-dim);
+        font-family: var(--font-ui);
+        font-size: 12.5px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+    .nav-category-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+    }
+    .nav-category-item.active {
+        color: var(--accent);
     }
 
     .nav-spacer {

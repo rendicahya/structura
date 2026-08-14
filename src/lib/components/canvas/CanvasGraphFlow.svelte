@@ -1,5 +1,4 @@
 <script>
-    import { untrack } from "svelte";
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import GraphFlowNode from "../node/GraphFlowNode.svelte";
@@ -22,6 +21,7 @@
     import { toast } from "../../stores/shared/toast.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_R = 28;
 
@@ -32,7 +32,6 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     // Svelte Flow's own pan/zoom gesture seeds its internal transform once,
     // at mount, from whatever `viewport` holds at that instant, and never
     // re-reads it afterward. Pushing a new zoom into `viewport` from outside
@@ -45,12 +44,10 @@
     // `initialViewport` is also wired below: without it, the outgoing
     // instance's own teardown resets `viewport` back to the library default
     // right before the new instance reads it, clobbering our correction.
-    let flowGen = $state(0);
-    // Only reseed automatically, before the user has touched this mounted
-    // instance's pan/zoom directly — once they have, its internal transform
-    // is live and trustworthy, and remounting on every toolbar zoom-in/out
-    // click would flicker the canvas for no benefit.
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {string|null} */
     let pendingFrom = $state(null);
@@ -68,20 +65,6 @@
     // bidirectional-effect feedback loop — onMoveEnd's echo lands here with
     // `z` already equal to `viewport.zoom` (Svelte Flow already applied it
     // live), so the equality guard below skips it regardless.
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
-
     function blockedByTraversal() {
         if ($traversalState.order.length > 0) {
             toast.error("Stop traversal playback first");
@@ -94,8 +77,8 @@
         if (!wrapperEl) return { x: 0, y: 0 };
         const rect = wrapperEl.getBoundingClientRect();
         return {
-            x: (clientX - rect.left - viewport.x) / viewport.zoom,
-            y: (clientY - rect.top - viewport.y) / viewport.zoom,
+            x: (clientX - rect.left - flow.viewport.x) / flow.viewport.zoom,
+            y: (clientY - rect.top - flow.viewport.y) / flow.viewport.zoom,
         };
     }
 
@@ -289,13 +272,13 @@
 />
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodedrag={onNodeDrag}
@@ -305,7 +288,7 @@
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -313,9 +296,14 @@
     {/key}
 
     <svg class="graph-decor">
-        <CanvasDefs panX={viewport.x} panY={viewport.y} zoom={viewport.zoom} markerPrefix="graph-flow" />
+        <CanvasDefs
+            panX={flow.viewport.x}
+            panY={flow.viewport.y}
+            zoom={flow.viewport.zoom}
+            markerPrefix="graph-flow"
+        />
         <g
-            style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
         >
             {#each $graphEdges as edge (`${edge.from}-${edge.to}`)}
                 {#if edgePos(edge, $graphNodes)}

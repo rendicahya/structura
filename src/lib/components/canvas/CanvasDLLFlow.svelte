@@ -1,5 +1,4 @@
 <script>
-    import { untrack } from "svelte";
     import { SvelteFlow, Background, Controls, MarkerType } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import DLLFlowNode from "../node/DLLFlowNode.svelte";
@@ -23,6 +22,8 @@
         setWalkDLL,
     } from "../../stores/dll/graphDLL.js";
     import { pushHistory } from "../../stores/shared/history.js";
+    import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     let { zoom = $bindable(1) } = $props();
 
@@ -34,7 +35,6 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     // Svelte Flow's own pan/zoom gesture seeds its internal transform once,
     // at mount, from whatever `viewport` holds at that instant, and never
     // re-reads it afterward. Pushing a new zoom into `viewport` from outside
@@ -47,12 +47,10 @@
     // `initialViewport` is also wired below: without it, the outgoing
     // instance's own teardown resets `viewport` back to the library default
     // right before the new instance reads it, clobbering our correction.
-    let flowGen = $state(0);
-    // Only reseed automatically, before the user has touched this mounted
-    // instance's pan/zoom directly — once they have, its internal transform
-    // is live and trustworthy, and remounting on every toolbar zoom-in/out
-    // click would flicker the canvas for no benefit.
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {{ x: number, y: number, node: any }|null} */
     let contextMenu = $state(null);
@@ -68,20 +66,6 @@
     // bidirectional-effect feedback loop — onMoveEnd's echo lands here with
     // `z` already equal to `viewport.zoom` (Svelte Flow already applied it
     // live), so the equality guard below skips it regardless.
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
-
     function handleEdit(nodeId, value) {
         pushHistory();
         updateNodeDLL(nodeId, { data: value });
@@ -183,8 +167,8 @@
         contextMenu = null;
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
-        const flowX = (event.clientX - rect.left - viewport.x) / viewport.zoom;
-        const flowY = (event.clientY - rect.top - viewport.y) / viewport.zoom;
+        const flowX = (event.clientX - rect.left - flow.viewport.x) / flow.viewport.zoom;
+        const flowY = (event.clientY - rect.top - flow.viewport.y) / flow.viewport.zoom;
         canvasContextMenu = { x: event.clientX, y: event.clientY, flowX, flowY };
     }
 
@@ -265,23 +249,23 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={flowEdges}
             {nodeTypes}
             {isValidConnection}
-            bind:viewport
-            initialViewport={viewport}
-            minZoom={0.3}
-            maxZoom={2}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
+            minZoom={ZOOM_MIN}
+            maxZoom={ZOOM_MAX}
             onnodedragstop={onNodeDragStop}
             onconnect={onConnect}
             ondelete={onDelete}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeAllMenus}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />

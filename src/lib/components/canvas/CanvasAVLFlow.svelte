@@ -15,6 +15,7 @@
     import { traversalState } from "../../stores/tree/avlTraversal.js";
     import { toast } from "../../stores/shared/toast.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_R = 34;
 
@@ -25,27 +26,14 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = false;
-    let flowGen = $state(0);
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
-
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
 
     function centerTree() {
         if (!wrapperEl || $avlNodes.length === 0) return false;
@@ -64,12 +52,12 @@
         const newZoom = Math.min(Math.min(scaleX, scaleY), 1);
 
         zoom = newZoom;
-        viewport = {
+        flow.viewport = {
             x: (rect.width - contentW * newZoom) / 2 - minX * newZoom,
             y: (rect.height - contentH * newZoom) / 2 - minY * newZoom + padding / 2,
             zoom: newZoom,
         };
-        flowGen++;
+        flow.remount();
         return true;
     }
 
@@ -201,19 +189,19 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -227,7 +215,7 @@
             </marker>
         </defs>
         <g
-            style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
         >
             {#each $avlNodes as node (node.id)}
                 {#if node.left}

@@ -1,5 +1,5 @@
 <script>
-    import { untrack, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import LinkedStackFlowNode from "../node/LinkedStackFlowNode.svelte";
@@ -12,6 +12,7 @@
     } from "../../stores/stack/graphLinkedStack.js";
     import { pushHistory } from "../../stores/shared/history.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_W = 130;
     const NODE_H = 64;
@@ -26,7 +27,6 @@
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
 
-    let viewport = $state({ x: 0, y: 0, zoom: 1 });
     let initialized = $state(false);
     let peekingId = $state(null);
     // See CanvasSLLFlow.svelte: remount Svelte Flow whenever we recenter or
@@ -34,37 +34,16 @@
     // reseeds from the corrected viewport, and wire `initialViewport` to the
     // live `viewport` so the outgoing instance's own teardown-triggered
     // reset can't clobber that correction before the new instance reads it.
-    let flowGen = $state(0);
-    // Only reseed automatically, before the user has touched this mounted
-    // instance's pan/zoom directly — once they have, its internal transform
-    // is live and trustworthy, and remounting on every toolbar zoom-in/out
-    // click would flicker the canvas for no benefit.
-    let userInteracted = false;
+    const flow = createFlowViewportSync({
+        getZoom: () => zoom,
+        setZoom: (z) => (zoom = z),
+    });
 
     /** @type {{ x: number, y: number, type: 'canvas'|'node', nodeId?: string }|null} */
     let contextMenu = $state(null);
 
     let animatingInId = $state(null);
     let prevLength = $linkedStackNodes.length;
-
-    // The shared toolbar's zoom buttons (or a restored per-page zoom on
-    // mount) push into Svelte Flow's viewport; the reverse direction
-    // (wheel/pinch on canvas) is captured via onMoveEnd, which lands here
-    // with `z` already equal to `viewport.zoom`, so the equality guard skips
-    // it regardless.
-    $effect(() => {
-        const z = zoom;
-        untrack(() => {
-            if (z === viewport.zoom) return;
-            viewport = { ...viewport, zoom: z };
-            if (!userInteracted) flowGen++;
-        });
-    });
-
-    function onMoveEnd(event, vp) {
-        userInteracted = true;
-        zoom = vp.zoom;
-    }
 
     // Push entry animation, ported from CanvasLinkedStack.
     $effect(() => {
@@ -82,8 +61,8 @@
     function centerStack() {
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
-        viewport = { ...viewport, x: rect.width / 2 - NODE_W / 2, y: 120 };
-        flowGen++;
+        flow.viewport = { ...flow.viewport, x: rect.width / 2 - NODE_W / 2, y: 120 };
+        flow.remount();
     }
 
     $effect(() => {
@@ -236,19 +215,19 @@
         </div>
     {/if}
 
-    {#key flowGen}
+    {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
             edges={[]}
             {nodeTypes}
-            bind:viewport
-            initialViewport={viewport}
+            bind:viewport={flow.viewport}
+            initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}
-            onmoveend={onMoveEnd}
+            onmoveend={flow.onMoveEnd}
         >
             <Background />
             <Controls />
@@ -262,7 +241,7 @@
             </marker>
         </defs>
         <g
-            style="transform: translate({viewport.x}px, {viewport.y}px) scale({viewport.zoom}); transform-origin: 0 0;"
+            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
         >
             {#each $linkedStackNodes as node, idx (node.id)}
                 {@const y = -idx * (NODE_H + NODE_GAP)}
