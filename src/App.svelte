@@ -62,6 +62,11 @@
     import CanvasHeapFlow from "./lib/components/canvas/CanvasHeapFlow.svelte";
     import { heapLog } from "./lib/stores/shared/heapLog.js";
 
+    import ToolbarAVL from "./lib/components/toolbar/ToolbarAVL.svelte";
+    import CanvasAVLFlow from "./lib/components/canvas/CanvasAVLFlow.svelte";
+    import { avlLog } from "./lib/stores/shared/avlLog.js";
+    import { initAVL } from "./lib/stores/tree/graphAVL.js";
+
     import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
     import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
     import { graphLog } from "./lib/stores/shared/graphLog.js";
@@ -277,6 +282,8 @@
             if (get(graphLog).length === 0) initGraph();
         } else if (page === "#/bst-flow") {
             if (get(bstLog).length === 0) initBST();
+        } else if (page === "#/avl-flow") {
+            if (get(avlLog).length === 0) initAVL();
         }
 
         const p = page;
@@ -341,6 +348,7 @@
         "#/graph-flow",
         "#/bst-flow",
         "#/heap-flow",
+        "#/avl-flow",
     ];
 
     function onKeydown(e) {
@@ -541,6 +549,14 @@
             Heap / Priority Queue
         </button>
 
+        <button
+            class="nav-tab"
+            class:active={page === "#/avl-flow"}
+            onclick={() => navigate("#/avl-flow")}
+        >
+            AVL Tree
+        </button>
+
         <div class="nav-spacer"></div>
 
         <div class="theme-picker" bind:this={themePickerEl}>
@@ -709,6 +725,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/avl-flow"}
+        <ToolbarAVL
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -755,6 +781,8 @@
                 <CanvasBSTFlow bind:zoom />
             {:else if page === "#/heap-flow"}
                 <CanvasHeapFlow bind:zoom />
+            {:else if page === "#/avl-flow"}
+                <CanvasAVLFlow bind:zoom />
             {/if}
         </div>
 
@@ -794,7 +822,9 @@
                                       ? treeLog
                                       : page === "#/heap-flow"
                                         ? heapLog
-                                        : bstLog}
+                                        : page === "#/avl-flow"
+                                          ? avlLog
+                                          : bstLog}
                 />
             </div>
         {/if}

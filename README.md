@@ -8,7 +8,7 @@
 
 ## ✨ Features
 
-- **Eleven data structures**: Singly Linked List, Doubly Linked List, Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, Heap / Priority Queue, and Graph — each with its own canvas and toolbar.
+- **Twelve data structures**: Singly Linked List, Doubly Linked List, Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, and Graph — each with its own canvas and toolbar.
 - **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
 - **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
@@ -21,6 +21,7 @@
   - **Graph BFS/DFS Playback**: Pick a start node and step or auto-play a breadth-first or depth-first traversal over directed edges, with the same live-highlight and code-generation treatment as the Tree.
   - **Binary Search Tree**: A dedicated BST page with rule-enforced, comparison-driven insertion and a standard leaf/one-child/two-child (in-order successor) delete — unlike the free-placement Binary Tree page, in-order traversal on this page always yields sorted output.
   - **Heap / Priority Queue**: An array-backed binary heap (min or max mode, chosen at creation) visualized as a complete binary tree with an array-index badge on every node. Insert sifts up and Extract Root sifts down with a step-by-step comparison trail in the generated code, and repeated extraction always yields values in sorted (ascending for min, descending for max) order.
+  - **AVL Tree**: A self-balancing BST that automatically applies single or double rotations after every insert/delete to keep the tree height-balanced, with a live balance-factor badge on every node and the rotation logic itself shown in the generated code.
   - **Circular Linked List Ring Traversal**: Play a full lap around the ring from the head, highlighting each node in turn and generating the matching do-while traversal code.
   - **Infix ↔ Postfix on the Array Stack**: Convert an infix expression to postfix, or evaluate a postfix expression, with the current token and running output/result shown live as the array stack fills and drains.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
@@ -64,10 +65,10 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 ## 📖 How to Use
 
-1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Binary Tree, Binary Search Tree, Heap / Priority Queue, and Graph.
+1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, and Graph.
 2. **Add Nodes**: Right-click anywhere on the canvas to add a node at that position, or use the toolbar for structure-specific operations (push, enqueue, insert, ...).
 3. **Connect**: Drag from a node's port to another node to link them (drag from the left port for a `prev` pointer on a Doubly Linked List).
-4. **Edit Data**: Double-click any node to change its value (disabled on the Binary Search Tree page, where a value's position is derived from comparisons — use Insert/Delete instead).
+4. **Edit Data**: Double-click any node to change its value (disabled on the Binary Search Tree and AVL Tree pages, where a value's position is derived from comparisons — use Insert/Delete instead).
 5. **Delete / Manage**: Right-click a node for its context menu, or use the toolbar's GC button to sweep up unreachable nodes.
 6. **Pan & Zoom**: Drag the empty canvas to pan, scroll to zoom.
 7. **Shortcuts**: Press `?` to open the Keyboard Shortcut Guide.
@@ -84,6 +85,7 @@ All planned data structures (Stack, Queue, Tree) have shipped. Ideas being consi
 - [x] Infix-to-postfix conversion and postfix evaluation as an Array Stack mode, with playback controls and matching generated code.
 - [x] Binary Search Tree with rule-enforced insert (comparison-driven placement, duplicates rejected) and standard delete (leaf / one-child / two-child in-order-successor).
 - [x] Heap Tree with array-backed insert/extract-root (min or max mode), doubling as a Priority Queue enqueue/dequeue.
+- [x] AVL Tree with automatic rebalancing (single and double rotations) after insert and delete.
 - [ ] Hash Table structure with collision handling (chaining/open addressing).
 
 ### Coverage against a typical Data Structures & Algorithms syllabus
@@ -100,7 +102,7 @@ Structura's structures were checked against a standard ASD (Algoritma & Struktur
 | Binary Search Tree insert/delete/traversal/search (rule-enforced ordering) | ✅ covered |
 | Complete Binary Tree | ✅ covered |
 | Heap Tree (min/max-heap, heapify) | ✅ covered — insert/extract-root only, no bulk build-heapify from an existing array |
-| AVL Tree (rotations/rebalancing) | ❌ not yet |
+| AVL Tree (rotations/rebalancing) | ✅ covered |
 | Graph ADT (adjacency list/matrix) + BFS/DFS | ⚠️ BFS/DFS playback covered; adjacency list/matrix representation isn't shown |
 | Linear search (array/list/queue/linked list) | ❌ not yet |
 | Binary search (sorted array) | ❌ not yet |
