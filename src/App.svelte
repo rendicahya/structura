@@ -67,6 +67,15 @@
     import { avlLog } from "./lib/stores/shared/avlLog.js";
     import { initAVL } from "./lib/stores/tree/graphAVL.js";
 
+    // Array-backed (bucket count fixed at creation), like Array Stack and
+    // Heap: nothing to log until the user picks a capacity via the New
+    // modal, so this doesn't need an entry in the init-on-first-visit
+    // effect below — initHash() is called from ToolbarHash.svelte's
+    // New-modal confirm handler instead.
+    import ToolbarHash from "./lib/components/toolbar/ToolbarHash.svelte";
+    import CanvasHashFlow from "./lib/components/canvas/CanvasHashFlow.svelte";
+    import { hashLog } from "./lib/stores/shared/hashLog.js";
+
     import ToolbarGraph from "./lib/components/toolbar/ToolbarGraph.svelte";
     import CanvasGraph from "./lib/components/canvas/CanvasGraph.svelte";
     import { graphLog } from "./lib/stores/shared/graphLog.js";
@@ -349,6 +358,7 @@
         "#/bst-flow",
         "#/heap-flow",
         "#/avl-flow",
+        "#/hash-flow",
     ];
 
     function onKeydown(e) {
@@ -557,6 +567,14 @@
             AVL Tree
         </button>
 
+        <button
+            class="nav-tab"
+            class:active={page === "#/hash-flow"}
+            onclick={() => navigate("#/hash-flow")}
+        >
+            Hash Table
+        </button>
+
         <div class="nav-spacer"></div>
 
         <div class="theme-picker" bind:this={themePickerEl}>
@@ -735,6 +753,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/hash-flow"}
+        <ToolbarHash
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {/if}
 
     <!-- workspace -->
@@ -783,6 +811,8 @@
                 <CanvasHeapFlow bind:zoom />
             {:else if page === "#/avl-flow"}
                 <CanvasAVLFlow bind:zoom />
+            {:else if page === "#/hash-flow"}
+                <CanvasHashFlow bind:zoom />
             {/if}
         </div>
 
@@ -824,7 +854,9 @@
                                         ? heapLog
                                         : page === "#/avl-flow"
                                           ? avlLog
-                                          : bstLog}
+                                          : page === "#/hash-flow"
+                                            ? hashLog
+                                            : bstLog}
                 />
             </div>
         {/if}
