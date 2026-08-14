@@ -16,7 +16,13 @@
         stackType,
     } from "../../stores/stack/graphStack.js";
     import { logOpStack } from "../../stores/shared/stackLog.js";
+    import { expressionState } from "../../stores/stack/stackExpression.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+
+    let expressionActive = $derived($expressionState.tokens.length > 0);
+    let currentTokenIndex = $derived(
+        $expressionState.steps[$expressionState.stepIndex]?.tokenIndex ?? -1,
+    );
 
     const NODE_W = 160;
     const NODE_H = 50;
@@ -242,6 +248,33 @@
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>
+    {#if expressionActive}
+        <div class="expr-hud">
+            <div class="expr-tokens">
+                {#each $expressionState.tokens as tok, i (i)}
+                    <span class="expr-token" class:is-current={i === currentTokenIndex}
+                        >{tok}</span
+                    >
+                {/each}
+            </div>
+            <div class="expr-output">
+                {#if $expressionState.mode === "convert"}
+                    <span class="expr-output-label">postfix:</span>
+                    <span class="expr-output-value"
+                        >{$expressionState.done
+                            ? $expressionState.result
+                            : $expressionState.output.join(" ") || "…"}</span
+                    >
+                {:else}
+                    <span class="expr-output-label">result:</span>
+                    <span class="expr-output-value"
+                        >{$expressionState.done ? $expressionState.result : "…"}</span
+                    >
+                {/if}
+            </div>
+        </div>
+    {/if}
+
     {#key flowGen}
         <SvelteFlow
             nodes={flowNodes}
@@ -412,26 +445,34 @@
         "
         >
             <Tooltip
-                text={$stackIsFull ? "Stack is full" : "Push value"}
+                text={expressionActive && !$expressionState.done
+                    ? "Stop the expression demo first"
+                    : $stackIsFull
+                      ? "Stack is full"
+                      : "Push value"}
                 shortcut="N"
             >
                 <button
                     class="btn-canvas btn-push"
                     onclick={handlePushFromMenu}
-                    disabled={$stackIsFull}
+                    disabled={$stackIsFull || (expressionActive && !$expressionState.done)}
                 >
                     <Icon name="push" size={14} />
                     <span>Push</span>
                 </button>
             </Tooltip>
             <Tooltip
-                text={$stackIsEmpty ? "Stack is empty" : "Pop top element"}
+                text={expressionActive && !$expressionState.done
+                    ? "Stop the expression demo first"
+                    : $stackIsEmpty
+                      ? "Stack is empty"
+                      : "Pop top element"}
                 shortcut="M"
             >
                 <button
                     class="btn-canvas btn-pop"
                     onclick={handlePopFromMenu}
-                    disabled={$stackIsEmpty}
+                    disabled={$stackIsEmpty || (expressionActive && !$expressionState.done)}
                 >
                     <Icon name="pop" size={14} />
                     <span>Pop</span>
@@ -489,7 +530,8 @@
         <div class="empty-hint">
             <div class="empty-title">Stack not initialized</div>
             <div class="empty-sub">
-                Click <strong>New Stack</strong> to get started
+                Click <strong>New Stack</strong>, or try <strong>Infix → Postfix</strong>
+                / <strong>Evaluate Postfix</strong>
             </div>
         </div>
     {/if}
@@ -513,6 +555,64 @@
         height: 100%;
         pointer-events: none;
         z-index: 5;
+    }
+    .expr-hud {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        max-width: min(90%, 640px);
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 12px;
+        padding: 12px 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .expr-tokens {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+    }
+    .expr-token {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-dim);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 2px 7px;
+        transition: all 0.15s ease;
+    }
+    .expr-token.is-current {
+        color: #fff;
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .expr-output {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+    }
+    .expr-output-label {
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+    }
+    .expr-output-value {
+        color: var(--success);
+        font-weight: 700;
     }
     .top-pointer {
         transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);

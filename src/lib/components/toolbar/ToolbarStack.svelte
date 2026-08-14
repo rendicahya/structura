@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
 
     import Tooltip from "../ui/Tooltip.svelte";
     import BrandLogo from "../ui/BrandLogo.svelte";
@@ -25,12 +25,32 @@
         applySnapshotStack,
         clearStack,
     } from "../../stores/stack/graphStack.js";
+    import {
+        expressionState,
+        startConvert,
+        startEvaluate,
+        stepForward as stepExpressionForward,
+        playPause as playPauseExpression,
+        stopExpression,
+        resetExpression,
+        setExpressionSpeed,
+    } from "../../stores/stack/stackExpression.js";
 
     // Register history handlers
     registerHistoryHandlers(getSnapshotStack, applySnapshotStack);
     import { clearLogStack } from "../../stores/shared/stackLog.js";
     import { toast } from "../../stores/shared/toast.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+
+    // The expression-playback interval is module-level state (see
+    // stackExpression.js) and would otherwise keep ticking in the
+    // background after navigating away from this page.
+    onDestroy(() => {
+        stopExpression();
+    });
+
+    let expressionActive = $derived($expressionState.tokens.length > 0);
+    let expressionRunning = $derived(expressionActive && !$expressionState.done);
 
     const {
         zoom = 1,
@@ -49,6 +69,13 @@
     let newCapacity = $state(5);
     let capacityInputEl = $state();
 
+    let showConvert = $state(false);
+    let showEvaluate = $state(false);
+    let convertValue = $state("");
+    let evaluateValue = $state("");
+    let convertInputEl = $state();
+    let evaluateInputEl = $state();
+
     function openNewStackModal() {
         showNewStack = true;
         setTimeout(() => {
@@ -58,6 +85,10 @@
     }
 
     function handleNewStack() {
+        if (expressionRunning) {
+            toast.error("Stop the expression demo first");
+            return;
+        }
         if (!$stackIsEmpty) {
             showConfirmNew = true;
         } else {
@@ -75,6 +106,7 @@
             toast.error("Capacity must be between 1 and 20");
             return;
         }
+        resetExpression();
         clearStack();
         clearLogStack();
         initHistory();
@@ -83,7 +115,49 @@
         toast.success(`Stack created with capacity ${newCapacity}`);
     }
 
+    function handleConvert() {
+        showConvert = true;
+        convertValue = "";
+        setTimeout(() => convertInputEl?.focus(), 50);
+    }
+
+    function confirmConvert() {
+        if (!convertValue.trim()) {
+            toast.error("Enter an infix expression first");
+            return;
+        }
+        startConvert(convertValue);
+        showConvert = false;
+    }
+
+    function handleEvaluate() {
+        showEvaluate = true;
+        evaluateValue = "";
+        setTimeout(() => evaluateInputEl?.focus(), 50);
+    }
+
+    function confirmEvaluate() {
+        if (!evaluateValue.trim()) {
+            toast.error("Enter a postfix expression first");
+            return;
+        }
+        startEvaluate(evaluateValue);
+        showEvaluate = false;
+    }
+
+    function handlePlayPauseExpression() {
+        playPauseExpression();
+    }
+
+    function handleSpeedChangeExpression(e) {
+        setExpressionSpeed(Number(e.currentTarget.value));
+    }
+
     function handlePush() {
+        if (expressionRunning) {
+            toast.error("Stop the expression demo first");
+            return;
+        }
         if ($stackIsFull) {
             toast.error("Stack overflow — stack is full");
             return;
@@ -139,6 +213,10 @@
     }
 
     function handlePop() {
+        if (expressionRunning) {
+            toast.error("Stop the expression demo first");
+            return;
+        }
         if ($stackIsEmpty) {
             toast.error("Stack underflow — stack is empty");
             return;
@@ -177,6 +255,7 @@
                     const snap = JSON.parse(
                         /** @type {string} */ (ev.target?.result),
                     );
+                    resetExpression();
                     pushHistory();
                     applySnapshotStack(snap);
                     toast.success("Loaded successfully");
@@ -244,11 +323,81 @@
 
     <div class="actions">
         <Tooltip text="Create new stack">
-            <button class="btn btn-secondary" onclick={handleNewStack}>
+            <button class="btn btn-secondary" onclick={handleNewStack} disabled={expressionRunning}>
                 <Icon name="new" />
                 New Stack
             </button>
         </Tooltip>
+
+        <div class="separator"></div>
+
+        <Tooltip text="Convert an infix expression to postfix">
+            <button class="btn btn-secondary" onclick={handleConvert} disabled={expressionRunning}>
+                Infix → Postfix
+            </button>
+        </Tooltip>
+
+        <Tooltip text="Evaluate a postfix expression">
+            <button class="btn btn-secondary" onclick={handleEvaluate} disabled={expressionRunning}>
+                Evaluate Postfix
+            </button>
+        </Tooltip>
+
+        {#if expressionActive}
+            <Tooltip text={$expressionState.playing ? "Pause" : "Play"}>
+                <button
+                    class="btn btn-icon"
+                    aria-label={$expressionState.playing ? "Pause" : "Play"}
+                    onclick={handlePlayPauseExpression}
+                    disabled={$expressionState.done}
+                >
+                    {#if $expressionState.playing}
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <rect x="3" y="2" width="3" height="10" rx="1" fill="currentColor" />
+                            <rect x="8" y="2" width="3" height="10" rx="1" fill="currentColor" />
+                        </svg>
+                    {:else}
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M3.5 2.3v9.4c0 .6.6.9 1.1.6l7.6-4.7c.5-.3.5-1 0-1.3L4.6 1.6c-.5-.3-1.1 0-1.1.7z" fill="currentColor" />
+                        </svg>
+                    {/if}
+                </button>
+            </Tooltip>
+
+            <Tooltip text="Step forward">
+                <button
+                    class="btn btn-icon"
+                    aria-label="Step forward"
+                    onclick={stepExpressionForward}
+                    disabled={$expressionState.playing || $expressionState.done}
+                >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M3 2.7v8.6c0 .6.6.9 1.1.6l5.4-4.3c.4-.3.4-1 0-1.3L4.1 2c-.5-.3-1.1 0-1.1.7z" fill="currentColor" />
+                        <rect x="9.5" y="2" width="2" height="10" rx="1" fill="currentColor" />
+                    </svg>
+                </button>
+            </Tooltip>
+
+            <Tooltip text="Stop expression demo">
+                <button class="btn btn-icon" aria-label="Stop expression demo" onclick={stopExpression}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
+                    </svg>
+                </button>
+            </Tooltip>
+
+            <Tooltip text="Playback speed">
+                <select
+                    class="traversal-select traversal-speed"
+                    value={$expressionState.speed}
+                    onchange={handleSpeedChangeExpression}
+                >
+                    <option value="1400">0.5x</option>
+                    <option value="700">1x</option>
+                    <option value="350">2x</option>
+                </select>
+            </Tooltip>
+        {/if}
 
         <div class="separator"></div>
 
@@ -482,7 +631,126 @@
     </div>
 {/if}
 
+<!-- Infix -> Postfix Modal -->
+{#if showConvert}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showConvert = false)}>
+        <div class="modal" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">Infix → Postfix</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showConvert = false)}
+                >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                            d="M2 2l10 10M12 2L2 12"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label for="convert-value">Infix expression</label>
+                    <input
+                        id="convert-value"
+                        bind:this={convertInputEl}
+                        bind:value={convertValue}
+                        onkeydown={(e) => e.key === "Enter" && confirmConvert()}
+                        placeholder="e.g. A+B*(C-D)"
+                        spellcheck="false"
+                    />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showConvert = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmConvert}
+                    >Convert</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
+<!-- Evaluate Postfix Modal -->
+{#if showEvaluate}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onmousedown={() => (showEvaluate = false)}>
+        <div class="modal" onmousedown={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <span class="modal-title">Evaluate Postfix</span>
+                <button
+                    class="close-btn"
+                    aria-label="Close"
+                    onclick={() => (showEvaluate = false)}
+                >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                            d="M2 2l10 10M12 2L2 12"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label for="evaluate-value">Postfix expression (space-separated)</label>
+                    <input
+                        id="evaluate-value"
+                        bind:this={evaluateInputEl}
+                        bind:value={evaluateValue}
+                        onkeydown={(e) => e.key === "Enter" && confirmEvaluate()}
+                        placeholder="e.g. 3 4 + 5 *"
+                        spellcheck="false"
+                    />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button
+                    class="btn btn-secondary"
+                    onclick={() => (showEvaluate = false)}>Cancel</button
+                >
+                <button class="btn btn-primary" onclick={confirmEvaluate}
+                    >Evaluate</button
+                >
+            </div>
+        </div>
+    </div>
+{/if}
+
 <style>
+    .traversal-select {
+        font-family: var(--font-ui);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-dim);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .traversal-select:hover:not(:disabled) {
+        background: var(--border);
+        color: var(--text);
+    }
+    .traversal-select:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    .traversal-speed {
+        width: 58px;
+    }
     .toolbar {
         display: flex;
         align-items: center;
