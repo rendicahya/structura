@@ -311,6 +311,8 @@
             isWalk={$walkIdDLL === contextMenu.node.id}
             hasNext={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.nextId}
             hasPrev={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.prevId}
+            isConnected={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.nextId ||
+                !!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.prevId}
             onclose={closeContextMenu}
             oneditData={handleEditData}
             ondisconnectNext={handleDisconnectNext}

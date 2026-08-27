@@ -11,6 +11,7 @@
         isWalk = false,
         hasNext = false,
         hasPrev = false,
+        isConnected = false,
         onclose,
         onrename,
         oneditData,
@@ -161,12 +162,14 @@
             {/if}
         {/if}
 
-        <div class="menu-divider"></div>
+        {#if isConnected}
+            <div class="menu-divider"></div>
 
-        <button class="menu-item danger" onclick={handleUnlink}>
-            <Icon name="unlink" size={13} />
-            Unlink node
-        </button>
+            <button class="menu-item danger" onclick={handleUnlink}>
+                <Icon name="unlink" size={13} />
+                Unlink node
+            </button>
+        {/if}
     {/if}
 </div>
 

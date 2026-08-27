@@ -290,6 +290,8 @@
             isTail={$tailId === contextMenu.node.id}
             isWalk={$walkId === contextMenu.node.id}
             hasNext={!!$nodes.find((n) => n.id === contextMenu.node.id)?.nextId}
+            isConnected={!!$nodes.find((n) => n.id === contextMenu.node.id)?.nextId ||
+                $nodes.some((n) => n.nextId === contextMenu.node.id)}
             onclose={closeContextMenu}
             oneditData={handleEditData}
             ondisconnectNext={handleDisconnectNext}
