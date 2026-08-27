@@ -146,6 +146,7 @@
         border-radius: 10px;
         background: var(--node-bg);
         border: 1.5px solid var(--node-border);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
         text-align: center;
         font-family: var(--font-ui);
     }
@@ -163,7 +164,9 @@
     }
     .dll-flow-node.selected {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-glow);
+        box-shadow:
+            0 0 0 3px var(--accent-glow),
+            0 4px 10px rgba(0, 0, 0, 0.25);
     }
     :global(.dll-flow-node .handle-next) {
         background: var(--accent);

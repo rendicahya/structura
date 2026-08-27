@@ -243,9 +243,10 @@ html, body {
 
 /* Edges render behind nodes by default, so pointer arrows can duck under
    a node's body instead of terminating cleanly at its edge. Bring the
-   whole edges layer in front of the nodes layer. */
+   whole edges layer in front of the nodes layer (but still below the
+   in-progress connection line, which xyflow keeps at z-index 1001). */
 .svelte-flow__edges {
-  z-index: 5;
+  z-index: 500 !important;
 }
 
 ::-webkit-scrollbar {
