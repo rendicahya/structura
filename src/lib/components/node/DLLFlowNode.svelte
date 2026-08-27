@@ -62,6 +62,7 @@
         id="prev-source"
         position={Position.Left}
         class="handle-prev drag-source drag-source-left"
+        style="right: auto; left: 0; top: 50%; width: 20%; height: 50%; transform: none;"
     />
 
     {#if data.isHead || data.isTail || data.isWalk}
@@ -90,6 +91,7 @@
         id="next-source"
         position={Position.Right}
         class="handle-next drag-source drag-source-right"
+        style="left: auto; right: 0; top: 0; width: 20%; height: 50%; transform: none;"
     />
     <Handle
         type="target"
@@ -180,12 +182,6 @@
        handle element's own center — keeping the dot there is what makes
        the line start from where the user is actually dragging. */
     :global(.dll-flow-node .svelte-flow__handle.drag-source-right) {
-        width: 20%;
-        height: 50%;
-        left: auto;
-        right: 0;
-        top: 0;
-        transform: none;
         border-radius: 0 10px 0 0;
         background: transparent;
         border: none;
@@ -204,12 +200,6 @@
         pointer-events: none;
     }
     :global(.dll-flow-node .svelte-flow__handle.drag-source-left) {
-        width: 20%;
-        height: 50%;
-        right: auto;
-        left: 0;
-        top: 50%;
-        transform: none;
         border-radius: 0 0 0 10px;
         background: transparent;
         border: none;

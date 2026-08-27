@@ -73,7 +73,12 @@
         <div class="value">{data.value || "null"}</div>
     {/if}
 
-    <Handle type="source" position={Position.Right} class="drag-source" />
+    <Handle
+        type="source"
+        position={Position.Right}
+        class="drag-source"
+        style="left: auto; right: 0; top: 0; width: 20%; height: 100%; transform: none;"
+    />
 
     {#if !data.hasNext}
         <svg class="ground-symbol" width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -109,12 +114,6 @@
        keeping the dot there is what makes the line start from where the
        user is actually dragging. */
     :global(.sll-flow-node .svelte-flow__handle.drag-source) {
-        width: 20%;
-        height: 100%;
-        left: auto;
-        right: 0;
-        top: 0;
-        transform: none;
         border-radius: 0 10px 10px 0;
         background: transparent;
         border: none;
