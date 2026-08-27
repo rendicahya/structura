@@ -101,10 +101,13 @@
         text-align: center;
         font-family: var(--font-ui);
     }
-    /* Drag-start hit area for the "next" pointer: the visible dot stays put
-       at the right edge, but the interactive Handle itself is stretched to
-       cover the right 20% of the node so grabbing it doesn't require
-       pinpointing a 10px circle. */
+    /* Drag-start hit area for the "next" pointer: the interactive Handle is
+       stretched to cover the right 20% of the node so grabbing it doesn't
+       require pinpointing a 10px circle. The visible dot is centered inside
+       that same box (not pinned to the node's edge) because xyflow anchors
+       the in-progress connection line to the handle element's own center —
+       keeping the dot there is what makes the line start from where the
+       user is actually dragging. */
     :global(.sll-flow-node .svelte-flow__handle.drag-source) {
         width: 20%;
         height: 100%;
@@ -119,9 +122,9 @@
     :global(.sll-flow-node .svelte-flow__handle.drag-source::after) {
         content: "";
         position: absolute;
-        right: -5px;
+        right: 50%;
         top: 50%;
-        transform: translateY(-50%);
+        transform: translate(50%, -50%);
         width: 10px;
         height: 10px;
         border-radius: 50%;
