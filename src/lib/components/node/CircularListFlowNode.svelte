@@ -11,8 +11,6 @@
     class:is-unreachable={data.isUnreachable}
     class:anim-in={data.isAnimIn}
 >
-    <span class="var-name">{data.varName}</span>
-    <div class="divider"></div>
     <span class="value" class:muted={!data.value}>{data.value || "null"}</span>
 </div>
 
@@ -67,19 +65,6 @@
             opacity: 1;
             transform: translateX(0);
         }
-    }
-    .divider {
-        width: calc(100% - 24px);
-        height: 1px;
-        background: var(--border);
-    }
-    .var-name {
-        font-size: 10px;
-        color: var(--accent);
-        font-weight: 500;
-    }
-    .cl-node.is-unreachable .var-name {
-        color: var(--text-muted);
     }
     .value {
         font-size: 13px;

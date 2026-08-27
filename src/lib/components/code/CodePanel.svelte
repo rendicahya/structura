@@ -65,6 +65,52 @@
         return text;
     }
 
+    // For each line index, is it a foldable block opener, and if so what
+    // line index does the block close on. Python is indentation-based
+    // (no braces); Java/C++ are brace-based, matched with a stack so
+    // nested blocks resolve independently.
+    function computeFoldRanges(lines, language) {
+        const meta = lines.map(() => ({ foldable: false, endIdx: -1 }));
+
+        if (language === "python") {
+            for (let i = 0; i < lines.length; i++) {
+                const text = lines[i].text;
+                if (text.trim() === "" || !text.trimEnd().endsWith(":")) continue;
+                const indent = text.match(/^\s*/)[0].length;
+                let end = i;
+                for (let j = i + 1; j < lines.length; j++) {
+                    const t = lines[j].text;
+                    if (t.trim() === "") {
+                        end = j;
+                        continue;
+                    }
+                    const ind = t.match(/^\s*/)[0].length;
+                    if (ind > indent) end = j;
+                    else break;
+                }
+                if (end > i) {
+                    meta[i] = { foldable: true, endIdx: end };
+                }
+            }
+            return meta;
+        }
+
+        const stack = [];
+        for (let i = 0; i < lines.length; i++) {
+            for (const ch of lines[i].text) {
+                if (ch === "{") {
+                    stack.push(i);
+                } else if (ch === "}") {
+                    const startIdx = stack.pop();
+                    if (startIdx !== undefined && i > startIdx) {
+                        meta[startIdx] = { foldable: true, endIdx: i };
+                    }
+                }
+            }
+        }
+        return meta;
+    }
+
     $effect(() => {
         $log;
         if (codeBodyEl) codeBodyEl.scrollTop = codeBodyEl.scrollHeight;
@@ -281,6 +327,36 @@
 
     let fullCode = $derived(flatLines.map((l) => l.text).join("\n"));
 
+    let foldMeta = $derived(computeFoldRanges(flatLines, lang));
+    let foldedIdx = $state(new Set());
+
+    $effect(() => {
+        lang;
+        foldedIdx = new Set();
+    });
+
+    function toggleFold(idx) {
+        const next = new Set(foldedIdx);
+        if (next.has(idx)) next.delete(idx);
+        else next.add(idx);
+        foldedIdx = next;
+    }
+
+    let visibleLines = $derived(
+        (() => {
+            const result = [];
+            let hideUntil = -1;
+            for (let i = 0; i < flatLines.length; i++) {
+                if (i <= hideUntil) continue;
+                const meta = foldMeta[i];
+                const folded = meta.foldable && foldedIdx.has(i);
+                result.push({ ...flatLines[i], idx: i, foldable: meta.foldable, folded });
+                if (folded) hideUntil = meta.endIdx;
+            }
+            return result;
+        })(),
+    );
+
     let copied = $state(false);
     let copyTimer;
     function handleCopy() {
@@ -385,11 +461,24 @@
         {:else}
             <table class="code-table">
                 <tbody>
-                    {#each flatLines as line (line.lineNum)}
+                    {#each visibleLines as line (line.idx)}
                         <tr class="code-row" class:fresh={line.fresh}>
                             <td class="line-num">{line.lineNum}</td>
+                            <td class="fold-gutter">
+                                {#if line.foldable}
+                                    <button
+                                        class="fold-toggle"
+                                        class:folded={line.folded}
+                                        onclick={() => toggleFold(line.idx)}
+                                        title={line.folded ? "Expand" : "Collapse"}
+                                        >▸</button
+                                    >
+                                {/if}
+                            </td>
                             <td class="line-code"
-                                >{@html highlight(line.text, lang)}</td
+                                >{@html highlight(line.text, lang)}{#if line.folded}<span
+                                        class="fold-ellipsis">⋯</span
+                                    >{/if}</td
                             >
                         </tr>
                     {/each}
@@ -592,6 +681,42 @@
         line-height: 1.75;
         color: var(--text-dim);
         white-space: pre;
+    }
+    .fold-gutter {
+        width: 14px;
+        min-width: 14px;
+        padding: 0;
+        vertical-align: top;
+        border-right: 1px solid var(--border);
+    }
+    .fold-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: calc(var(--code-font-size, 12.5px) * 1.75 + 2px);
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 8px;
+        line-height: 1;
+        transform: rotate(90deg);
+        transition: transform 0.12s, color 0.12s;
+    }
+    .fold-toggle.folded {
+        transform: rotate(0deg);
+    }
+    .fold-toggle:hover {
+        color: var(--text);
+    }
+    .fold-ellipsis {
+        color: var(--text-muted);
+        font-style: italic;
+        margin-left: 4px;
+        user-select: none;
     }
     :global(.kw) {
         color: #c792ea;

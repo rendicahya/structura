@@ -60,8 +60,6 @@
         </div>
     {/if}
 
-    <div class="var-name">{data.varName}</div>
-
     {#if editing}
         <input
             class="nodrag value-input"
@@ -153,13 +151,6 @@
     .badge.walk {
         background: rgba(251, 146, 60, 0.15);
         color: #fb923c;
-    }
-    .var-name {
-        font-family: var(--font-mono);
-        font-size: 9px;
-        color: var(--accent);
-        font-weight: 600;
-        margin-bottom: 2px;
     }
     .value {
         font-family: var(--font-mono);
