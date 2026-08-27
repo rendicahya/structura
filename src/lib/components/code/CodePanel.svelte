@@ -3,7 +3,17 @@
 
     let lang = $state("java");
     let useGenerics = $state(false);
+    let fontSize = $state(12.5);
     let codeBodyEl;
+
+    const MIN_FONT_SIZE = 9;
+    const MAX_FONT_SIZE = 20;
+    function decreaseFontSize() {
+        fontSize = Math.max(MIN_FONT_SIZE, fontSize - 1);
+    }
+    function increaseFontSize() {
+        fontSize = Math.min(MAX_FONT_SIZE, fontSize + 1);
+    }
 
     const PROGRAM_WRAP = {
         java: {
@@ -307,6 +317,24 @@
             </button>
         </div>
         <div class="header-actions">
+            <div class="font-size-control">
+                <button
+                    class="font-size-btn"
+                    onclick={decreaseFontSize}
+                    disabled={fontSize <= MIN_FONT_SIZE}
+                    title="Decrease code text size"
+                >
+                    A<span class="font-size-sign">-</span>
+                </button>
+                <button
+                    class="font-size-btn"
+                    onclick={increaseFontSize}
+                    disabled={fontSize >= MAX_FONT_SIZE}
+                    title="Increase code text size"
+                >
+                    A<span class="font-size-sign">+</span>
+                </button>
+            </div>
             <button
                 class="generics-btn"
                 class:active={useGenerics}
@@ -351,7 +379,7 @@
         </div>
     </div>
 
-    <div class="code-body" bind:this={codeBodyEl}>
+    <div class="code-body" bind:this={codeBodyEl} style="--code-font-size: {fontSize}px">
         {#if flatLines.length === 0}
             <div class="empty-code"></div>
         {:else}
@@ -434,6 +462,46 @@
         align-items: center;
         gap: 8px;
     }
+    .font-size-control {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-bottom: 6px;
+    }
+    .font-size-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        font-family: var(--font-ui);
+        font-size: 11px;
+        font-weight: 600;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .font-size-btn:first-child {
+        border-radius: 5px 0 0 5px;
+    }
+    .font-size-btn:last-child {
+        border-radius: 0 5px 5px 0;
+        border-left: none;
+    }
+    .font-size-btn .font-size-sign {
+        font-size: 9px;
+        margin-left: 1px;
+    }
+    .font-size-btn:hover:not(:disabled) {
+        background: var(--border);
+        color: var(--text);
+    }
+    .font-size-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
     .copy-btn,
     .generics-btn {
         display: flex;
@@ -511,7 +579,7 @@
         text-align: right;
         padding: 1px 12px 1px 8px;
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: calc(var(--code-font-size, 12.5px) - 0.5px);
         color: var(--text-muted);
         user-select: none;
         vertical-align: top;
@@ -520,7 +588,7 @@
     .line-code {
         padding: 1px 16px;
         font-family: var(--font-mono);
-        font-size: 12.5px;
+        font-size: var(--code-font-size, 12.5px);
         line-height: 1.75;
         color: var(--text-dim);
         white-space: pre;
