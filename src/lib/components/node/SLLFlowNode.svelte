@@ -50,7 +50,7 @@
     class:is-walk={data.isWalk}
     ondblclick={startEdit}
 >
-    <Handle type="target" position={Position.Left} />
+    <Handle type="target" position={Position.Left} class="drop-target" />
 
     {#if data.isHead || data.isTail || data.isWalk}
         <div class="badges">
@@ -73,7 +73,7 @@
         <div class="value">{data.value || "null"}</div>
     {/if}
 
-    <Handle type="source" position={Position.Right} />
+    <Handle type="source" position={Position.Right} class="drag-source" />
 
     {#if !data.hasNext}
         <svg class="ground-symbol" width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -90,12 +90,44 @@
     .sll-flow-node {
         position: relative;
         min-width: 110px;
-        padding: 8px 12px;
+        height: 43px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border-radius: 10px;
         background: var(--node-bg);
         border: 1.5px solid var(--node-border);
         text-align: center;
         font-family: var(--font-ui);
+    }
+    /* Drag-start hit area for the "next" pointer: the visible dot stays put
+       at the right edge, but the interactive Handle itself is stretched to
+       cover the right 20% of the node so grabbing it doesn't require
+       pinpointing a 10px circle. */
+    :global(.sll-flow-node .svelte-flow__handle.drag-source) {
+        width: 20%;
+        height: 100%;
+        left: auto;
+        right: 0;
+        top: 0;
+        transform: none;
+        border-radius: 0 10px 10px 0;
+        background: transparent;
+        border: none;
+    }
+    :global(.sll-flow-node .svelte-flow__handle.drag-source::after) {
+        content: "";
+        position: absolute;
+        right: -5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--surface);
+        pointer-events: none;
     }
     .sll-flow-node.is-walk {
         border-color: #fb923c;

@@ -259,6 +259,7 @@
             initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
+            connectionRadius={140}
             onnodedragstop={onNodeDragStop}
             onconnect={onConnect}
             ondelete={onDelete}

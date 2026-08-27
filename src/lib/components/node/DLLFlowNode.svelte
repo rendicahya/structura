@@ -54,15 +54,14 @@
         type="target"
         id="next-target"
         position={Position.Left}
-        class="handle-next"
+        class="handle-next drop-target"
         style="top: 38%;"
     />
     <Handle
         type="source"
         id="prev-source"
         position={Position.Left}
-        class="handle-prev"
-        style="top: 62%;"
+        class="handle-prev drag-source drag-source-left"
     />
 
     {#if data.isHead || data.isTail || data.isWalk}
@@ -90,14 +89,13 @@
         type="source"
         id="next-source"
         position={Position.Right}
-        class="handle-next"
-        style="top: 38%;"
+        class="handle-next drag-source drag-source-right"
     />
     <Handle
         type="target"
         id="prev-target"
         position={Position.Right}
-        class="handle-prev"
+        class="handle-prev drop-target"
         style="top: 62%;"
     />
 
@@ -138,7 +136,11 @@
     .dll-flow-node {
         position: relative;
         min-width: 110px;
-        padding: 8px 12px;
+        height: 43px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border-radius: 10px;
         background: var(--node-bg);
         border: 1.5px solid var(--node-border);
@@ -168,6 +170,59 @@
     :global(.dll-flow-node .handle-prev) {
         background: #c792ea;
         border-color: #a855f7;
+    }
+    /* Drag-start hit areas for the next/prev pointers: each source handle's
+       visible dot stays where it was, but its interactive Handle is
+       stretched to cover 20% of the node's width on its edge (across the
+       half of the node's height it owns) so grabbing it doesn't require
+       pinpointing a 10px circle. */
+    :global(.dll-flow-node .svelte-flow__handle.drag-source-right) {
+        width: 20%;
+        height: 50%;
+        left: auto;
+        right: 0;
+        top: 0;
+        transform: none;
+        border-radius: 0 10px 0 0;
+        background: transparent;
+        border: none;
+    }
+    :global(.dll-flow-node .svelte-flow__handle.drag-source-right::after) {
+        content: "";
+        position: absolute;
+        right: -5px;
+        top: 76%;
+        transform: translateY(-50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #6f9fff;
+        pointer-events: none;
+    }
+    :global(.dll-flow-node .svelte-flow__handle.drag-source-left) {
+        width: 20%;
+        height: 50%;
+        right: auto;
+        left: 0;
+        top: 50%;
+        transform: none;
+        border-radius: 0 0 0 10px;
+        background: transparent;
+        border: none;
+    }
+    :global(.dll-flow-node .svelte-flow__handle.drag-source-left::after) {
+        content: "";
+        position: absolute;
+        left: -5px;
+        top: 24%;
+        transform: translateY(-50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #c792ea;
+        border: 2px solid #a855f7;
+        pointer-events: none;
     }
     .ground-symbol {
         position: absolute;
