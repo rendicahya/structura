@@ -106,6 +106,10 @@
         pushHistory();
     }
 
+    function isValidConnection(connection) {
+        return connection.source !== connection.target;
+    }
+
     function onConnect(connection) {
         if (connection.source === connection.target) return;
         pushHistory();
@@ -235,6 +239,7 @@
             nodes={flowNodes}
             edges={flowEdges}
             {nodeTypes}
+            {isValidConnection}
             bind:viewport={flow.viewport}
             initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
