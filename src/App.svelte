@@ -229,6 +229,24 @@
         themeMenuOpen = false;
     }
 
+    let isFullscreen = $state(!!document.fullscreenElement);
+
+    function toggleFullscreen() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            document.documentElement.requestFullscreen();
+        }
+    }
+
+    $effect(() => {
+        const onFullscreenChange = () => {
+            isFullscreen = !!document.fullscreenElement;
+        };
+        document.addEventListener("fullscreenchange", onFullscreenChange);
+        return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+    });
+
     const ZOOM_STEP = 0.1;
 
     $effect(() => {
@@ -465,6 +483,14 @@
         </div>
 
         <div class="nav-spacer"></div>
+
+        <button
+            class="theme-toggle fullscreen-toggle"
+            onclick={toggleFullscreen}
+            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+        >
+            <Icon name={isFullscreen ? "fullscreenExit" : "fullscreen"} size={16} />
+        </button>
 
         <div class="theme-picker" bind:this={themePickerEl}>
             <button
@@ -848,6 +874,11 @@
     .theme-picker {
         position: relative;
         margin-bottom: 6px;
+    }
+
+    .fullscreen-toggle {
+        margin-bottom: 6px;
+        margin-right: 8px;
     }
 
     .theme-toggle {

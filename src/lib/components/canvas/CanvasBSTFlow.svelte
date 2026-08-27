@@ -45,10 +45,15 @@
         if (rect.width === 0 || rect.height === 0) return false;
 
         const padding = 80;
-        const minX = Math.min(...$bstNodes.map((n) => n.x - NODE_R));
-        const maxX = Math.max(...$bstNodes.map((n) => n.x + NODE_R));
-        const minY = Math.min(...$bstNodes.map((n) => n.y - NODE_R));
-        const maxY = Math.max(...$bstNodes.map((n) => n.y + NODE_R));
+        const { minX, maxX, minY, maxY } = $bstNodes.reduce(
+            (acc, n) => ({
+                minX: Math.min(acc.minX, n.x - NODE_R),
+                maxX: Math.max(acc.maxX, n.x + NODE_R),
+                minY: Math.min(acc.minY, n.y - NODE_R),
+                maxY: Math.max(acc.maxY, n.y + NODE_R),
+            }),
+            { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+        );
         const contentW = maxX - minX;
         const contentH = maxY - minY;
         const scaleX = (rect.width - padding * 2) / contentW;
@@ -91,14 +96,16 @@
         return false;
     }
 
-    let reachableIds = $derived(() => {
+    let nodesById = $derived(new Map($bstNodes.map((n) => [n.id, n])));
+
+    let reachableIds = $derived.by(() => {
         const root = $bstRootId;
-        const ns = $bstNodes;
+        const ns = nodesById;
         const reachable = new Set();
         function traverse(id) {
-            if (!id) return;
+            if (!id || reachable.has(id)) return;
             reachable.add(id);
-            const node = ns.find((n) => n.id === id);
+            const node = ns.get(id);
             if (!node) return;
             traverse(node.left);
             traverse(node.right);
@@ -108,7 +115,7 @@
     });
 
     function isReachable(nodeId) {
-        return reachableIds().has(nodeId);
+        return reachableIds.has(nodeId);
     }
 
     let traversalCurrentId = $derived(
@@ -219,7 +226,7 @@
         >
             {#each $bstNodes as node (node.id)}
                 {#if node.left}
-                    {@const child = $bstNodes.find((n) => n.id === node.left)}
+                    {@const child = nodesById.get(node.left)}
                     {#if child && isReachable(child.id)}
                         <line
                             x1={node.x}
@@ -234,7 +241,7 @@
                     {/if}
                 {/if}
                 {#if node.right}
-                    {@const child = $bstNodes.find((n) => n.id === node.right)}
+                    {@const child = nodesById.get(node.right)}
                     {#if child && isReachable(child.id)}
                         <line
                             x1={node.x}

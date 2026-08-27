@@ -119,6 +119,12 @@
         `,
         chevronDown: `
             <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        `,
+        fullscreen: `
+            <path d="M1.5 5V2.5C1.5 1.9 1.9 1.5 2.5 1.5H5M9 1.5H11.5C12.1 1.5 12.5 1.9 12.5 2.5V5M12.5 9V11.5C12.5 12.1 12.1 12.5 11.5 12.5H9M5 12.5H2.5C1.9 12.5 1.5 12.1 1.5 11.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        `,
+        fullscreenExit: `
+            <path d="M5 1.5V4C5 4.6 4.6 5 4 5H1.5M9 1.5V4C9 4.6 9.4 5 10 5H12.5M12.5 9H10C9.4 9 9 9.4 9 10V12.5M1.5 9H4C4.6 9 5 9.4 5 10V12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
         `
     };
 

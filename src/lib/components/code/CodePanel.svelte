@@ -2,7 +2,58 @@
     const { log } = $props();
 
     let lang = $state("java");
+    let useGenerics = $state(false);
     let codeBodyEl;
+
+    const PROGRAM_WRAP = {
+        java: {
+            header: ["public class Main {", "    public static void main(String[] args) {"],
+            indent: "        ",
+            footer: ["    }", "}"],
+        },
+        cpp: {
+            header: ["int main() {"],
+            indent: "    ",
+            footer: ["    return 0;", "}"],
+        },
+        python: {
+            header: ['if __name__ == "__main__":'],
+            indent: "    ",
+            footer: [],
+        },
+    };
+
+    function indentBlock(text, indent) {
+        return text
+            .split("\n")
+            .map((l) => (l.length ? indent + l : l))
+            .join("\n");
+    }
+
+    function applyGenericsJava(text) {
+        return text
+            .replace(/\bclass Node \{/g, "class Node<T> {")
+            .replace(/\bString data;/g, "T data;")
+            .replace(/\bNode (left|right|next|prev);/g, "Node<T> $1;")
+            .replace(/\bList<Node> neighbors/g, "List<Node<T>> neighbors")
+            .replace(/\bNode (\w+) = new Node/g, "Node<T> $1 = new Node")
+            .replace(/\bnew Node\(\)/g, "new Node<>()");
+    }
+
+    function applyGenericsCpp(text) {
+        return text
+            .replace(/\bstruct Node \{/g, "template<typename T>\nstruct Node {")
+            .replace(/\bstd::string data;/g, "T data;")
+            .replace(/\bNode\*/g, "Node<T>*")
+            .replace(/\bnew Node\(/g, "new Node<T>(");
+    }
+
+    function applyGenerics(text, language) {
+        if (!useGenerics) return text;
+        if (language === "java") return applyGenericsJava(text);
+        if (language === "cpp") return applyGenericsCpp(text);
+        return text;
+    }
 
     $effect(() => {
         $log;
@@ -165,40 +216,60 @@
             .join("");
     }
 
+    function pickLines(entry, language) {
+        return language === "java"
+            ? entry.java
+            : language === "python"
+              ? (entry.python ?? entry.java)
+              : (entry.cpp ?? entry.java);
+    }
+
+    // Class/struct declarations belong at file scope, not nested inside
+    // Main's main()/int main() body — detected on the raw (pre-generics)
+    // text so the check is unaffected by the generics toggle.
+    function isClassEntry(text, language) {
+        const trimmed = text.trim();
+        return language === "cpp"
+            ? /^struct\s+\w+\s*\{/.test(trimmed)
+            : /^class\s+\w+/.test(trimmed);
+    }
+
     let flatLines = $derived(
         (() => {
+            const wrap = PROGRAM_WRAP[lang];
             let lineNum = 1;
             const result = [];
+            const push = (text, fresh) => {
+                result.push({ lineNum: lineNum++, text, fresh });
+            };
+
+            let hasPreamble = false;
             for (const entry of $log) {
-                const lines =
-                    lang === "java"
-                        ? entry.java
-                        : lang === "python"
-                          ? (entry.python ?? entry.java)
-                          : (entry.cpp ?? entry.java);
-                for (const line of lines) {
-                    result.push({
-                        lineNum: lineNum++,
-                        text: line,
-                        fresh: entry.fresh,
-                    });
+                for (const raw of pickLines(entry, lang)) {
+                    if (isClassEntry(raw, lang)) {
+                        push(applyGenerics(raw, lang), entry.fresh);
+                        hasPreamble = true;
+                    }
                 }
             }
+            if (hasPreamble) push("", false);
+
+            for (const text of wrap.header) push(text, false);
+
+            for (const entry of $log) {
+                for (const raw of pickLines(entry, lang)) {
+                    if (isClassEntry(raw, lang)) continue;
+                    push(indentBlock(applyGenerics(raw, lang), wrap.indent), entry.fresh);
+                }
+            }
+
+            for (const text of wrap.footer) push(text, false);
+
             return result;
         })(),
     );
 
-    let fullCode = $derived(
-        $log
-            .flatMap((e) =>
-                lang === "java"
-                    ? e.java
-                    : lang === "python"
-                      ? (e.python ?? e.java)
-                      : (e.cpp ?? e.java),
-            )
-            .join("\n"),
-    );
+    let fullCode = $derived(flatLines.map((l) => l.text).join("\n"));
 
     let copied = $state(false);
     let copyTimer;
@@ -235,38 +306,49 @@
                 <span class="dot cpp-dot"></span>C++
             </button>
         </div>
-        <button class="copy-btn" class:copied onclick={handleCopy}>
-            {#if copied}
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                    <path
-                        d="M2 7L5 10L11 3"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                Copied!
-            {:else}
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                    <rect
-                        x="4"
-                        y="4"
-                        width="7"
-                        height="7"
-                        rx="1.5"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                    <path
-                        d="M3 9H2.5A1.5 1.5 0 0 1 1 7.5V2.5A1.5 1.5 0 0 1 2.5 1H7.5A1.5 1.5 0 0 1 9 2.5V3"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                    />
-                </svg>
-                Copy
-            {/if}
-        </button>
+        <div class="header-actions">
+            <button
+                class="generics-btn"
+                class:active={useGenerics}
+                onclick={() => (useGenerics = !useGenerics)}
+                title="Toggle generic type parameters (Java/C++)"
+                disabled={lang === "python"}
+            >
+                &lt;T&gt; Generics
+            </button>
+            <button class="copy-btn" class:copied onclick={handleCopy}>
+                {#if copied}
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <path
+                            d="M2 7L5 10L11 3"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    Copied!
+                {:else}
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                        <rect
+                            x="4"
+                            y="4"
+                            width="7"
+                            height="7"
+                            rx="1.5"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                        />
+                        <path
+                            d="M3 9H2.5A1.5 1.5 0 0 1 1 7.5V2.5A1.5 1.5 0 0 1 2.5 1H7.5A1.5 1.5 0 0 1 9 2.5V3"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                        />
+                    </svg>
+                    Copy
+                {/if}
+            </button>
+        </div>
     </div>
 
     <div class="code-body" bind:this={codeBodyEl}>
@@ -347,7 +429,13 @@
     .cpp-dot {
         background: #00599c;
     }
-    .copy-btn {
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .copy-btn,
+    .generics-btn {
         display: flex;
         align-items: center;
         gap: 5px;
@@ -364,9 +452,19 @@
         justify-content: center;
         margin-bottom: 6px;
     }
-    .copy-btn:hover {
+    .copy-btn:hover,
+    .generics-btn:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
+    }
+    .generics-btn.active {
+        background: rgba(91, 143, 255, 0.14);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .generics-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     .copy-btn.copied {
         background: rgba(78, 204, 163, 0.12);

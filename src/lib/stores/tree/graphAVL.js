@@ -104,6 +104,32 @@ export function getBalance(nodeId, nodesById) {
     return getHeight(node.left, nodesById) - getHeight(node.right, nodesById);
 }
 
+/**
+ * Balance factor for every node in one pass, memoizing subtree heights
+ * so each node's height is computed once instead of re-walked per node
+ * (the naive per-node getBalance/getHeight combo is O(n) work per node).
+ * @param {Map<string, AVLNode>} nodesById
+ * @returns {Map<string, number>} nodeId -> balance factor
+ */
+export function computeAllBalances(nodesById) {
+    const heights = new Map();
+    function height(nodeId) {
+        if (!nodeId) return -1;
+        if (heights.has(nodeId)) return heights.get(nodeId);
+        const node = nodesById.get(nodeId);
+        if (!node) return -1;
+        const h = 1 + Math.max(height(node.left), height(node.right));
+        heights.set(nodeId, h);
+        return h;
+    }
+    const balances = new Map();
+    for (const id of nodesById.keys()) {
+        const node = nodesById.get(id);
+        balances.set(id, height(node.left) - height(node.right));
+    }
+    return balances;
+}
+
 function buildMap() {
     return new Map(get(avlNodes).map((n) => [n.id, n]));
 }

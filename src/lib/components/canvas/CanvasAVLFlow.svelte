@@ -9,7 +9,7 @@
         avlIsEmpty,
         deleteAVLNode,
         garbageCollectAVL,
-        getBalance,
+        computeAllBalances,
     } from "../../stores/tree/graphAVL.js";
     import { pushHistory } from "../../stores/shared/history.js";
     import { traversalState } from "../../stores/tree/avlTraversal.js";
@@ -41,10 +41,15 @@
         if (rect.width === 0 || rect.height === 0) return false;
 
         const padding = 80;
-        const minX = Math.min(...$avlNodes.map((n) => n.x - NODE_R));
-        const maxX = Math.max(...$avlNodes.map((n) => n.x + NODE_R));
-        const minY = Math.min(...$avlNodes.map((n) => n.y - NODE_R));
-        const maxY = Math.max(...$avlNodes.map((n) => n.y + NODE_R));
+        const { minX, maxX, minY, maxY } = $avlNodes.reduce(
+            (acc, n) => ({
+                minX: Math.min(acc.minX, n.x - NODE_R),
+                maxX: Math.max(acc.maxX, n.x + NODE_R),
+                minY: Math.min(acc.minY, n.y - NODE_R),
+                maxY: Math.max(acc.maxY, n.y + NODE_R),
+            }),
+            { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+        );
         const contentW = maxX - minX;
         const contentH = maxY - minY;
         const scaleX = (rect.width - padding * 2) / contentW;
@@ -87,14 +92,16 @@
         return false;
     }
 
-    let reachableIds = $derived(() => {
+    let nodesById = $derived(new Map($avlNodes.map((n) => [n.id, n])));
+
+    let reachableIds = $derived.by(() => {
         const root = $avlRootId;
-        const ns = $avlNodes;
+        const ns = nodesById;
         const reachable = new Set();
         function traverse(id) {
-            if (!id) return;
+            if (!id || reachable.has(id)) return;
             reachable.add(id);
-            const node = ns.find((n) => n.id === id);
+            const node = ns.get(id);
             if (!node) return;
             traverse(node.left);
             traverse(node.right);
@@ -104,7 +111,7 @@
     });
 
     function isReachable(nodeId) {
-        return reachableIds().has(nodeId);
+        return reachableIds.has(nodeId);
     }
 
     let traversalCurrentId = $derived(
@@ -121,34 +128,33 @@
             : null,
     );
 
+    let balances = $derived(computeAllBalances(nodesById));
+
     let flowNodes = $derived(
-        (() => {
-            const nodesById = new Map($avlNodes.map((n) => [n.id, n]));
-            return $avlNodes.map((node) => {
-                const reachable = isReachable(node.id);
-                const isSearchOutcome = node.id === searchOutcomeId;
-                return {
-                    id: node.id,
-                    type: "avl",
-                    position: { x: node.x - NODE_R, y: node.y - NODE_R },
-                    draggable: false,
-                    selectable: false,
-                    connectable: false,
-                    style: "transition: transform 0.3s ease;",
-                    data: {
-                        varName: node.varName,
-                        value: node.data,
-                        balance: getBalance(node.id, nodesById),
-                        isRoot: node.id === $avlRootId,
-                        reachable,
-                        isCurrent: node.id === traversalCurrentId && !isSearchOutcome,
-                        isVisited: traversalVisitedIds.has(node.id),
-                        isFound: isSearchOutcome && $traversalState.searchFound,
-                        isNotFound: isSearchOutcome && !$traversalState.searchFound,
-                    },
-                };
-            });
-        })(),
+        $avlNodes.map((node) => {
+            const reachable = isReachable(node.id);
+            const isSearchOutcome = node.id === searchOutcomeId;
+            return {
+                id: node.id,
+                type: "avl",
+                position: { x: node.x - NODE_R, y: node.y - NODE_R },
+                draggable: false,
+                selectable: false,
+                connectable: false,
+                style: "transition: transform 0.3s ease;",
+                data: {
+                    varName: node.varName,
+                    value: node.data,
+                    balance: balances.get(node.id),
+                    isRoot: node.id === $avlRootId,
+                    reachable,
+                    isCurrent: node.id === traversalCurrentId && !isSearchOutcome,
+                    isVisited: traversalVisitedIds.has(node.id),
+                    isFound: isSearchOutcome && $traversalState.searchFound,
+                    isNotFound: isSearchOutcome && !$traversalState.searchFound,
+                },
+            };
+        }),
     );
 
     function onPaneContextMenu({ event }) {
@@ -219,7 +225,7 @@
         >
             {#each $avlNodes as node (node.id)}
                 {#if node.left}
-                    {@const child = $avlNodes.find((n) => n.id === node.left)}
+                    {@const child = nodesById.get(node.left)}
                     {#if child && isReachable(child.id)}
                         <line
                             x1={node.x}
@@ -234,7 +240,7 @@
                     {/if}
                 {/if}
                 {#if node.right}
-                    {@const child = $avlNodes.find((n) => n.id === node.right)}
+                    {@const child = nodesById.get(node.right)}
                     {#if child && isReachable(child.id)}
                         <line
                             x1={node.x}
