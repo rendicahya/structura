@@ -241,6 +241,13 @@ html, body {
   border-color: var(--surface);
 }
 
+/* Edges render behind nodes by default, so pointer arrows can duck under
+   a node's body instead of terminating cleanly at its edge. Bring the
+   whole edges layer in front of the nodes layer. */
+.svelte-flow__edges {
+  z-index: 5;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
