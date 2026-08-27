@@ -196,8 +196,11 @@
                 themeMenuOpen = false;
             }
         }
-        window.addEventListener("mousedown", onDocMousedown);
-        return () => window.removeEventListener("mousedown", onDocMousedown);
+        // Capture phase: Svelte Flow's canvas pane stops propagation of its
+        // own mousedown handling, so a bubble-phase listener here would
+        // never see clicks on the canvas and the menu would stay open.
+        window.addEventListener("mousedown", onDocMousedown, true);
+        return () => window.removeEventListener("mousedown", onDocMousedown, true);
     });
 
     // Which NAV_CATEGORIES dropdown (if any) is currently open, by id.
@@ -211,8 +214,11 @@
                 openNavCategory = null;
             }
         }
-        window.addEventListener("mousedown", onDocMousedown);
-        return () => window.removeEventListener("mousedown", onDocMousedown);
+        // Capture phase: Svelte Flow's canvas pane stops propagation of its
+        // own mousedown handling, so a bubble-phase listener here would
+        // never see clicks on the canvas and the dropdown would stay open.
+        window.addEventListener("mousedown", onDocMousedown, true);
+        return () => window.removeEventListener("mousedown", onDocMousedown, true);
     });
 
     function toggleNavCategory(id) {

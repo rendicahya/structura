@@ -216,6 +216,12 @@ html, body {
   --xy-controls-button-color-hover: var(--text);
   --xy-controls-button-border-color: var(--border);
   --xy-attribution-background-color: var(--surface2);
+  /* Default edge/arrowhead stroke (#b1b1b7) is tuned for a light UI with a
+     dark canvas; against this app's light themes it reads as a washed-out
+     gray. Tie it to --text-dim so pointer arrows stay legible in every
+     theme. */
+  --xy-edge-stroke-default: var(--text-dim);
+  --xy-edge-stroke-selected-default: var(--accent);
 }
 
 /* Same problem for the "Svelte Flow" attribution badge that renders on
@@ -223,6 +229,16 @@ html, body {
    near-white pill), which barely reads against this app's dark surfaces. */
 .svelte-flow__attribution a {
   color: var(--text-dim);
+}
+
+/* Default connection handles render at 6px, easy to miss/mis-click when
+   linking nodes. Enlarge them and tie the color to the app's accent
+   token so they read clearly in every theme. */
+.svelte-flow__handle {
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent);
+  border-color: var(--surface);
 }
 
 ::-webkit-scrollbar {
