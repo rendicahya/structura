@@ -40,6 +40,11 @@
     } from "../../stores/dll/graphDLL.js";
     import { toast } from "../../stores/shared/toast.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+    import {
+        downloadStructure,
+        pickStructureFile,
+        requestLoad,
+    } from "../../utils/saveLoad.js";
 
     const {
         mode = "sll",
@@ -47,9 +52,6 @@
         zoomIn,
         zoomOut,
         zoomReset,
-        codeHidden = false,
-        ontoggleCode,
-        onopenShortcuts,
     } = $props();
 
     let isSLL = $derived(mode === "sll");
@@ -127,44 +129,52 @@
     }
 
     function handleSave() {
-        const snap = isSLL ? getSnapshot() : getSnapshotDLL();
-        snap._type = mode;
-        const blob = new Blob([JSON.stringify(snap, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `structura-${mode}-save.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadStructure(mode, isSLL ? getSnapshot() : getSnapshotDLL());
         toast.success("Saved successfully");
     }
 
     function handleLoad() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
-            const file = target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const result = /** @type {string} */ (ev.target?.result);
-                    const snap = JSON.parse(result);
-                    pushHistory();
-                    if (isSLL) applySnapshot(snap);
-                    else applySnapshotDLL(snap);
-                    toast.success("Loaded successfully");
-                } catch {
-                    toast.error("Invalid save file");
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
+        pickStructureFile((snap) => {
+            if (!snap) return toast.error("Invalid .stc file");
+            requestLoad(snap);
+        });
+    }
+
+    // SLL⇄DLL conversion: reuses the load pipeline so the app navigates to
+    // the other page and rebases history. SLL→DLL derives each node's `prev`
+    // by walking the existing `next` chain; DLL→SLL just drops `prev`.
+    function handleConvert() {
+        if (isSLL) {
+            const snap = getSnapshot();
+            const prevByNode = new Map();
+            for (const n of snap.nodes) {
+                if (n.nextId) prevByNode.set(n.nextId, n.id);
+            }
+            const nodes = snap.nodes.map((n) => ({
+                ...n,
+                prevId: prevByNode.get(n.id) ?? null,
+            }));
+            const edges = [
+                ...snap.edges.map((e) => ({ from: e.from, to: e.to, type: "next" })),
+                ...nodes
+                    .filter((n) => n.prevId)
+                    .map((n) => ({ from: n.id, to: n.prevId, type: "prev" })),
+            ];
+            requestLoad(
+                { ...snap, nodes, edges, _type: "dll" },
+                "Converted to doubly linked list",
+            );
+        } else {
+            const snap = getSnapshotDLL();
+            const nodes = snap.nodes.map(({ prevId, ...n }) => n);
+            const edges = snap.edges
+                .filter((e) => e.type === "next")
+                .map((e) => ({ from: e.from, to: e.to }));
+            requestLoad(
+                { ...snap, nodes, edges, _type: "sll" },
+                "Converted to singly linked list",
+            );
+        }
     }
 
     /** @param {KeyboardEvent} e */
@@ -179,9 +189,6 @@
             } else if (key === "o") {
                 e.preventDefault();
                 handleLoad();
-            } else if (e.key === "\\") {
-                e.preventDefault();
-                ontoggleCode?.();
             }
             return;
         }
@@ -222,6 +229,17 @@
             >
                 <Icon name="arrange" />
                 Arrange
+            </button>
+        </Tooltip>
+
+        <Tooltip
+            text={isSLL
+                ? "Convert to a doubly linked list (fills prev pointers)"
+                : "Convert to a singly linked list (drops prev pointers)"}
+        >
+            <button class="btn btn-secondary" onclick={handleConvert}>
+                <Icon name="swap" />
+                {isSLL ? "To Doubly" : "To Singly"}
             </button>
         </Tooltip>
 
@@ -317,32 +335,6 @@
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <Icon name="load" />
                 Load
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
-        <Tooltip
-            text={codeHidden ? "Show Code Panel" : "Hide Code Panel"}
-            shortcut="Ctrl+\"
-        >
-            <button
-                class="btn btn-icon"
-                aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
-                class:active={codeHidden}
-                onclick={() => ontoggleCode?.()}
-            >
-                <Icon name="code" {codeHidden} />
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Keyboard Shortcuts" shortcut="?">
-            <button
-                class="btn btn-icon"
-                aria-label="Keyboard shortcuts"
-                onclick={() => onopenShortcuts?.()}
-            >
-                <Icon name="shortcuts" />
             </button>
         </Tooltip>
     </div>
@@ -468,13 +460,7 @@
     .btn-icon:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
-    }
-    .btn-icon.active {
-        background: var(--accent-dim);
-        color: #fff;
-        border-color: var(--accent-dim);
-    }
-    .zoom-label {
+    }    .zoom-label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;

@@ -9,6 +9,7 @@
         isHead = false,
         isTail = false,
         isWalk = false,
+        isInput = false,
         hasNext = false,
         hasPrev = false,
         isConnected = false,
@@ -20,6 +21,7 @@
         onsetHead,
         onsetTail,
         onsetWalk,
+        onsetInput,
         onunlink,
     } = $props();
 
@@ -66,6 +68,10 @@
         onsetWalk?.();
         close();
     }
+    function handleSetInput() {
+        onsetInput?.();
+        close();
+    }
     function handleUnlink() {
         onunlink?.();
         close();
@@ -106,6 +112,7 @@
             {#if isHead}<span class="badge head">HEAD</span>{/if}
             {#if isTail}<span class="badge tail">TAIL</span>{/if}
             {#if isWalk}<span class="badge walk">WALK</span>{/if}
+            {#if isInput}<span class="badge input">INPUT</span>{/if}
         </div>
     </div>
 
@@ -144,6 +151,11 @@
         <button class="menu-item walk-item" onclick={handleSetWalk}>
             <Icon name="walk" size={13} />
             {isWalk ? "✓ Walk (unset)" : "Set as walk"}
+        </button>
+
+        <button class="menu-item input-item" onclick={handleSetInput}>
+            <Icon name="head" size={13} />
+            {isInput ? "✓ Input (unset)" : "Set as input"}
         </button>
 
         {#if hasNext || hasPrev}
@@ -236,6 +248,10 @@
         background: rgba(251, 146, 60, 0.15);
         color: #fb923c;
     }
+    .badge.input {
+        background: rgba(244, 114, 182, 0.15);
+        color: #f472b6;
+    }
     .menu-item {
         display: flex;
         align-items: center;
@@ -280,6 +296,12 @@
     }
     .menu-item.walk-item:hover {
         background: rgba(251, 146, 60, 0.08);
+    }
+    .menu-item.input-item {
+        color: #f472b6;
+    }
+    .menu-item.input-item:hover {
+        background: rgba(244, 114, 182, 0.08);
     }
     .menu-divider {
         height: 1px;

@@ -26,6 +26,7 @@
     } from "../../stores/heap/graphHeap.js";
     import { clearLogHeap } from "../../stores/shared/heapLog.js";
     import { toast } from "../../stores/shared/toast.js";
+    import { downloadStructure, pickStructureFile, requestLoad } from "../../utils/saveLoad.js";
     import { onMount } from "svelte";
     import { isTypingTarget } from "../../utils/keyboard.js";
 
@@ -37,9 +38,6 @@
         zoomIn,
         zoomOut,
         zoomReset,
-        codeHidden = false,
-        ontoggleCode,
-        onopenShortcuts,
     } = $props();
 
     let showConfirmNew = $state(false);
@@ -151,42 +149,15 @@
     }
 
     function handleSave() {
-        const snap = getSnapshotHeap();
-        const blob = new Blob([JSON.stringify(snap, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "structura-heap-save.json";
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadStructure("heap", getSnapshotHeap());
         toast.success("Saved successfully");
     }
 
     function handleLoad() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const snap = JSON.parse(
-                        /** @type {string} */ (ev.target?.result),
-                    );
-                    pushHistory();
-                    applySnapshotHeap(snap);
-                    toast.success("Loaded successfully");
-                } catch {
-                    toast.error("Invalid save file");
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
+        pickStructureFile((snap) => {
+            if (!snap) return toast.error("Invalid .stc file");
+            requestLoad(snap);
+        });
     }
 
     onMount(() => {
@@ -212,9 +183,6 @@
             } else if (key === "o") {
                 e.preventDefault();
                 handleLoad();
-            } else if (e.key === "\\") {
-                e.preventDefault();
-                ontoggleCode?.();
             }
             return;
         }
@@ -240,15 +208,6 @@
     </div>
 
     <div class="actions">
-        <Tooltip text="Create new heap">
-            <button class="btn btn-secondary" onclick={handleNew}>
-                <Icon name="new" />
-                New
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
         <Tooltip text={$heapCapacity === 0 ? "Create a heap first" : $heapIsFull ? "Heap is full" : "Insert value"} shortcut="N">
             <button
                 class="btn btn-primary"
@@ -319,6 +278,13 @@
 
         <div class="separator"></div>
 
+        <Tooltip text="Create new heap">
+            <button class="btn btn-secondary" onclick={handleNew}>
+                <Icon name="new" />
+                New
+            </button>
+        </Tooltip>
+
         <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button
                 class="btn btn-secondary"
@@ -334,32 +300,6 @@
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <Icon name="load" />
                 Load
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
-        <Tooltip
-            text={codeHidden ? "Show code panel" : "Hide code panel"}
-            shortcut="Ctrl+\"
-        >
-            <button
-                class="btn btn-icon"
-                aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
-                class:active={codeHidden}
-                onclick={() => ontoggleCode?.()}
-            >
-                <Icon name="code" {codeHidden} />
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Keyboard shortcuts" shortcut="?">
-            <button
-                class="btn btn-icon"
-                aria-label="Keyboard shortcuts"
-                onclick={() => onopenShortcuts?.()}
-            >
-                <Icon name="shortcuts" />
             </button>
         </Tooltip>
     </div>
@@ -582,13 +522,7 @@
     .btn-icon:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
-    }
-    .btn-icon.active {
-        background: var(--accent-dim);
-        color: #fff;
-        border-color: var(--accent-dim);
-    }
-    .zoom-label {
+    }    .zoom-label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;

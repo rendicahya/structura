@@ -22,6 +22,7 @@
     import { clearLogGraph } from "../../stores/shared/graphLog.js";
     import { toast } from "../../stores/shared/toast.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+    import { downloadStructure, pickStructureFile, requestLoad } from "../../utils/saveLoad.js";
     import {
         traversalState,
         startTraversal,
@@ -38,9 +39,6 @@
         zoomIn,
         zoomOut,
         zoomReset,
-        codeHidden = false,
-        ontoggleCode,
-        onopenShortcuts,
     } = $props();
 
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
@@ -108,43 +106,16 @@
     }
 
     function handleSave() {
-        const snap = getSnapshotGraph();
-        const blob = new Blob([JSON.stringify(snap, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "structura-graph-save.json";
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadStructure("graph", getSnapshotGraph());
         toast.success("Saved successfully");
     }
 
     function handleLoad() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
-            const file = target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const result = /** @type {string} */ (ev.target?.result);
-                    const snap = JSON.parse(result);
-                    resetTraversal();
-                    pushHistory();
-                    applySnapshotGraph(snap);
-                    toast.success("Loaded successfully");
-                } catch {
-                    toast.error("Invalid save file");
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
+        pickStructureFile((snap) => {
+            if (!snap) return toast.error("Invalid .stc file");
+            resetTraversal();
+            requestLoad(snap);
+        });
     }
 
     /** @param {KeyboardEvent} e */
@@ -159,9 +130,6 @@
         } else if (key === "o") {
             e.preventDefault();
             handleLoad();
-        } else if (e.key === "\\") {
-            e.preventDefault();
-            ontoggleCode?.();
         }
     }
 </script>
@@ -175,35 +143,6 @@
     </div>
 
     <div class="actions">
-        <Tooltip text="New graph">
-            <button
-                class="btn btn-secondary"
-                onclick={handleNew}
-                disabled={$graphIsEmpty}
-            >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect
-                        x="2"
-                        y="2"
-                        width="10"
-                        height="10"
-                        rx="2"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                    />
-                    <path
-                        d="M5 7h4M7 5v4"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round"
-                    />
-                </svg>
-                New
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
         <Tooltip text={startNodeName ? `Start: ${startNodeName}` : "Click a node to pick a start"}>
             <span class="start-indicator" class:unset={!startNodeName}>
                 {startNodeName ? `Start: ${startNodeName}` : "Pick a start node"}
@@ -420,6 +359,33 @@
 
         <div class="separator"></div>
 
+        <Tooltip text="New graph">
+            <button
+                class="btn btn-secondary"
+                onclick={handleNew}
+                disabled={$graphIsEmpty}
+            >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect
+                        x="2"
+                        y="2"
+                        width="10"
+                        height="10"
+                        rx="2"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                    />
+                    <path
+                        d="M5 7h4M7 5v4"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round"
+                    />
+                </svg>
+                New
+            </button>
+        </Tooltip>
+
         <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button
                 class="btn btn-secondary"
@@ -462,83 +428,6 @@
                     />
                 </svg>
                 Load
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
-        <Tooltip
-            text={codeHidden ? "Show code panel" : "Hide code panel"}
-            shortcut="Ctrl+\"
-        >
-            <button
-                class="btn btn-icon"
-                aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
-                class:active={codeHidden}
-                onclick={() => ontoggleCode?.()}
-            >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                    <rect
-                        x="1"
-                        y="2"
-                        width="13"
-                        height="11"
-                        rx="2"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                    />
-                    <line
-                        x1="9"
-                        y1="2"
-                        x2="9"
-                        y2="13"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                    />
-                    {#if codeHidden}
-                        <path
-                            d="M11 6l2 1.5-2 1.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    {:else}
-                        <path
-                            d="M11 6l2 1.5-2 1.5"
-                            stroke="currentColor"
-                            stroke-width="1.3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            opacity="0.4"
-                        />
-                    {/if}
-                </svg>
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Keyboard shortcuts" shortcut="?">
-            <button
-                class="btn btn-icon"
-                aria-label="Keyboard shortcuts"
-                onclick={() => onopenShortcuts?.()}
-            >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                    <circle
-                        cx="7.5"
-                        cy="7.5"
-                        r="5.5"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                    />
-                    <path
-                        d="M5.5 6C5.5 4.9 6.3 4 7.5 4S9.5 4.9 9.5 6C9.5 7 8.5 7.5 7.5 8v1"
-                        stroke="currentColor"
-                        stroke-width="1.3"
-                        stroke-linecap="round"
-                    />
-                    <circle cx="7.5" cy="10.5" r="0.6" fill="currentColor" />
-                </svg>
             </button>
         </Tooltip>
     </div>
@@ -654,13 +543,7 @@
     .btn-icon:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
-    }
-    .btn-icon.active {
-        background: var(--accent-dim);
-        color: #fff;
-        border-color: var(--accent-dim);
-    }
-    .zoom-label {
+    }    .zoom-label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;

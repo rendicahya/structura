@@ -26,6 +26,7 @@
     import { clearLogAVL } from "../../stores/shared/avlLog.js";
     import { toast } from "../../stores/shared/toast.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+    import { downloadStructure, pickStructureFile, requestLoad } from "../../utils/saveLoad.js";
     import {
         traversalState,
         startTraversal,
@@ -43,9 +44,6 @@
         zoomIn,
         zoomOut,
         zoomReset,
-        codeHidden = false,
-        ontoggleCode,
-        onopenShortcuts,
     } = $props();
 
     let zoomPct = $derived(Math.round(zoom * 100) + "%");
@@ -183,43 +181,16 @@
     }
 
     function handleSave() {
-        const snap = getSnapshotAVL();
-        const blob = new Blob([JSON.stringify(snap, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "structura-avl-save.json";
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadStructure("avl", getSnapshotAVL());
         toast.success("Saved successfully");
     }
 
     function handleLoad() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
-            const file = target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const result = /** @type {string} */ (ev.target?.result);
-                    const snap = JSON.parse(result);
-                    resetTraversal();
-                    pushHistory();
-                    applySnapshotAVL(snap);
-                    toast.success("Loaded successfully");
-                } catch {
-                    toast.error("Invalid save file");
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
+        pickStructureFile((snap) => {
+            if (!snap) return toast.error("Invalid .stc file");
+            resetTraversal();
+            requestLoad(snap);
+        });
     }
 
     onMount(() => {
@@ -242,9 +213,6 @@
             } else if (key === "o") {
                 e.preventDefault();
                 handleLoad();
-            } else if (e.key === "\\") {
-                e.preventDefault();
-                ontoggleCode?.();
             }
             return;
         }
@@ -270,17 +238,6 @@
             <button class="btn btn-primary" onclick={handleInsertOpen}>
                 <Icon name="plus" />
                 Insert
-            </button>
-        </Tooltip>
-
-        <Tooltip text="New tree">
-            <button
-                class="btn btn-secondary"
-                onclick={handleNew}
-                disabled={$avlIsEmpty}
-            >
-                <Icon name="new" />
-                New
             </button>
         </Tooltip>
 
@@ -459,6 +416,17 @@
 
         <div class="separator"></div>
 
+        <Tooltip text="New tree">
+            <button
+                class="btn btn-secondary"
+                onclick={handleNew}
+                disabled={$avlIsEmpty}
+            >
+                <Icon name="new" />
+                New
+            </button>
+        </Tooltip>
+
         <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button
                 class="btn btn-secondary"
@@ -473,32 +441,6 @@
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <Icon name="load" />
                 Load
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
-        <Tooltip
-            text={codeHidden ? "Show code panel" : "Hide code panel"}
-            shortcut="Ctrl+\"
-        >
-            <button
-                class="btn btn-icon"
-                aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
-                class:active={codeHidden}
-                onclick={() => ontoggleCode?.()}
-            >
-                <Icon name="code" {codeHidden} />
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Keyboard shortcuts" shortcut="?">
-            <button
-                class="btn btn-icon"
-                aria-label="Keyboard shortcuts"
-                onclick={() => onopenShortcuts?.()}
-            >
-                <Icon name="shortcuts" />
             </button>
         </Tooltip>
     </div>
@@ -664,13 +606,7 @@
     .btn-icon:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
-    }
-    .btn-icon.active {
-        background: var(--accent-dim);
-        color: #fff;
-        border-color: var(--accent-dim);
-    }
-    .zoom-label {
+    }    .zoom-label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;

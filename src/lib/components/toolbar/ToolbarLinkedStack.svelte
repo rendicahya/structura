@@ -31,15 +31,13 @@
     import { clearLogLinkedStack } from "../../stores/shared/linkedStackLog.js";
     import { toast } from "../../stores/shared/toast.js";
     import { isTypingTarget } from "../../utils/keyboard.js";
+    import { downloadStructure, pickStructureFile, requestLoad } from "../../utils/saveLoad.js";
 
     const {
         zoom = 1,
         zoomIn,
         zoomOut,
         zoomReset,
-        codeHidden = false,
-        ontoggleCode,
-        onopenShortcuts,
     } = $props();
 
     let showPush = $state(false);
@@ -129,42 +127,15 @@
     }
 
     function handleSave() {
-        const snap = getSnapshotLinkedStack();
-        const blob = new Blob([JSON.stringify(snap, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "structura-linked-stack-save.json";
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadStructure("linked-stack", getSnapshotLinkedStack());
         toast.success("Saved successfully");
     }
 
     function handleLoad() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
-            const file = target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const result = /** @type {string} */ (ev.target?.result);
-                    const snap = JSON.parse(result);
-                    pushHistory();
-                    applySnapshotLinkedStack(snap);
-                    toast.success("Loaded successfully");
-                } catch {
-                    toast.error("Invalid save file");
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
+        pickStructureFile((snap) => {
+            if (!snap) return toast.error("Invalid .stc file");
+            requestLoad(snap);
+        });
     }
 
     onMount(() => {
@@ -190,9 +161,6 @@
             } else if (key === "o") {
                 e.preventDefault();
                 handleLoad();
-            } else if (e.key === "\\") {
-                e.preventDefault();
-                ontoggleCode?.();
             }
             return;
         }
@@ -217,15 +185,6 @@
     </div>
 
     <div class="actions">
-        <Tooltip text="Clear stack">
-            <button class="btn btn-secondary" onclick={handleNewStack}>
-                <Icon name="new" />
-                New
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
         <Tooltip text="Push node onto stack">
             <button class="btn btn-primary" onclick={handlePush}>
                 <Icon name="push" />
@@ -317,6 +276,13 @@
 
         <div class="separator"></div>
 
+        <Tooltip text="Clear stack">
+            <button class="btn btn-secondary" onclick={handleNewStack}>
+                <Icon name="new" />
+                New
+            </button>
+        </Tooltip>
+
         <Tooltip text="Save to file" shortcut="Ctrl+S">
             <button class="btn btn-secondary" onclick={handleSave}>
                 <Icon name="save" />
@@ -327,32 +293,6 @@
             <button class="btn btn-secondary" onclick={handleLoad}>
                 <Icon name="load" />
                 Load
-            </button>
-        </Tooltip>
-
-        <div class="separator"></div>
-
-        <Tooltip
-            text={codeHidden ? "Show code panel" : "Hide code panel"}
-            shortcut="Ctrl+\"
-        >
-            <button
-                class="btn btn-icon"
-                aria-label={codeHidden ? "Show code panel" : "Hide code panel"}
-                class:active={codeHidden}
-                onclick={() => ontoggleCode?.()}
-            >
-                <Icon name="code" {codeHidden} />
-            </button>
-        </Tooltip>
-
-        <Tooltip text="Keyboard shortcuts" shortcut="?">
-            <button
-                class="btn btn-icon"
-                aria-label="Keyboard shortcuts"
-                onclick={() => onopenShortcuts?.()}
-            >
-                <Icon name="shortcuts" />
             </button>
         </Tooltip>
     </div>
@@ -519,13 +459,7 @@
     .btn-icon:hover:not(:disabled) {
         background: var(--border);
         color: var(--text);
-    }
-    .btn-icon.active {
-        background: var(--accent-dim);
-        color: #fff;
-        border-color: var(--accent-dim);
-    }
-    .zoom-label {
+    }    .zoom-label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;

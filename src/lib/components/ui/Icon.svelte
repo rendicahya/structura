@@ -125,6 +125,9 @@
         `,
         fullscreenExit: `
             <path d="M5 1.5V4C5 4.6 4.6 5 4 5H1.5M9 1.5V4C9 4.6 9.4 5 10 5H12.5M12.5 9H10C9.4 9 9 9.4 9 10V12.5M1.5 9H4C4.6 9 5 9.4 5 10V12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        `,
+        swap: `
+            <path d="M3 4.5h8M8.5 2l2.5 2.5-2.5 2.5M11 9.5H3M5.5 7 3 9.5 5.5 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
         `
     };
 

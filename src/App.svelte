@@ -97,6 +97,67 @@
     // stay intact.
     const SHOW_OLD_LINKED_QUEUE_TAB = false;
 
+    // --- .stc Load routing -------------------------------------------------
+    // A `.stc` file carries a `_type` tag. Loading one navigates to the
+    // matching page and hands the snapshot to that structure's applier,
+    // regardless of which page Load was triggered from. The SLL⇄DLL
+    // converter reuses the same "structura:load" event.
+    import { toast } from "./lib/stores/shared/toast.js";
+    import { STRUCTURE_ROUTES } from "./lib/utils/saveLoad.js";
+    import { applySnapshot as applySnapshotSLL } from "./lib/stores/sll/graph.js";
+    import { applySnapshotDLL } from "./lib/stores/dll/graphDLL.js";
+    import { applySnapshotCircularList } from "./lib/stores/list/graphCircularList.js";
+    import { applySnapshotDCL } from "./lib/stores/list/graphDoublyCircularList.js";
+    import { applySnapshotStack } from "./lib/stores/stack/graphStack.js";
+    import { applySnapshotLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
+    import { applySnapshotQueue } from "./lib/stores/queue/graphQueue.js";
+    import { applySnapshotLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
+    import { applySnapshotTree } from "./lib/stores/tree/graphTree.js";
+    import { applySnapshotBST } from "./lib/stores/tree/graphBST.js";
+    import { applySnapshotAVL } from "./lib/stores/tree/graphAVL.js";
+    import { applySnapshotHeap } from "./lib/stores/heap/graphHeap.js";
+    import { applySnapshotHash } from "./lib/stores/hash/graphHash.js";
+    import { applySnapshotGraph } from "./lib/stores/graph/graphGraph.js";
+
+    const APPLY_SNAPSHOT_BY_TYPE = {
+        sll: applySnapshotSLL,
+        dll: applySnapshotDLL,
+        "circular-list": applySnapshotCircularList,
+        "doubly-circular-list": applySnapshotDCL,
+        stack: applySnapshotStack,
+        "linked-stack": applySnapshotLinkedStack,
+        queue: applySnapshotQueue,
+        "linked-queue": applySnapshotLinkedQueue,
+        tree: applySnapshotTree,
+        bst: applySnapshotBST,
+        avl: applySnapshotAVL,
+        heap: applySnapshotHeap,
+        hash: applySnapshotHash,
+        graph: applySnapshotGraph,
+    };
+
+    /** @param {CustomEvent<{ snapshot: any, message?: string }>} e */
+    function onStructuraLoad(e) {
+        const { snapshot, message } = e.detail ?? {};
+        const type = snapshot?._type;
+        const route = type && STRUCTURE_ROUTES[type];
+        const apply = type && APPLY_SNAPSHOT_BY_TYPE[type];
+        if (!route || !apply) {
+            toast.error("Unrecognised .stc file");
+            return;
+        }
+        // Populate the module-level stores first, then navigate — the target
+        // canvas mounts reading already-correct state, and the per-page
+        // "init on first visit" effect sees a non-empty code log so it
+        // won't overwrite it.
+        apply(snapshot);
+        if (location.hash !== route) location.hash = route;
+        // Rebase undo history onto the freshly loaded structure once the
+        // destination toolbar has (re-)registered its snapshot handlers.
+        setTimeout(() => initHistory(), 0);
+        toast.success(message ?? "Loaded successfully");
+    }
+
     onMount(() => {
         initHistory();
 
@@ -112,6 +173,7 @@
 
         window.addEventListener("hashchange", onHashChange);
         window.addEventListener("wheel", onWindowWheel, { passive: false });
+        window.addEventListener("structura:load", onStructuraLoad);
 
         const media = window.matchMedia("(prefers-color-scheme: light)");
         const onMediaChange = (e) => {
@@ -122,6 +184,7 @@
         return () => {
             window.removeEventListener("hashchange", onHashChange);
             window.removeEventListener("wheel", onWindowWheel);
+            window.removeEventListener("structura:load", onStructuraLoad);
             media.removeEventListener("change", onMediaChange);
         };
     });
@@ -374,7 +437,10 @@
             items: [
                 { href: "#/linked-list-flow", label: "Singly Linked List" },
                 { href: "#/doubly-linked-list-flow", label: "Doubly Linked List" },
-                { href: "#/circular-linked-list", label: "Circular Linked List" },
+                {
+                    href: "#/circular-linked-list",
+                    label: "Singly Circular Linked List",
+                },
                 {
                     href: "#/doubly-circular-linked-list",
                     label: "Doubly Circular Linked List",
@@ -432,6 +498,11 @@
         }
 
         if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            if (e.key === "\\") {
+                e.preventDefault();
+                codeHidden = !codeHidden;
+                return;
+            }
             const pageIndex = Number(e.key) - 1;
             if (pageIndex >= 0 && pageIndex < PAGE_ORDER.length) {
                 e.preventDefault();
@@ -500,6 +571,23 @@
         </div>
 
         <div class="nav-spacer"></div>
+
+        <button
+            class="theme-toggle nav-icon-btn"
+            class:active={codeHidden}
+            onclick={() => (codeHidden = !codeHidden)}
+            title={codeHidden ? "Show code panel" : "Hide code panel"}
+        >
+            <Icon name="code" size={16} />
+        </button>
+
+        <button
+            class="theme-toggle nav-icon-btn"
+            onclick={() => (showShortcuts = !showShortcuts)}
+            title="Keyboard shortcuts"
+        >
+            <Icon name="shortcuts" size={16} />
+        </button>
 
         <button
             class="theme-toggle fullscreen-toggle"
@@ -581,9 +669,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/circular-linked-list"}
         <ToolbarCircularList
@@ -591,9 +676,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/doubly-circular-linked-list"}
         <ToolbarDoublyCircularList
@@ -601,9 +683,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/stack" || page === "#/stack-flow"}
         <ToolbarStack
@@ -611,9 +690,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/linked-stack" || page === "#/linked-stack-flow"}
         <ToolbarLinkedStack
@@ -621,9 +697,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/queue" || page === "#/queue-flow"}
         <ToolbarQueue
@@ -631,9 +704,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/linked-queue" || page === "#/linked-queue-flow"}
         <ToolbarLinkedQueue
@@ -641,9 +711,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/tree" || page === "#/tree-flow"}
         <ToolbarTree
@@ -651,9 +718,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/graph" || page === "#/graph-flow"}
         <ToolbarGraph
@@ -661,9 +725,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/bst-flow"}
         <ToolbarBST
@@ -671,9 +732,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/heap-flow"}
         <ToolbarHeap
@@ -681,9 +739,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/avl-flow"}
         <ToolbarAVL
@@ -691,9 +746,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {:else if page === "#/hash-flow"}
         <ToolbarHash
@@ -701,9 +753,6 @@
             {zoomIn}
             {zoomOut}
             {zoomReset}
-            {codeHidden}
-            ontoggleCode={() => (codeHidden = !codeHidden)}
-            onopenShortcuts={() => (showShortcuts = true)}
         />
     {/if}
 
@@ -910,6 +959,15 @@
     .fullscreen-toggle {
         margin-bottom: 6px;
         margin-right: 8px;
+    }
+
+    .nav-icon-btn {
+        margin-bottom: 6px;
+    }
+    .nav-icon-btn.active {
+        background: var(--accent-dim);
+        color: #fff;
+        border-color: var(--accent-dim);
     }
 
     .theme-toggle {

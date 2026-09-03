@@ -9,6 +9,7 @@
         headId,
         tailId,
         walkId,
+        inputId,
         createNode,
         addNode,
         updateNode,
@@ -18,9 +19,10 @@
         setHead,
         setTail,
         setWalk,
+        setInput,
     } from "../../stores/sll/graph.js";
     import { pushHistory, undo, redo } from "../../stores/shared/history.js";
-    import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { ZOOM_MIN, ZOOM_MAX, LIST_EDGE } from "../../utils/canvasConstants.js";
     import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     let { zoom = $bindable(1) } = $props();
@@ -80,6 +82,7 @@
                 isHead: n.id === $headId,
                 isTail: n.id === $tailId,
                 isWalk: n.id === $walkId,
+                isInput: n.id === $inputId,
                 hasNext: !!n.nextId,
                 onEdit: (value) => handleEdit(n.id, value),
             },
@@ -91,7 +94,8 @@
             id: `${e.from}-${e.to}`,
             source: e.from,
             target: e.to,
-            markerEnd: { type: MarkerType.ArrowClosed },
+            markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.NEXT_COLOR },
+            style: `stroke: ${LIST_EDGE.NEXT_COLOR};`,
         })),
     );
 
@@ -208,6 +212,13 @@
         pushHistory();
     }
 
+    function handleSetInput() {
+        if (!contextMenu) return;
+        pushHistory();
+        setInput($inputId === contextMenu.node.id ? null : contextMenu.node.id);
+        pushHistory();
+    }
+
     function handleUnlink() {
         if (!contextMenu) return;
         pushHistory();
@@ -294,6 +305,7 @@
             isHead={$headId === contextMenu.node.id}
             isTail={$tailId === contextMenu.node.id}
             isWalk={$walkId === contextMenu.node.id}
+            isInput={$inputId === contextMenu.node.id}
             hasNext={!!$nodes.find((n) => n.id === contextMenu.node.id)?.nextId}
             isConnected={!!$nodes.find((n) => n.id === contextMenu.node.id)?.nextId ||
                 $nodes.some((n) => n.nextId === contextMenu.node.id)}
@@ -303,6 +315,7 @@
             onsetHead={handleSetHead}
             onsetTail={handleSetTail}
             onsetWalk={handleSetWalk}
+            onsetInput={handleSetInput}
             onunlink={handleUnlink}
         />
     {/if}

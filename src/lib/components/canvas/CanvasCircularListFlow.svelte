@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
+    import { SvelteFlow, Background, Controls, MarkerType } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import CircularListFlowNode from "../node/CircularListFlowNode.svelte";
     import {
@@ -13,7 +13,7 @@
         garbageCollectCircularList,
     } from "../../stores/list/graphCircularList.js";
     import { pushHistory } from "../../stores/shared/history.js";
-    import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { ZOOM_MIN, ZOOM_MAX, LIST_EDGE } from "../../utils/canvasConstants.js";
     import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_W = 130;
@@ -84,15 +84,6 @@
         prevNodeCount = currentCount;
     });
 
-    function getNodeIndex(id) {
-        return $circularListNodes.findIndex((n) => n.id === id);
-    }
-
-    function getNodeX(id) {
-        const idx = getNodeIndex(id);
-        return idx !== -1 ? idx * (NODE_W + NODE_GAP) : 0;
-    }
-
     let nodeTransition = $derived(
         `transition: ${isGCing ? "none" : "transform 0.4s ease-in-out"};`,
     );
@@ -118,24 +109,26 @@
         })),
     );
 
-    // Path for the ring-closing edge from tail back to head: a single node
-    // loops back on itself above the node; two or more nodes get a wide arc
-    // dipping below the whole row so it never crosses the forward chain.
-    function ringPath(headX, tailX) {
-        if (headX === tailX) {
-            const left = headX + 14;
-            const right = headX + NODE_W - 14;
-            const topY = -6;
-            const loopY = -46;
-            return `M ${right} ${topY} C ${right + 30} ${loopY}, ${left - 30} ${loopY}, ${left} ${topY}`;
-        }
-        const startX = tailX + NODE_W - 16;
-        const startY = NODE_H + 6;
-        const endX = headX + 16;
-        const endY = NODE_H + 6;
-        const dipY = NODE_H + 68;
-        return `M ${startX} ${startY} C ${startX} ${dipY}, ${endX} ${dipY}, ${endX} ${endY}`;
-    }
+    // One Svelte Flow bezier edge per ring hop. The last hop (tail → head)
+    // uses the pair of bottom handles so the closing link arcs cleanly
+    // below the row instead of cutting back through every node.
+    let flowEdges = $derived.by(() => {
+        const ring = $listRing;
+        if (ring.length === 0) return [];
+        return ring.map((from, i) => {
+            const to = ring[(i + 1) % ring.length];
+            const isCloser = i === ring.length - 1;
+            return {
+                id: `next-${from.id}-${to.id}`,
+                source: from.id,
+                target: to.id,
+                sourceHandle: isCloser ? "ring-out" : "out",
+                targetHandle: isCloser ? "ring-in" : "in",
+                markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.NEXT_COLOR },
+                style: `stroke: ${LIST_EDGE.NEXT_COLOR};`,
+            };
+        });
+    });
 
     function onPaneContextMenu({ event }) {
         event.preventDefault();
@@ -221,7 +214,7 @@
     {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
-            edges={[]}
+            edges={flowEdges}
             {nodeTypes}
             bind:viewport={flow.viewport}
             initialViewport={flow.viewport}
@@ -236,76 +229,6 @@
             <Controls />
         </SvelteFlow>
     {/key}
-
-    <svg class="cl-decor">
-        <defs>
-            <marker id="arrow-cl-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="#5b8fff" />
-            </marker>
-            <marker id="arrow-cl-ring" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="var(--warning)" />
-            </marker>
-        </defs>
-        <g
-            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
-        >
-            {#each $circularListNodes as node, idx (node.id)}
-                {@const x = idx * (NODE_W + NODE_GAP)}
-                {@const isUnreachable = $unreachableListNodes.some((n) => n.id === node.id)}
-                {@const isTail = node.id === $tailNode?.id}
-
-                {#if node.nextId && node.nextId !== $headNode?.id && !isUnreachable}
-                    {@const nextX = getNodeX(node.nextId)}
-                    {@const dx = nextX - x}
-                    <line
-                        x1={x + NODE_W}
-                        y1={NODE_H / 2}
-                        x2={x + dx - 4}
-                        y2={NODE_H / 2}
-                        stroke="var(--accent)"
-                        stroke-width="1.8"
-                        marker-end="url(#arrow-cl-flow)"
-                        style={nodeTransition}
-                    />
-                {/if}
-            {/each}
-
-            {#if $headNode && $tailNode}
-                {@const hx = getNodeX($headNode.id)}
-                {@const tx = getNodeX($tailNode.id)}
-                <path
-                    d={ringPath(hx, tx)}
-                    fill="none"
-                    stroke="var(--warning)"
-                    stroke-width="1.6"
-                    stroke-dasharray="3 3"
-                    marker-end="url(#arrow-cl-ring)"
-                    style={nodeTransition}
-                />
-            {/if}
-
-            {#if $headNode}
-                {@const hx = getNodeX($headNode.id)}
-                <g class="pointer-group" style="transform: translateX({hx}px); {nodeTransition}">
-                    <rect x={NODE_W / 2 - 22} y="-28" width="44" height="20" rx="5" fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2" />
-                    <text x={NODE_W / 2} y="-13" text-anchor="middle" font-family="var(--font-mono)" font-size="9" font-weight="700" fill="var(--success)" letter-spacing="0.8">HEAD</text>
-                    <line x1={NODE_W / 2} y1="-8" x2={NODE_W / 2} y2="-2" stroke="var(--success)" stroke-width="1.5" />
-                    <polygon points="{NODE_W / 2 - 4},-4 {NODE_W / 2 + 4},-4 {NODE_W / 2},0" fill="var(--success)" />
-                </g>
-            {/if}
-
-            {#if $tailNode}
-                {@const tx = getNodeX($tailNode.id)}
-                {@const isStacked = $headNode?.id === $tailNode?.id}
-                <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px); {nodeTransition}">
-                    <rect x={NODE_W / 2 - 18} y="-28" width="36" height="20" rx="5" fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2" />
-                    <text x={NODE_W / 2} y="-13" text-anchor="middle" font-family="var(--font-mono)" font-size="9" font-weight="700" fill="#c084fc" letter-spacing="0.8">TAIL</text>
-                    <line x1={NODE_W / 2} y1="-8" x2={NODE_W / 2} y2="-2" stroke="#c084fc" stroke-width="1.5" />
-                    <polygon points="{NODE_W / 2 - 4},-4 {NODE_W / 2 + 4},-4 {NODE_W / 2},0" fill="#c084fc" />
-                </g>
-            {/if}
-        </g>
-    </svg>
 
     {#if contextMenu}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -362,14 +285,6 @@
     }
     :global(.svelte-flow) {
         background: var(--bg);
-    }
-    .cl-decor {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 5;
     }
     .empty-hint {
         position: absolute;

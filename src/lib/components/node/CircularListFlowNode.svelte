@@ -1,4 +1,6 @@
 <script>
+    import { Handle, Position } from "@xyflow/svelte";
+
     const { data } = $props();
 </script>
 
@@ -11,6 +13,32 @@
     class:is-unreachable={data.isUnreachable}
     class:anim-in={data.isAnimIn}
 >
+    <!-- Anchor points for the Svelte Flow bezier edges. Non-interactive:
+         circular-list links are managed by the toolbar, not drawn by hand. -->
+    <Handle type="target" position={Position.Left} id="in" isConnectable={false} />
+    <Handle type="source" position={Position.Right} id="out" isConnectable={false} />
+    <Handle
+        type="source"
+        position={Position.Bottom}
+        id="ring-out"
+        isConnectable={false}
+        style="left: 35%;"
+    />
+    <Handle
+        type="target"
+        position={Position.Bottom}
+        id="ring-in"
+        isConnectable={false}
+        style="left: 65%;"
+    />
+
+    {#if data.isHead || data.isTail}
+        <div class="badges">
+            {#if data.isHead}<span class="badge head">HEAD</span>{/if}
+            {#if data.isTail}<span class="badge tail">TAIL</span>{/if}
+        </div>
+    {/if}
+
     <span class="value" class:muted={!data.value}>{data.value || "null"}</span>
 </div>
 
@@ -65,6 +93,42 @@
             opacity: 1;
             transform: translateX(0);
         }
+    }
+    /* Edge anchors only — keep them invisible and inert. */
+    :global(.cl-node .svelte-flow__handle) {
+        width: 1px;
+        height: 1px;
+        min-width: 1px;
+        min-height: 1px;
+        border: none;
+        background: transparent;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .badges {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .badge {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+        letter-spacing: 0.5px;
+    }
+    .badge.head {
+        background: rgba(78, 204, 163, 0.15);
+        color: var(--success);
+    }
+    .badge.tail {
+        background: rgba(192, 132, 252, 0.15);
+        color: #c084fc;
     }
     .value {
         font-size: 13px;

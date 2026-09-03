@@ -22,6 +22,14 @@ export const tailIdDLL = writable(null);
 /** @type {import('svelte/store').Writable<string|null>} */
 export const walkIdDLL = writable(null);
 
+/**
+ * The "input" pointer — always follows the most recently added node. Like
+ * the SLL one, it is a fourth named pointer alongside head/tail/walk and is
+ * deliberately *not* a GC root.
+ * @type {import('svelte/store').Writable<string|null>}
+ */
+export const inputIdDLL = writable(null);
+
 let nodeCounter = 0;
 
 export function initNodeClassDLL() {
@@ -88,11 +96,24 @@ export function arrangeNodesDLL() {
  */
 export function addNodeDLL(node, silent = false) {
     nodesDLL.update(ns => [...ns, node]);
+    // The freshly built node is what `input` points at.
+    inputIdDLL.set(node.id);
     if (!silent) logOp(
-        `Node ${node.varName} = new Node();`,
-        `${node.varName} = Node()`,
-        `Node* ${node.varName} = new Node();`
+        [`Node ${node.varName} = new Node();`, `input = ${node.varName};`],
+        [`${node.varName} = Node()`, `input = ${node.varName}`],
+        [`Node* ${node.varName} = new Node();`, `input = ${node.varName};`]
     );
+}
+
+/**
+ * @param {string|null} nodeId
+ */
+export function setInputDLL(nodeId) {
+    inputIdDLL.set(nodeId);
+    const ns = get(nodesDLL);
+    const node = ns.find(n => n.id === nodeId);
+    if (node) logOp(`Node input = ${node.varName};`, `input = ${node.varName}`);
+    else logOp(`// input unset`, `# input unset`);
 }
 
 /**
@@ -300,6 +321,7 @@ export function removeNodeFromListDLL(nodeId) {
     headIdDLL.update(id => id === nodeId ? null : id);
     tailIdDLL.update(id => id === nodeId ? null : id);
     walkIdDLL.update(id => id === nodeId ? null : id);
+    inputIdDLL.update(id => id === nodeId ? null : id);
 
     if (javaOps.length > 0) logOp(javaOps, pyOps);
 }
@@ -367,6 +389,8 @@ export function garbageCollectDLL() {
 
     nodesDLL.update(ns => ns.filter(n => reachable.has(n.id)));
     edgesDLL.update(es => es.filter(e => reachable.has(e.from) && reachable.has(e.to)));
+    // `input` isn't a GC root — drop it if its target was just collected.
+    inputIdDLL.update(id => (id && reachable.has(id) ? id : null));
 }
 
 export function getSnapshotDLL() {
@@ -376,6 +400,7 @@ export function getSnapshotDLL() {
         headId: get(headIdDLL),
         tailId: get(tailIdDLL),
         walkId: get(walkIdDLL),
+        inputId: get(inputIdDLL),
         counter: nodeCounter,
         codeLog: cloneStoreValue(codeLog),
     };
@@ -391,6 +416,7 @@ export function applySnapshotDLL(snapshot) {
     headIdDLL.set(snapshot.headId ?? null);
     tailIdDLL.set(snapshot.tailId ?? null);
     walkIdDLL.set(snapshot.walkId ?? null);
+    inputIdDLL.set(snapshot.inputId ?? null);
     codeLog.set(snapshot.codeLog ?? []);
 }
 
@@ -401,4 +427,5 @@ export function resetCanvasDLL() {
     headIdDLL.set(null);
     tailIdDLL.set(null);
     walkIdDLL.set(null);
+    inputIdDLL.set(null);
 }

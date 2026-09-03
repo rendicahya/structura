@@ -8,12 +8,12 @@
 
 ## ✨ Features
 
-- **Fourteen data structures**: Singly Linked List, Doubly Linked List, Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar.
+- **Fourteen data structures**: Singly Linked List, Doubly Linked List, Singly Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar.
 - **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
 - **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
   - **Undo/Redo**: A full history stack backs every action.
-  - **Save/Load**: Export your diagram (and its code log) to JSON and resume later.
+  - **Save/Load**: Export your diagram (and its code log) to a `.stc` file (minified JSON, tagged with the structure type). Loading one reopens Structura on the matching page automatically, whichever page you triggered Load from.
 - **Smart Tools**:
   - **Auto GC (Garbage Collection)**: Clean up orphaned/unreachable nodes with one click, and see the generated cleanup code.
   - **Traversal Playback**: Step or auto-play in-order/pre-order/post-order traversals on the Binary Tree, with the visited node highlighted live and matching code generated as it goes.
@@ -25,6 +25,8 @@
   - **Hash Table (separate chaining)**: A fixed-bucket-count table using a simple sum-of-char-codes hash function, with each bucket rendered as a small linked-list "chain" of colliding entries. Buckets with more than one entry are flagged with a collision badge and warning border, and Search walks the target bucket's chain live, logging each comparison and highlighting the found entry (or flashing not-found).
   - **Circular Linked List Ring Traversal**: Play a full lap around the ring from the head, highlighting each node in turn and generating the matching do-while traversal code.
   - **Doubly Circular Linked List**: Every node carries both `next` and `prev` back into a closed ring; Insert/Delete Head & Tail keep both link directions consistent (tail deletion is a single `prev` hop, no walk), plus forward and backward ring-traversal playback.
+  - **SLL ⇄ DLL conversion**: One click turns a singly linked list into a doubly linked list (deriving every `prev` pointer from the existing `next` chain) or back again, switching to the matching page.
+  - **`input` pointer**: Alongside `head`/`tail`/`walk`, the SLL and DLL pages carry an `input` pointer that automatically follows the most recently added node (also settable by hand from a node's context menu).
   - **Infix ↔ Postfix on the Array Stack**: Convert an infix expression to postfix, or evaluate a postfix expression, with the current token and running output/result shown live as the array stack fills and drains.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
   - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.

@@ -9,6 +9,7 @@
         headIdDLL,
         tailIdDLL,
         walkIdDLL,
+        inputIdDLL,
         createNodeDLL,
         addNodeDLL,
         updateNodeDLL,
@@ -20,6 +21,7 @@
         setHeadDLL,
         setTailDLL,
         setWalkDLL,
+        setInputDLL,
     } from "../../stores/dll/graphDLL.js";
     import { pushHistory } from "../../stores/shared/history.js";
     import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
@@ -83,6 +85,7 @@
                 isHead: n.id === $headIdDLL,
                 isTail: n.id === $tailIdDLL,
                 isWalk: n.id === $walkIdDLL,
+                isInput: n.id === $inputIdDLL,
                 hasNext: !!n.nextId,
                 hasPrev: !!n.prevId,
                 onEdit: (value) => handleEdit(n.id, value),
@@ -240,6 +243,13 @@
         pushHistory();
     }
 
+    function handleSetInput() {
+        if (!contextMenu) return;
+        pushHistory();
+        setInputDLL($inputIdDLL === contextMenu.node.id ? null : contextMenu.node.id);
+        pushHistory();
+    }
+
     function handleUnlink() {
         if (!contextMenu) return;
         pushHistory();
@@ -309,6 +319,7 @@
             isHead={$headIdDLL === contextMenu.node.id}
             isTail={$tailIdDLL === contextMenu.node.id}
             isWalk={$walkIdDLL === contextMenu.node.id}
+            isInput={$inputIdDLL === contextMenu.node.id}
             hasNext={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.nextId}
             hasPrev={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.prevId}
             isConnected={!!$nodesDLL.find((n) => n.id === contextMenu.node.id)?.nextId ||
@@ -320,6 +331,7 @@
             onsetHead={handleSetHead}
             onsetTail={handleSetTail}
             onsetWalk={handleSetWalk}
+            onsetInput={handleSetInput}
             onunlink={handleUnlink}
         />
     {/if}

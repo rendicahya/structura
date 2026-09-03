@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
+    import { SvelteFlow, Background, Controls, MarkerType } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import DoublyCircularListFlowNode from "../node/DoublyCircularListFlowNode.svelte";
     import {
@@ -13,15 +13,12 @@
         garbageCollectDCL,
     } from "../../stores/list/graphDoublyCircularList.js";
     import { pushHistory } from "../../stores/shared/history.js";
-    import { ZOOM_MIN, ZOOM_MAX } from "../../utils/canvasConstants.js";
+    import { ZOOM_MIN, ZOOM_MAX, LIST_EDGE } from "../../utils/canvasConstants.js";
     import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
     const NODE_W = 130;
     const NODE_H = 64;
     const NODE_GAP = 60;
-
-    const NEXT_COLOR = "var(--accent)";
-    const PREV_COLOR = "#c792ea";
 
     let { zoom = $bindable(1) } = $props();
 
@@ -87,15 +84,6 @@
         prevNodeCount = currentCount;
     });
 
-    function getNodeIndex(id) {
-        return $dclNodes.findIndex((n) => n.id === id);
-    }
-
-    function getNodeX(id) {
-        const idx = getNodeIndex(id);
-        return idx !== -1 ? idx * (NODE_W + NODE_GAP) : 0;
-    }
-
     let nodeTransition = $derived(
         `transition: ${isGCing ? "none" : "transform 0.4s ease-in-out"};`,
     );
@@ -121,41 +109,39 @@
         })),
     );
 
-    // Ring-closing `next` edge from tail back to head: a single node loops
-    // back on itself below the node; two or more nodes get a wide arc
-    // dipping below the whole row so it never crosses the forward chain.
-    function nextRingPath(headX, tailX) {
-        if (headX === tailX) {
-            const left = headX + 20;
-            const right = headX + NODE_W - 20;
-            const botY = NODE_H + 6;
-            const loopY = NODE_H + 40;
-            return `M ${left} ${botY} C ${left - 30} ${loopY}, ${right + 30} ${loopY}, ${right} ${botY}`;
+    // For every ring hop we draw two bezier edges: a `next` (blue) from the
+    // node to its successor and a `prev` (purple) from the successor back.
+    // The final hop's edges are the ring closers — routed through the
+    // bottom (next) / top (prev) handle pairs so they arc clear of the row.
+    let flowEdges = $derived.by(() => {
+        const ring = $dclRing;
+        if (ring.length === 0) return [];
+        const edges = [];
+        for (let i = 0; i < ring.length; i++) {
+            const from = ring[i];
+            const to = ring[(i + 1) % ring.length];
+            const isCloser = i === ring.length - 1;
+            edges.push({
+                id: `next-${from.id}-${to.id}`,
+                source: from.id,
+                target: to.id,
+                sourceHandle: isCloser ? "nring-out" : "next-out",
+                targetHandle: isCloser ? "nring-in" : "next-in",
+                markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.NEXT_COLOR },
+                style: `stroke: ${LIST_EDGE.NEXT_COLOR};`,
+            });
+            edges.push({
+                id: `prev-${to.id}-${from.id}`,
+                source: to.id,
+                target: from.id,
+                sourceHandle: isCloser ? "pring-out" : "prev-out",
+                targetHandle: isCloser ? "pring-in" : "prev-in",
+                markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.PREV_COLOR },
+                style: `stroke: ${LIST_EDGE.PREV_COLOR};`,
+            });
         }
-        const startX = tailX + NODE_W - 16;
-        const endX = headX + 16;
-        const y = NODE_H + 6;
-        const dipY = NODE_H + 60;
-        return `M ${startX} ${y} C ${startX} ${dipY}, ${endX} ${dipY}, ${endX} ${y}`;
-    }
-
-    // Ring-closing `prev` edge from head back to tail — a deeper arc, also
-    // below the row (staying clear of the HEAD/TAIL badges above), nested
-    // outside the `next` ring closer and pointing the opposite way.
-    function prevRingPath(headX, tailX) {
-        if (headX === tailX) {
-            const left = headX + 14;
-            const right = headX + NODE_W - 14;
-            const botY = NODE_H + 6;
-            const loopY = NODE_H + 84;
-            return `M ${right} ${botY} C ${right + 40} ${loopY}, ${left - 40} ${loopY}, ${left} ${botY}`;
-        }
-        const startX = headX + 16;
-        const endX = tailX + NODE_W - 16;
-        const y = NODE_H + 6;
-        const dipY = NODE_H + 108;
-        return `M ${startX} ${y} C ${startX} ${dipY}, ${endX} ${dipY}, ${endX} ${y}`;
-    }
+        return edges;
+    });
 
     function onPaneContextMenu({ event }) {
         event.preventDefault();
@@ -241,7 +227,7 @@
     {#key flow.flowGen}
         <SvelteFlow
             nodes={flowNodes}
-            edges={[]}
+            edges={flowEdges}
             {nodeTypes}
             bind:viewport={flow.viewport}
             initialViewport={flow.viewport}
@@ -256,100 +242,6 @@
             <Controls />
         </SvelteFlow>
     {/key}
-
-    <svg class="dcl-decor">
-        <defs>
-            <marker id="arrow-dcl-next" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="#5b8fff" />
-            </marker>
-            <marker id="arrow-dcl-next-ring" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="var(--warning)" />
-            </marker>
-            <marker id="arrow-dcl-prev" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="#c792ea" />
-            </marker>
-        </defs>
-        <g
-            style="transform: translate({flow.viewport.x}px, {flow.viewport.y}px) scale({flow.viewport.zoom}); transform-origin: 0 0;"
-        >
-            {#each $dclNodes as node, idx (node.id)}
-                {@const x = idx * (NODE_W + NODE_GAP)}
-                {@const isUnreachable = $unreachableDCLNodes.some((n) => n.id === node.id)}
-
-                {#if node.nextId && node.nextId !== $dclHeadNode?.id && !isUnreachable}
-                    {@const nextX = getNodeX(node.nextId)}
-                    <line
-                        x1={x + NODE_W}
-                        y1={NODE_H / 2 - 8}
-                        x2={nextX - 4}
-                        y2={NODE_H / 2 - 8}
-                        stroke={NEXT_COLOR}
-                        stroke-width="1.8"
-                        marker-end="url(#arrow-dcl-next)"
-                        style={nodeTransition}
-                    />
-                {/if}
-
-                {#if node.prevId && node.prevId !== $dclTailNode?.id && !isUnreachable}
-                    {@const prevX = getNodeX(node.prevId)}
-                    <line
-                        x1={x}
-                        y1={NODE_H / 2 + 8}
-                        x2={prevX + NODE_W + 4}
-                        y2={NODE_H / 2 + 8}
-                        stroke={PREV_COLOR}
-                        stroke-width="1.6"
-                        marker-end="url(#arrow-dcl-prev)"
-                        style={nodeTransition}
-                    />
-                {/if}
-            {/each}
-
-            {#if $dclHeadNode && $dclTailNode}
-                {@const hx = getNodeX($dclHeadNode.id)}
-                {@const tx = getNodeX($dclTailNode.id)}
-                <path
-                    d={nextRingPath(hx, tx)}
-                    fill="none"
-                    stroke="var(--warning)"
-                    stroke-width="1.6"
-                    stroke-dasharray="3 3"
-                    marker-end="url(#arrow-dcl-next-ring)"
-                    style={nodeTransition}
-                />
-                <path
-                    d={prevRingPath(hx, tx)}
-                    fill="none"
-                    stroke={PREV_COLOR}
-                    stroke-width="1.5"
-                    stroke-dasharray="3 3"
-                    marker-end="url(#arrow-dcl-prev)"
-                    style={nodeTransition}
-                />
-            {/if}
-
-            {#if $dclHeadNode}
-                {@const hx = getNodeX($dclHeadNode.id)}
-                <g class="pointer-group" style="transform: translateX({hx}px); {nodeTransition}">
-                    <rect x={NODE_W / 2 - 22} y="-28" width="44" height="20" rx="5" fill="rgba(78,204,163,0.15)" stroke="var(--success)" stroke-width="1.2" />
-                    <text x={NODE_W / 2} y="-13" text-anchor="middle" font-family="var(--font-mono)" font-size="9" font-weight="700" fill="var(--success)" letter-spacing="0.8">HEAD</text>
-                    <line x1={NODE_W / 2} y1="-8" x2={NODE_W / 2} y2="-2" stroke="var(--success)" stroke-width="1.5" />
-                    <polygon points="{NODE_W / 2 - 4},-4 {NODE_W / 2 + 4},-4 {NODE_W / 2},0" fill="var(--success)" />
-                </g>
-            {/if}
-
-            {#if $dclTailNode}
-                {@const tx = getNodeX($dclTailNode.id)}
-                {@const isStacked = $dclHeadNode?.id === $dclTailNode?.id}
-                <g class="pointer-group" style="transform: translateX({tx}px) translateY({isStacked ? -26 : 0}px); {nodeTransition}">
-                    <rect x={NODE_W / 2 - 18} y="-28" width="36" height="20" rx="5" fill="rgba(192,132,252,0.15)" stroke="#c084fc" stroke-width="1.2" />
-                    <text x={NODE_W / 2} y="-13" text-anchor="middle" font-family="var(--font-mono)" font-size="9" font-weight="700" fill="#c084fc" letter-spacing="0.8">TAIL</text>
-                    <line x1={NODE_W / 2} y1="-8" x2={NODE_W / 2} y2="-2" stroke="#c084fc" stroke-width="1.5" />
-                    <polygon points="{NODE_W / 2 - 4},-4 {NODE_W / 2 + 4},-4 {NODE_W / 2},0" fill="#c084fc" />
-                </g>
-            {/if}
-        </g>
-    </svg>
 
     {#if contextMenu}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -406,14 +298,6 @@
     }
     :global(.svelte-flow) {
         background: var(--bg);
-    }
-    .dcl-decor {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 5;
     }
     .empty-hint {
         position: absolute;

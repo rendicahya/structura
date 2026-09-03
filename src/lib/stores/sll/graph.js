@@ -3,7 +3,7 @@
  */
 
 /**
- * @typedef {{ nodes: SLLNode[], edges: {from: string, to: string}[], headId: string|null, tailId: string|null, walkId: string|null, counter: number, codeLog: any[] }} SLLSnapshot
+ * @typedef {{ nodes: SLLNode[], edges: {from: string, to: string}[], headId: string|null, tailId: string|null, walkId: string|null, inputId: string|null, counter: number, codeLog: any[] }} SLLSnapshot
  */
 
 import { writable, get, derived } from 'svelte/store';
@@ -25,6 +25,14 @@ export const tailId = writable(null);
 
 /** @type {import('svelte/store').Writable<string|null>} */
 export const walkId = writable(null);
+
+/**
+ * The "input" pointer: a fourth named pointer (alongside head/tail/walk)
+ * that always follows the most recently added node. Unlike walk it is *not*
+ * a GC root — it's purely a teaching aid for "the node we just built".
+ * @type {import('svelte/store').Writable<string|null>}
+ */
+export const inputId = writable(null);
 
 let nodeCounter = 0;
 
@@ -71,11 +79,28 @@ export function arrangeNodes() {
  */
 export function addNode(node, silent = false) {
     nodes.update(ns => [...ns, node]);
+    // The freshly built node is what `input` points at.
+    inputId.set(node.id);
     if (!silent) logOp(
-        `Node ${node.varName} = new Node();`,
-        `${node.varName} = Node()`,
-        `Node* ${node.varName} = new Node();`
+        [`Node ${node.varName} = new Node();`, `input = ${node.varName};`],
+        [`${node.varName} = Node()`, `input = ${node.varName}`],
+        [`Node* ${node.varName} = new Node();`, `input = ${node.varName};`]
     );
+}
+
+/**
+ * @param {string|null} nodeId
+ */
+export function setInput(nodeId) {
+    inputId.set(nodeId);
+    const ns = get(nodes);
+    const node = ns.find(n => n.id === nodeId);
+    if (node) logOp(
+        `Node input = ${node.varName};`,
+        `input = ${node.varName}`,
+        `Node* input = ${node.varName};`
+    );
+    else logOp(`// input unset`, `# input unset`, `// input unset`);
 }
 
 /**
@@ -127,6 +152,7 @@ export function removeNodeFromList(nodeId) {
     headId.update(id => id === nodeId ? null : id);
     tailId.update(id => id === nodeId ? null : id);
     walkId.update(id => id === nodeId ? null : id);
+    inputId.update(id => id === nodeId ? null : id);
 
     if (javaOps.length > 0) logOp(javaOps, pyOps, cppOps);
 }
@@ -262,6 +288,9 @@ export function garbageCollect() {
 
     nodes.update(ns => ns.filter(n => reachable.has(n.id)));
     edges.update(es => es.filter(e => reachable.has(e.from) && reachable.has(e.to)));
+    // `input` isn't a GC root, so its target may have just been collected —
+    // drop the dangling pointer rather than leave it pointing at nothing.
+    inputId.update(id => (id && reachable.has(id) ? id : null));
 }
 
 export const unreachableCount = derived(
@@ -283,6 +312,7 @@ export function getSnapshot() {
         headId: get(headId),
         tailId: get(tailId),
         walkId: get(walkId),
+        inputId: get(inputId),
         counter: nodeCounter,
         codeLog: cloneStoreValue(codeLog),
     };
@@ -295,6 +325,7 @@ export function resetCanvas() {
     headId.set(null);
     tailId.set(null);
     walkId.set(null);
+    inputId.set(null);
 }
 
 /**
@@ -308,4 +339,6 @@ export function applySnapshot(snapshot) {
     headId.set(snapshot.headId ?? null);
     tailId.set(snapshot.tailId ?? null);
     walkId.set(snapshot.walkId ?? null);
+    inputId.set(snapshot.inputId ?? null);
+    if (snapshot.codeLog) codeLog.set(snapshot.codeLog);
 }

@@ -48,6 +48,7 @@
     class:is-head={data.isHead}
     class:is-tail={data.isTail}
     class:is-walk={data.isWalk}
+    class:is-input={data.isInput}
     ondblclick={startEdit}
 >
     <Handle
@@ -65,11 +66,12 @@
         style="right: auto; left: 0; top: 50%; width: 20%; height: 50%; transform: none;"
     />
 
-    {#if data.isHead || data.isTail || data.isWalk}
+    {#if data.isHead || data.isTail || data.isWalk || data.isInput}
         <div class="badges">
             {#if data.isHead}<span class="badge head">HEAD</span>{/if}
             {#if data.isTail}<span class="badge tail">TAIL</span>{/if}
             {#if data.isWalk}<span class="badge walk">WALK</span>{/if}
+            {#if data.isInput}<span class="badge input">INPUT</span>{/if}
         </div>
     {/if}
 
@@ -149,6 +151,9 @@
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
         text-align: center;
         font-family: var(--font-ui);
+    }
+    .dll-flow-node.is-input {
+        border-color: #f472b6;
     }
     .dll-flow-node.is-walk {
         border-color: #fb923c;
@@ -264,6 +269,10 @@
     .badge.walk {
         background: rgba(251, 146, 60, 0.15);
         color: #fb923c;
+    }
+    .badge.input {
+        background: rgba(244, 114, 182, 0.15);
+        color: #f472b6;
     }
     .value {
         font-family: var(--font-mono);
