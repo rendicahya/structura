@@ -140,18 +140,18 @@
     </p>
 
     <!-- The two stacks -->
-    <div class="stacks">
+    {#snippet stackColumn(label, tag, view, foot)}
       <div class="stack-col">
         <div class="col-head">
-          <span class="col-name">Back stack</span>
-          <span class="col-tag">stack&nbsp;1</span>
-          <span class="col-count">{$backStack.length}</span>
+          <span class="col-name">{label}</span>
+          <span class="col-tag">{tag}</span>
+          <span class="col-count">{view.length}</span>
         </div>
-        <div class="col-body" class:is-empty={backView.length === 0}>
-          {#if backView.length === 0}
+        <div class="col-body" class:is-empty={view.length === 0}>
+          {#if view.length === 0}
             <div class="empty-slot">empty</div>
           {:else}
-            {#each backView as page, i (page.id)}
+            {#each view as page, i (page.id)}
               <div
                 class="scard"
                 class:top={i === 0}
@@ -165,35 +165,16 @@
             {/each}
           {/if}
         </div>
-        <div class="col-foot">◀ <strong>Back</strong> pops the top row onto the page</div>
+        <div class="col-foot">{@render foot()}</div>
       </div>
+    {/snippet}
 
-      <div class="stack-col">
-        <div class="col-head">
-          <span class="col-name">Forward stack</span>
-          <span class="col-tag">stack&nbsp;2</span>
-          <span class="col-count">{$forwardStack.length}</span>
-        </div>
-        <div class="col-body" class:is-empty={forwardView.length === 0}>
-          {#if forwardView.length === 0}
-            <div class="empty-slot">empty</div>
-          {:else}
-            {#each forwardView as page, i (page.id)}
-              <div
-                class="scard"
-                class:top={i === 0}
-                animate:flip={{ duration: 200 }}
-                in:fly={{ y: -10, duration: 180 }}
-                out:fly={{ y: -10, duration: 140 }}
-              >
-                {#if i === 0}<span class="top-pill">top</span>{/if}
-                <span class="scard-url">{shortUrl(page.url)}</span>
-              </div>
-            {/each}
-          {/if}
-        </div>
-        <div class="col-foot"><strong>Forward</strong> pops the top row onto the page ▶</div>
-      </div>
+    {#snippet backFoot()}◀ <strong>Back</strong> pops the top row onto the page{/snippet}
+    {#snippet forwardFoot()}<strong>Forward</strong> pops the top row onto the page ▶{/snippet}
+
+    <div class="stacks">
+      {@render stackColumn('Back stack', 'stack 1', backView, backFoot)}
+      {@render stackColumn('Forward stack', 'stack 2', forwardView, forwardFoot)}
     </div>
 
     <div class="legend">
@@ -488,6 +469,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 1px 5px;
+    white-space: nowrap;
   }
   .col-count {
     margin-left: auto;
@@ -538,7 +520,6 @@
   }
   .scard.top {
     border-color: var(--accent);
-    background: var(--accent-dim, var(--surface2));
     color: var(--text);
   }
   .scard-url {

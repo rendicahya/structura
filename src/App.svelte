@@ -8,6 +8,10 @@
     import CanvasBrowserHistory from "./lib/components/canvas/CanvasBrowserHistory.svelte";
     import { browserHistoryLog } from "./lib/stores/shared/browserHistoryLog.js";
     import { initBrowserHistory } from "./lib/stores/stack/browserHistory.js";
+    import ToolbarPrintSpooler from "./lib/components/toolbar/ToolbarPrintSpooler.svelte";
+    import CanvasPrintSpooler from "./lib/components/canvas/CanvasPrintSpooler.svelte";
+    import { printSpoolerLog } from "./lib/stores/shared/printSpoolerLog.js";
+    import { initPrintSpooler } from "./lib/stores/queue/printSpooler.js";
     import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
@@ -43,6 +47,11 @@
     import CanvasDoublyCircularListFlow from "./lib/components/canvas/CanvasDoublyCircularListFlow.svelte";
     import { dclLog } from "./lib/stores/shared/dclLog.js";
     import { initNodeClassDCL } from "./lib/stores/list/graphDoublyCircularList.js";
+
+    import ToolbarPlayQueue from "./lib/components/toolbar/ToolbarPlayQueue.svelte";
+    import CanvasPlayQueue from "./lib/components/canvas/CanvasPlayQueue.svelte";
+    import { playQueueLog } from "./lib/stores/shared/playQueueLog.js";
+    import { initPlayQueue } from "./lib/stores/list/playQueue.js";
 
     import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
     import { treeLog } from "./lib/stores/shared/treeLog.js";
@@ -112,9 +121,11 @@
     import { applySnapshotDLL } from "./lib/stores/dll/graphDLL.js";
     import { applySnapshotCircularList } from "./lib/stores/list/graphCircularList.js";
     import { applySnapshotDCL } from "./lib/stores/list/graphDoublyCircularList.js";
+    import { applySnapshotPQ } from "./lib/stores/list/playQueue.js";
     import { applySnapshotStack } from "./lib/stores/stack/graphStack.js";
     import { applySnapshotLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
     import { applySnapshotBH } from "./lib/stores/stack/browserHistory.js";
+    import { applySnapshotPS } from "./lib/stores/queue/printSpooler.js";
     import { applySnapshotQueue } from "./lib/stores/queue/graphQueue.js";
     import { applySnapshotLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
     import { applySnapshotTree } from "./lib/stores/tree/graphTree.js";
@@ -129,9 +140,11 @@
         dll: applySnapshotDLL,
         "circular-list": applySnapshotCircularList,
         "doubly-circular-list": applySnapshotDCL,
+        "play-queue": applySnapshotPQ,
         stack: applySnapshotStack,
         "linked-stack": applySnapshotLinkedStack,
         "browser-history": applySnapshotBH,
+        "print-spooler": applySnapshotPS,
         queue: applySnapshotQueue,
         "linked-queue": applySnapshotLinkedQueue,
         tree: applySnapshotTree,
@@ -367,6 +380,8 @@
             if (get(circularListLog).length === 0) initNodeClassCircularList();
         } else if (page === "#/doubly-circular-linked-list") {
             if (get(dclLog).length === 0) initNodeClassDCL();
+        } else if (page === "#/play-queue") {
+            if (get(playQueueLog).length === 0) initPlayQueue();
         } else if (
             page === "#/linked-stack" ||
             page === "#/linked-stack-flow"
@@ -374,6 +389,8 @@
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
         } else if (page === "#/browser-history") {
             if (get(browserHistoryLog).length === 0) initBrowserHistory();
+        } else if (page === "#/print-spooler") {
+            if (get(printSpoolerLog).length === 0) initPrintSpooler();
         } else if (page === "#/linked-queue" || page === "#/linked-queue-flow") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree" || page === "#/tree-flow") {
@@ -453,6 +470,7 @@
                     href: "#/doubly-circular-linked-list",
                     label: "Doubly Circular Linked List",
                 },
+                { href: "#/play-queue", label: "Play Queue (Doubly LL)" },
             ],
         },
         {
@@ -471,6 +489,7 @@
                       ]
                     : []),
                 { href: "#/linked-queue-flow", label: "Linked-List Queue" },
+                { href: "#/print-spooler", label: "Print Spooler (Queue)" },
                 {
                     href: "#/browser-history",
                     label: "Browser History (2 Stacks)",
@@ -696,6 +715,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/play-queue"}
+        <ToolbarPlayQueue
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/stack" || page === "#/stack-flow"}
         <ToolbarStack
             {zoom}
@@ -712,6 +738,13 @@
         />
     {:else if page === "#/browser-history"}
         <ToolbarBrowserHistory
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
+    {:else if page === "#/print-spooler"}
+        <ToolbarPrintSpooler
             {zoom}
             {zoomIn}
             {zoomOut}
@@ -789,12 +822,16 @@
                 <CanvasCircularListFlow bind:zoom />
             {:else if page === "#/doubly-circular-linked-list"}
                 <CanvasDoublyCircularListFlow bind:zoom />
+            {:else if page === "#/play-queue"}
+                <CanvasPlayQueue bind:zoom />
             {:else if page === "#/stack-flow"}
                 <CanvasStackFlow bind:zoom />
             {:else if page === "#/linked-stack-flow"}
                 <CanvasLinkedStackFlow bind:zoom />
             {:else if page === "#/browser-history"}
                 <CanvasBrowserHistory bind:zoom />
+            {:else if page === "#/print-spooler"}
+                <CanvasPrintSpooler bind:zoom />
             {:else if page === "#/queue-flow"}
                 <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
@@ -839,6 +876,8 @@
                             ? circularListLog
                             : page === "#/doubly-circular-linked-list"
                             ? dclLog
+                            : page === "#/play-queue"
+                            ? playQueueLog
                             : page === "#/stack" || page === "#/stack-flow"
                             ? stackLog
                             : page === "#/linked-stack" ||
@@ -846,6 +885,8 @@
                               ? linkedStackLog
                               : page === "#/browser-history"
                                 ? browserHistoryLog
+                                : page === "#/print-spooler"
+                                ? printSpoolerLog
                                 : page === "#/queue" || page === "#/queue-flow"
                                 ? queueLog
                                 : page === "#/linked-queue" || page === "#/linked-queue-flow"

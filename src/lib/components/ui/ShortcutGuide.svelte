@@ -22,7 +22,7 @@
         { key: "Drag port →", desc: "Connect next pointer" },
         { key: "Drag port ←", desc: "Connect prev pointer (DLL)" },
         { category: "Keyboard" },
-        { key: "N", desc: "Add node / Push / Enqueue / Insert Tail / Insert (BST, Heap, AVL, Hash Table) / Visit URL (browser history)" },
+        { key: "N", desc: "Add node / Push / Enqueue / Insert Tail / Insert (BST, Heap, AVL, Hash Table)" },
         { key: "Shift + N", desc: "Insert Head (circular list pages)" },
         { key: "M", desc: "Pop / Dequeue / Delete Head / Extract Root (Heap)" },
         { key: "Shift + M", desc: "Delete Tail (circular list pages)" },

@@ -13,70 +13,52 @@
     registerHistoryHandlers,
   } from '../../stores/shared/history.js';
   import {
-    backStack,
-    forwardStack,
-    canGoBack,
-    canGoForward,
-    hasVisited,
-    normalizeUrl,
-    visitUrl,
-    goBack,
-    goForward,
-    initBrowserHistory,
-    resetBrowserHistory,
-    getSnapshotBH,
-    applySnapshotBH,
-  } from '../../stores/stack/browserHistory.js';
+    spoolerIsEmpty,
+    submitJob,
+    printFront,
+    initPrintSpooler,
+    clearPrintSpooler,
+    getSnapshotPS,
+    applySnapshotPS,
+  } from '../../stores/queue/printSpooler.js';
 
   // Register history handlers
-  registerHistoryHandlers(getSnapshotBH, applySnapshotBH);
-  import { clearLogBH } from '../../stores/shared/browserHistoryLog.js';
+  registerHistoryHandlers(getSnapshotPS, applySnapshotPS);
+  import { clearLogPS } from '../../stores/shared/printSpoolerLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { isTypingTarget } from '../../utils/keyboard.js';
   import { downloadStructure, pickStructureFile, requestLoad } from '../../utils/saveLoad.js';
 
-  // Zoom props are handed to every toolbar; this demo has a fixed-size
-  // browser mock-up, so they're accepted but intentionally unused.
+  // Zoom props are handed to every toolbar; this demo renders a fixed-size
+  // printer mock-up, so they're accepted but intentionally unused.
   const { zoom = 1, zoomIn, zoomOut, zoomReset } = $props();
 
   let showConfirmNew = $state(false);
 
-  // The only way to visit a page is the address bar in the browser mock-up
-  // (CanvasBrowserHistory), which dispatches `browser:visit`. This handler
-  // wraps the store op in the undo/redo bracket.
-  function doVisit(raw) {
-    if (!normalizeUrl(raw)) {
-      toast.error('Enter a URL first');
-      return;
-    }
+  // The printer UI (CanvasPrintSpooler) owns every interaction and dispatches
+  // these events; here we only wrap them in the undo/redo bracket. The
+  // auto-print loop dequeues straight from the store (not undoable), same as
+  // the play-queue demo.
+  function handleSubmit({ name, pages }) {
     pushHistory();
-    const url = visitUrl(raw);
+    submitJob(name, pages);
     pushHistory();
-    toast.success(`Visited ${url}`);
+    toast.success(`Queued "${name}"`);
   }
 
-  function handleBack() {
-    if (!$canGoBack) {
-      toast.error('Nothing to go back to');
+  function handlePrint() {
+    if ($spoolerIsEmpty) {
+      toast.error('The spooler is empty');
       return;
     }
     pushHistory();
-    goBack();
+    const job = printFront();
     pushHistory();
-  }
-
-  function handleForward() {
-    if (!$canGoForward) {
-      toast.error('Nothing to go forward to');
-      return;
-    }
-    pushHistory();
-    goForward();
-    pushHistory();
+    if (job) toast.success(`Printed "${job.name}"`);
   }
 
   function handleNew() {
-    if ($hasVisited || $backStack.length || $forwardStack.length) {
+    if (!$spoolerIsEmpty) {
       showConfirmNew = true;
     } else {
       confirmNewActual();
@@ -84,16 +66,16 @@
   }
 
   function confirmNewActual() {
-    resetBrowserHistory();
-    clearLogBH();
+    clearPrintSpooler();
+    clearLogPS();
     initHistory();
-    initBrowserHistory();
+    initPrintSpooler();
     showConfirmNew = false;
-    toast.success('Browser reset');
+    toast.success('Spooler cleared');
   }
 
   function handleSave() {
-    downloadStructure('browser-history', getSnapshotBH());
+    downloadStructure('print-spooler', getSnapshotPS());
     toast.success('Saved successfully');
   }
 
@@ -105,23 +87,19 @@
   }
 
   onMount(() => {
-    const onVisit = (/** @type {CustomEvent<string>} */ e) => doVisit(e.detail);
-    const onBack = () => handleBack();
-    const onForward = () => handleForward();
-    window.addEventListener('browser:visit', onVisit);
-    window.addEventListener('browser:back', onBack);
-    window.addEventListener('browser:forward', onForward);
+    const onSubmit = (/** @type {CustomEvent} */ e) => handleSubmit(e.detail);
+    const onPrint = () => handlePrint();
+    window.addEventListener('printspooler:submit', onSubmit);
+    window.addEventListener('printspooler:print', onPrint);
     return () => {
-      window.removeEventListener('browser:visit', onVisit);
-      window.removeEventListener('browser:back', onBack);
-      window.removeEventListener('browser:forward', onForward);
+      window.removeEventListener('printspooler:submit', onSubmit);
+      window.removeEventListener('printspooler:print', onPrint);
     };
   });
 
   /** @param {KeyboardEvent} e */
   function onKeydown(e) {
     if (isTypingTarget(e) || e.repeat) return;
-
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       const key = e.key.toLowerCase();
       if (key === 's') {
@@ -131,16 +109,6 @@
         e.preventDefault();
         handleLoad();
       }
-      return;
-    }
-
-    if (e.altKey) return;
-    if (e.key === '[') {
-      e.preventDefault();
-      handleBack();
-    } else if (e.key === ']') {
-      e.preventDefault();
-      handleForward();
     }
   }
 </script>
@@ -167,7 +135,7 @@
 
     <div class="separator"></div>
 
-    <Tooltip text="Reset the browser and both stacks">
+    <Tooltip text="Clear the spooler">
       <button class="btn btn-secondary" onclick={handleNew}>
         <Icon name="new" />
         New
@@ -195,13 +163,13 @@
   <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
     <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <span class="modal-title">Reset browser</span>
+        <span class="modal-title">Clear spooler</span>
         <button class="close-btn" aria-label="Close" onclick={() => (showConfirmNew = false)}>
           <Icon name="close" size={14} />
         </button>
       </div>
       <div class="modal-body">
-        <p class="confirm-text">Clear the current page and both history stacks?</p>
+        <p class="confirm-text">Drop every job from the spooler?</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick={() => (showConfirmNew = false)}>Cancel</button>

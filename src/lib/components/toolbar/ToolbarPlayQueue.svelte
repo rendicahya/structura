@@ -13,70 +13,56 @@
     registerHistoryHandlers,
   } from '../../stores/shared/history.js';
   import {
-    backStack,
-    forwardStack,
-    canGoBack,
-    canGoForward,
-    hasVisited,
-    normalizeUrl,
-    visitUrl,
-    goBack,
-    goForward,
-    initBrowserHistory,
-    resetBrowserHistory,
-    getSnapshotBH,
-    applySnapshotBH,
-  } from '../../stores/stack/browserHistory.js';
+    tracks,
+    pqIsEmpty,
+    addToQueue,
+    playNext,
+    removeTrack,
+    initPlayQueue,
+    clearPlayQueue,
+    getSnapshotPQ,
+    applySnapshotPQ,
+  } from '../../stores/list/playQueue.js';
 
   // Register history handlers
-  registerHistoryHandlers(getSnapshotBH, applySnapshotBH);
-  import { clearLogBH } from '../../stores/shared/browserHistoryLog.js';
+  registerHistoryHandlers(getSnapshotPQ, applySnapshotPQ);
+  import { clearLogPQ } from '../../stores/shared/playQueueLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { isTypingTarget } from '../../utils/keyboard.js';
   import { downloadStructure, pickStructureFile, requestLoad } from '../../utils/saveLoad.js';
 
-  // Zoom props are handed to every toolbar; this demo has a fixed-size
-  // browser mock-up, so they're accepted but intentionally unused.
+  // Zoom props are handed to every toolbar; this demo renders a fixed-size
+  // player mock-up, so they're accepted but intentionally unused.
   const { zoom = 1, zoomIn, zoomOut, zoomReset } = $props();
 
   let showConfirmNew = $state(false);
 
-  // The only way to visit a page is the address bar in the browser mock-up
-  // (CanvasBrowserHistory), which dispatches `browser:visit`. This handler
-  // wraps the store op in the undo/redo bracket.
-  function doVisit(raw) {
-    if (!normalizeUrl(raw)) {
-      toast.error('Enter a URL first');
-      return;
-    }
+  // The player UI (CanvasPlayQueue) owns every queue interaction and
+  // dispatches these events; here we only wrap the structural ones in the
+  // undo/redo bracket. ⏭ / ⏮ / tap-to-play are pure pointer moves and go
+  // straight to the store from the canvas.
+  function handleAdd({ title, artist }) {
     pushHistory();
-    const url = visitUrl(raw);
+    addToQueue(title, artist);
     pushHistory();
-    toast.success(`Visited ${url}`);
+    toast.success(`Added "${title}" to the queue`);
   }
 
-  function handleBack() {
-    if (!$canGoBack) {
-      toast.error('Nothing to go back to');
-      return;
-    }
+  function handlePlayNext({ title, artist }) {
     pushHistory();
-    goBack();
+    playNext(title, artist);
     pushHistory();
+    toast.success(`"${title}" plays next`);
   }
 
-  function handleForward() {
-    if (!$canGoForward) {
-      toast.error('Nothing to go forward to');
-      return;
-    }
+  function handleRemove(id) {
     pushHistory();
-    goForward();
+    removeTrack(id);
     pushHistory();
   }
 
   function handleNew() {
-    if ($hasVisited || $backStack.length || $forwardStack.length) {
+    if (!$pqIsEmpty) {
       showConfirmNew = true;
     } else {
       confirmNewActual();
@@ -84,16 +70,16 @@
   }
 
   function confirmNewActual() {
-    resetBrowserHistory();
-    clearLogBH();
+    clearPlayQueue();
+    clearLogPQ();
     initHistory();
-    initBrowserHistory();
+    initPlayQueue();
     showConfirmNew = false;
-    toast.success('Browser reset');
+    toast.success('Queue cleared');
   }
 
   function handleSave() {
-    downloadStructure('browser-history', getSnapshotBH());
+    downloadStructure('play-queue', getSnapshotPQ());
     toast.success('Saved successfully');
   }
 
@@ -105,23 +91,22 @@
   }
 
   onMount(() => {
-    const onVisit = (/** @type {CustomEvent<string>} */ e) => doVisit(e.detail);
-    const onBack = () => handleBack();
-    const onForward = () => handleForward();
-    window.addEventListener('browser:visit', onVisit);
-    window.addEventListener('browser:back', onBack);
-    window.addEventListener('browser:forward', onForward);
+    const onAdd = (/** @type {CustomEvent} */ e) => handleAdd(e.detail);
+    const onPlayNext = (/** @type {CustomEvent} */ e) => handlePlayNext(e.detail);
+    const onRemove = (/** @type {CustomEvent} */ e) => handleRemove(e.detail);
+    window.addEventListener('playqueue:add', onAdd);
+    window.addEventListener('playqueue:playnext', onPlayNext);
+    window.addEventListener('playqueue:remove', onRemove);
     return () => {
-      window.removeEventListener('browser:visit', onVisit);
-      window.removeEventListener('browser:back', onBack);
-      window.removeEventListener('browser:forward', onForward);
+      window.removeEventListener('playqueue:add', onAdd);
+      window.removeEventListener('playqueue:playnext', onPlayNext);
+      window.removeEventListener('playqueue:remove', onRemove);
     };
   });
 
   /** @param {KeyboardEvent} e */
   function onKeydown(e) {
     if (isTypingTarget(e) || e.repeat) return;
-
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       const key = e.key.toLowerCase();
       if (key === 's') {
@@ -131,16 +116,6 @@
         e.preventDefault();
         handleLoad();
       }
-      return;
-    }
-
-    if (e.altKey) return;
-    if (e.key === '[') {
-      e.preventDefault();
-      handleBack();
-    } else if (e.key === ']') {
-      e.preventDefault();
-      handleForward();
     }
   }
 </script>
@@ -167,7 +142,7 @@
 
     <div class="separator"></div>
 
-    <Tooltip text="Reset the browser and both stacks">
+    <Tooltip text="Clear the queue">
       <button class="btn btn-secondary" onclick={handleNew}>
         <Icon name="new" />
         New
@@ -195,13 +170,13 @@
   <div class="modal-overlay" onmousedown={() => (showConfirmNew = false)}>
     <div class="modal modal-sm" onmousedown={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <span class="modal-title">Reset browser</span>
+        <span class="modal-title">Clear queue</span>
         <button class="close-btn" aria-label="Close" onclick={() => (showConfirmNew = false)}>
           <Icon name="close" size={14} />
         </button>
       </div>
       <div class="modal-body">
-        <p class="confirm-text">Clear the current page and both history stacks?</p>
+        <p class="confirm-text">Remove every track from the queue?</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick={() => (showConfirmNew = false)}>Cancel</button>

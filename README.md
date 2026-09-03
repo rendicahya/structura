@@ -8,7 +8,7 @@
 
 ## ✨ Features
 
-- **Fifteen data structures**: Singly Linked List, Doubly Linked List, Singly Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar — plus a two-stack **Browser History** demo.
+- **Fifteen data structures**: Singly Linked List, Doubly Linked List, Singly Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar — plus three applied demos: a two-stack **Browser History**, a doubly-linked-list **Play Queue**, and a FIFO-queue **Print Spooler**.
 - **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
 - **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
@@ -29,6 +29,8 @@
   - **`input` pointer**: Alongside `head`/`tail`/`walk`, the SLL and DLL pages carry an `input` pointer that automatically follows the most recently added node (also settable by hand from a node's context menu).
   - **Infix ↔ Postfix on the Array Stack**: Convert an infix expression to postfix, or evaluate a postfix expression, with the current token and running output/result shown live as the array stack fills and drains.
   - **Browser History (two stacks)**: A working browser mock-up — type a URL and press Enter to load a dummy page — that demonstrates how Back/Forward is implemented with two stacks. Visiting pushes the current page onto the back stack and clears the forward stack; Back moves the current page onto the forward stack; Forward moves it back. The two stacks are shown live and read-only (you drive them only through the address bar and the Back/Forward buttons), with the matching Java/Python/C++ shown for every navigation.
+  - **Play Queue (doubly linked list)**: A music-player mock-up whose "Up Next" queue is a doubly linked list of tracks with a `current` pointer. ⏭ / ⏮ just walk `current` along `next` / `prev`; **+ Queue** links a node at the tail; **Play next** splices a node in right after `current` (an O(1) relink of two neighbours — the move an array can't match); the ✕ on a row unlinks it and stitches its neighbours together; tapping a row walks `current` to it. Play/pause runs a fake progress bar that auto-advances at the end of each track. Every operation shows the matching Java/Python/C++.
+  - **Print Spooler (FIFO queue)**: A printer mock-up whose spooler is a queue of print jobs. **Submit** enqueues a job at the rear; **Print next** dequeues the front; **Auto-print** dequeues repeatedly, feeding a sheet animation whose length tracks the job's page count — so a 2-page memo submitted before a 300-page thesis still prints first. Front/rear are labelled on the queue, an out-tray counts finished jobs, and every enqueue/dequeue shows the matching Java/Python/C++.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
   - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.
 - **User Experience**:
@@ -70,7 +72,7 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 ## 📖 How to Use
 
-1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular/Doubly Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Browser History (2 Stacks), Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph.
+1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular/Doubly Circular Linked List, Play Queue (Doubly LL), Array/Linked-List Stack, Array/Linked-List Queue, Print Spooler (Queue), Browser History (2 Stacks), Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph.
 2. **Add Nodes**: Right-click anywhere on the canvas to add a node at that position, or use the toolbar for structure-specific operations (push, enqueue, insert, ...).
 3. **Connect**: Drag from a node's port to another node to link them (drag from the left port for a `prev` pointer on a Doubly Linked List).
 4. **Edit Data**: Double-click any node to change its value (disabled on the Binary Search Tree and AVL Tree pages, where a value's position is derived from comparisons — use Insert/Delete instead).
@@ -90,6 +92,8 @@ All planned data structures (Stack, Queue, Tree) have shipped. Ideas being consi
 - [x] Doubly Circular Linked List, with Insert/Delete Head & Tail that maintain both link directions and forward/backward ring-traversal playback.
 - [x] Infix-to-postfix conversion and postfix evaluation as an Array Stack mode, with playback controls and matching generated code.
 - [x] Browser history (Back/Forward) demo built on two stacks, with a live dummy-browser UI and read-only stack views.
+- [x] Music "Up Next" play queue demo built on a doubly linked list, with tail-append, O(1) splice-after-current ("Play next"), unlink, and a `current` pointer walked by ⏭ / ⏮.
+- [x] Print spooler demo built on a FIFO queue, with enqueue-at-rear (Submit), dequeue-at-front (Print next), and an auto-print loop that drains the queue.
 - [x] Binary Search Tree with rule-enforced insert (comparison-driven placement, duplicates rejected) and standard delete (leaf / one-child / two-child in-order-successor).
 - [x] Heap Tree with array-backed insert/extract-root (min or max mode), doubling as a Priority Queue enqueue/dequeue.
 - [x] AVL Tree with automatic rebalancing (single and double rotations) after insert and delete.
@@ -105,6 +109,8 @@ Structura's structures were checked against a standard ASD (Algoritma & Struktur
 | Stack & Queue (array and linked-list backed) | ✅ covered |
 | Stack application: postfix/infix expression evaluation | ✅ covered |
 | Stack application: browser history (Back/Forward via two stacks) | ✅ covered |
+| Linked-list application: media "Up Next" play queue (splice / unlink) | ✅ covered |
+| Queue application: print spooler (enqueue / dequeue, FIFO) | ✅ covered |
 | Priority Queue (basic and heap-backed) | ✅ covered |
 | Binary Tree traversal/search (free node placement) | ✅ covered |
 | Binary Search Tree insert/delete/traversal/search (rule-enforced ordering) | ✅ covered |
