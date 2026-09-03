@@ -35,6 +35,11 @@
     import { circularListLog } from "./lib/stores/shared/circularListLog.js";
     import { initNodeClassCircularList } from "./lib/stores/list/graphCircularList.js";
 
+    import ToolbarDoublyCircularList from "./lib/components/toolbar/ToolbarDoublyCircularList.svelte";
+    import CanvasDoublyCircularListFlow from "./lib/components/canvas/CanvasDoublyCircularListFlow.svelte";
+    import { dclLog } from "./lib/stores/shared/dclLog.js";
+    import { initNodeClassDCL } from "./lib/stores/list/graphDoublyCircularList.js";
+
     import ToolbarTree from "./lib/components/toolbar/ToolbarTree.svelte";
     import { treeLog } from "./lib/stores/shared/treeLog.js";
     import { initTree } from "./lib/stores/tree/graphTree.js";
@@ -291,6 +296,8 @@
             if (get(codeLogDLL).length === 0) initNodeClassDLL();
         } else if (page === "#/circular-linked-list") {
             if (get(circularListLog).length === 0) initNodeClassCircularList();
+        } else if (page === "#/doubly-circular-linked-list") {
+            if (get(dclLog).length === 0) initNodeClassDCL();
         } else if (
             page === "#/linked-stack" ||
             page === "#/linked-stack-flow"
@@ -368,6 +375,10 @@
                 { href: "#/linked-list-flow", label: "Singly Linked List" },
                 { href: "#/doubly-linked-list-flow", label: "Doubly Linked List" },
                 { href: "#/circular-linked-list", label: "Circular Linked List" },
+                {
+                    href: "#/doubly-circular-linked-list",
+                    label: "Doubly Circular Linked List",
+                },
             ],
         },
         {
@@ -584,6 +595,16 @@
             ontoggleCode={() => (codeHidden = !codeHidden)}
             onopenShortcuts={() => (showShortcuts = true)}
         />
+    {:else if page === "#/doubly-circular-linked-list"}
+        <ToolbarDoublyCircularList
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+            {codeHidden}
+            ontoggleCode={() => (codeHidden = !codeHidden)}
+            onopenShortcuts={() => (showShortcuts = true)}
+        />
     {:else if page === "#/stack" || page === "#/stack-flow"}
         <ToolbarStack
             {zoom}
@@ -698,6 +719,8 @@
                 <CanvasDLLFlow bind:zoom />
             {:else if page === "#/circular-linked-list"}
                 <CanvasCircularListFlow bind:zoom />
+            {:else if page === "#/doubly-circular-linked-list"}
+                <CanvasDoublyCircularListFlow bind:zoom />
             {:else if page === "#/stack-flow"}
                 <CanvasStackFlow bind:zoom />
             {:else if page === "#/linked-stack-flow"}
@@ -744,6 +767,8 @@
                           ? codeLogDLL
                           : page === "#/circular-linked-list"
                             ? circularListLog
+                            : page === "#/doubly-circular-linked-list"
+                            ? dclLog
                             : page === "#/stack" || page === "#/stack-flow"
                             ? stackLog
                             : page === "#/linked-stack" ||

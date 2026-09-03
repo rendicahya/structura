@@ -68,3 +68,26 @@ export function walkRing(nodes, startId) {
 export function reachableRingIds(nodes, startId) {
     return new Set(walkRing(nodes, startId).map(n => n.id));
 }
+
+/**
+ * Mirror of {@link walkRing} that follows `prevId` instead of `nextId`,
+ * used by the doubly circular list to animate a backwards ring traversal
+ * from the tail. Same `seen` guard against a malformed ring.
+ * @template {{ id: string, prevId: string|null }} Node
+ * @param {Node[]} nodes
+ * @param {string|null} startId
+ * @returns {Node[]}
+ */
+export function walkRingReverse(nodes, startId) {
+    if (!startId) return [];
+    const result = [];
+    const seen = new Set();
+    let current = nodes.find(n => n.id === startId);
+    while (current && !seen.has(current.id)) {
+        result.push(current);
+        seen.add(current.id);
+        if (current.prevId === startId) break;
+        current = current.prevId ? nodes.find(n => n.id === current.prevId) : undefined;
+    }
+    return result;
+}
