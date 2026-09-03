@@ -16,6 +16,7 @@ export const STRUCTURE_ROUTES = {
     'doubly-circular-list': '#/doubly-circular-linked-list',
     stack: '#/stack-flow',
     'linked-stack': '#/linked-stack-flow',
+    'browser-history': '#/browser-history',
     queue: '#/queue-flow',
     'linked-queue': '#/linked-queue-flow',
     tree: '#/tree-flow',

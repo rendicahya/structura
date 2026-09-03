@@ -8,7 +8,7 @@
 
 ## ✨ Features
 
-- **Fourteen data structures**: Singly Linked List, Doubly Linked List, Singly Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar.
+- **Fifteen data structures**: Singly Linked List, Doubly Linked List, Singly Circular Linked List, Doubly Circular Linked List, Array Stack, Linked-List Stack, Array Queue, Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph — each with its own canvas and toolbar — plus a two-stack **Browser History** demo.
 - **Interactive Canvas**: Drag and drop to build structures, right-click to add or edit nodes, and connect pointers by dragging directly from a node's port.
 - **Live Code Generation**: Every operation is mirrored instantly as syntax-highlighted **Java**, **Python**, and **C++** code, ready to copy.
 - **State Management**:
@@ -28,6 +28,7 @@
   - **SLL ⇄ DLL conversion**: One click turns a singly linked list into a doubly linked list (deriving every `prev` pointer from the existing `next` chain) or back again, switching to the matching page.
   - **`input` pointer**: Alongside `head`/`tail`/`walk`, the SLL and DLL pages carry an `input` pointer that automatically follows the most recently added node (also settable by hand from a node's context menu).
   - **Infix ↔ Postfix on the Array Stack**: Convert an infix expression to postfix, or evaluate a postfix expression, with the current token and running output/result shown live as the array stack fills and drains.
+  - **Browser History (two stacks)**: A working browser mock-up — type a URL and press Enter to load a dummy page — that demonstrates how Back/Forward is implemented with two stacks. Visiting pushes the current page onto the back stack and clears the forward stack; Back moves the current page onto the forward stack; Forward moves it back. The two stacks are shown live and read-only (you drive them only through the address bar and the Back/Forward buttons), with the matching Java/Python/C++ shown for every navigation.
   - **Zoom & Pan**: Mouse-relative zoom and free panning for large structures.
   - **Batch Operations**: Enqueue/push multiple values at once via comma-separated input.
 - **User Experience**:
@@ -69,7 +70,7 @@ You can access the live version at: [rendicahya.github.io/structura](https://ren
 
 ## 📖 How to Use
 
-1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular/Doubly Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph.
+1. **Pick a structure**: Use the tabs at the top to switch between Singly/Doubly/Circular/Doubly Circular Linked List, Array/Linked-List Stack, Array/Linked-List Queue, Browser History (2 Stacks), Binary Tree, Binary Search Tree, AVL Tree, Heap / Priority Queue, Hash Table, and Graph.
 2. **Add Nodes**: Right-click anywhere on the canvas to add a node at that position, or use the toolbar for structure-specific operations (push, enqueue, insert, ...).
 3. **Connect**: Drag from a node's port to another node to link them (drag from the left port for a `prev` pointer on a Doubly Linked List).
 4. **Edit Data**: Double-click any node to change its value (disabled on the Binary Search Tree and AVL Tree pages, where a value's position is derived from comparisons — use Insert/Delete instead).
@@ -88,6 +89,7 @@ All planned data structures (Stack, Queue, Tree) have shipped. Ideas being consi
 - [x] Circular Linked List, with Insert/Delete Head & Tail and a ring-traversal playback that generates the matching do-while code.
 - [x] Doubly Circular Linked List, with Insert/Delete Head & Tail that maintain both link directions and forward/backward ring-traversal playback.
 - [x] Infix-to-postfix conversion and postfix evaluation as an Array Stack mode, with playback controls and matching generated code.
+- [x] Browser history (Back/Forward) demo built on two stacks, with a live dummy-browser UI and read-only stack views.
 - [x] Binary Search Tree with rule-enforced insert (comparison-driven placement, duplicates rejected) and standard delete (leaf / one-child / two-child in-order-successor).
 - [x] Heap Tree with array-backed insert/extract-root (min or max mode), doubling as a Priority Queue enqueue/dequeue.
 - [x] AVL Tree with automatic rebalancing (single and double rotations) after insert and delete.
@@ -102,6 +104,7 @@ Structura's structures were checked against a standard ASD (Algoritma & Struktur
 | Array, singly/doubly/circular linked list | ✅ covered |
 | Stack & Queue (array and linked-list backed) | ✅ covered |
 | Stack application: postfix/infix expression evaluation | ✅ covered |
+| Stack application: browser history (Back/Forward via two stacks) | ✅ covered |
 | Priority Queue (basic and heap-backed) | ✅ covered |
 | Binary Tree traversal/search (free node placement) | ✅ covered |
 | Binary Search Tree insert/delete/traversal/search (rule-enforced ordering) | ✅ covered |

@@ -4,6 +4,10 @@
     import Toolbar from "./lib/components/toolbar/Toolbar.svelte";
     import ToolbarStack from "./lib/components/toolbar/ToolbarStack.svelte";
     import ToolbarLinkedStack from "./lib/components/toolbar/ToolbarLinkedStack.svelte";
+    import ToolbarBrowserHistory from "./lib/components/toolbar/ToolbarBrowserHistory.svelte";
+    import CanvasBrowserHistory from "./lib/components/canvas/CanvasBrowserHistory.svelte";
+    import { browserHistoryLog } from "./lib/stores/shared/browserHistoryLog.js";
+    import { initBrowserHistory } from "./lib/stores/stack/browserHistory.js";
     import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
@@ -110,6 +114,7 @@
     import { applySnapshotDCL } from "./lib/stores/list/graphDoublyCircularList.js";
     import { applySnapshotStack } from "./lib/stores/stack/graphStack.js";
     import { applySnapshotLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
+    import { applySnapshotBH } from "./lib/stores/stack/browserHistory.js";
     import { applySnapshotQueue } from "./lib/stores/queue/graphQueue.js";
     import { applySnapshotLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
     import { applySnapshotTree } from "./lib/stores/tree/graphTree.js";
@@ -126,6 +131,7 @@
         "doubly-circular-list": applySnapshotDCL,
         stack: applySnapshotStack,
         "linked-stack": applySnapshotLinkedStack,
+        "browser-history": applySnapshotBH,
         queue: applySnapshotQueue,
         "linked-queue": applySnapshotLinkedQueue,
         tree: applySnapshotTree,
@@ -366,6 +372,8 @@
             page === "#/linked-stack-flow"
         ) {
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
+        } else if (page === "#/browser-history") {
+            if (get(browserHistoryLog).length === 0) initBrowserHistory();
         } else if (page === "#/linked-queue" || page === "#/linked-queue-flow") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree" || page === "#/tree-flow") {
@@ -463,6 +471,10 @@
                       ]
                     : []),
                 { href: "#/linked-queue-flow", label: "Linked-List Queue" },
+                {
+                    href: "#/browser-history",
+                    label: "Browser History (2 Stacks)",
+                },
             ],
         },
         {
@@ -698,6 +710,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/browser-history"}
+        <ToolbarBrowserHistory
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/queue" || page === "#/queue-flow"}
         <ToolbarQueue
             {zoom}
@@ -774,6 +793,8 @@
                 <CanvasStackFlow bind:zoom />
             {:else if page === "#/linked-stack-flow"}
                 <CanvasLinkedStackFlow bind:zoom />
+            {:else if page === "#/browser-history"}
+                <CanvasBrowserHistory bind:zoom />
             {:else if page === "#/queue-flow"}
                 <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
@@ -823,7 +844,9 @@
                             : page === "#/linked-stack" ||
                                 page === "#/linked-stack-flow"
                               ? linkedStackLog
-                              : page === "#/queue" || page === "#/queue-flow"
+                              : page === "#/browser-history"
+                                ? browserHistoryLog
+                                : page === "#/queue" || page === "#/queue-flow"
                                 ? queueLog
                                 : page === "#/linked-queue" || page === "#/linked-queue-flow"
                                   ? linkedQueueLog
