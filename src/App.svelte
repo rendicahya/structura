@@ -12,6 +12,18 @@
     import CanvasPrintSpooler from "./lib/components/canvas/CanvasPrintSpooler.svelte";
     import { printSpoolerLog } from "./lib/stores/shared/printSpoolerLog.js";
     import { initPrintSpooler } from "./lib/stores/queue/printSpooler.js";
+    import ToolbarErTriage from "./lib/components/toolbar/ToolbarErTriage.svelte";
+    import CanvasErTriage from "./lib/components/canvas/CanvasErTriage.svelte";
+    import { erTriageLog } from "./lib/stores/shared/erTriageLog.js";
+    import { initErTriage } from "./lib/stores/heap/erTriage.js";
+    import ToolbarPhoneBook from "./lib/components/toolbar/ToolbarPhoneBook.svelte";
+    import CanvasPhoneBook from "./lib/components/canvas/CanvasPhoneBook.svelte";
+    import { phoneBookLog } from "./lib/stores/shared/phoneBookLog.js";
+    import { initPhoneBook } from "./lib/stores/hash/phoneBook.js";
+    import ToolbarTodoList from "./lib/components/toolbar/ToolbarTodoList.svelte";
+    import CanvasTodoList from "./lib/components/canvas/CanvasTodoList.svelte";
+    import { todoListLog } from "./lib/stores/shared/todoListLog.js";
+    import { initTodoList } from "./lib/stores/list/todoList.js";
     import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
@@ -126,6 +138,9 @@
     import { applySnapshotLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
     import { applySnapshotBH } from "./lib/stores/stack/browserHistory.js";
     import { applySnapshotPS } from "./lib/stores/queue/printSpooler.js";
+    import { applySnapshotER } from "./lib/stores/heap/erTriage.js";
+    import { applySnapshotPB } from "./lib/stores/hash/phoneBook.js";
+    import { applySnapshotTD } from "./lib/stores/list/todoList.js";
     import { applySnapshotQueue } from "./lib/stores/queue/graphQueue.js";
     import { applySnapshotLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
     import { applySnapshotTree } from "./lib/stores/tree/graphTree.js";
@@ -141,10 +156,13 @@
         "circular-list": applySnapshotCircularList,
         "doubly-circular-list": applySnapshotDCL,
         "play-queue": applySnapshotPQ,
+        "todo-list": applySnapshotTD,
         stack: applySnapshotStack,
         "linked-stack": applySnapshotLinkedStack,
         "browser-history": applySnapshotBH,
         "print-spooler": applySnapshotPS,
+        "er-triage": applySnapshotER,
+        "phone-book": applySnapshotPB,
         queue: applySnapshotQueue,
         "linked-queue": applySnapshotLinkedQueue,
         tree: applySnapshotTree,
@@ -382,6 +400,8 @@
             if (get(dclLog).length === 0) initNodeClassDCL();
         } else if (page === "#/play-queue") {
             if (get(playQueueLog).length === 0) initPlayQueue();
+        } else if (page === "#/todo-list") {
+            if (get(todoListLog).length === 0) initTodoList();
         } else if (
             page === "#/linked-stack" ||
             page === "#/linked-stack-flow"
@@ -391,6 +411,10 @@
             if (get(browserHistoryLog).length === 0) initBrowserHistory();
         } else if (page === "#/print-spooler") {
             if (get(printSpoolerLog).length === 0) initPrintSpooler();
+        } else if (page === "#/er-triage") {
+            if (get(erTriageLog).length === 0) initErTriage();
+        } else if (page === "#/phone-book") {
+            if (get(phoneBookLog).length === 0) initPhoneBook();
         } else if (page === "#/linked-queue" || page === "#/linked-queue-flow") {
             if (get(linkedQueueLog).length === 0) initNodeClassLinkedQueue();
         } else if (page === "#/tree" || page === "#/tree-flow") {
@@ -470,7 +494,9 @@
                     href: "#/doubly-circular-linked-list",
                     label: "Doubly Circular Linked List",
                 },
+                { divider: true, label: "Applied Examples" },
                 { href: "#/play-queue", label: "Play Queue (Doubly LL)" },
+                { href: "#/todo-list", label: "To-Do List (Singly LL)" },
             ],
         },
         {
@@ -489,6 +515,7 @@
                       ]
                     : []),
                 { href: "#/linked-queue-flow", label: "Linked-List Queue" },
+                { divider: true, label: "Applied Examples" },
                 { href: "#/print-spooler", label: "Print Spooler (Queue)" },
                 {
                     href: "#/browser-history",
@@ -504,6 +531,8 @@
                 { href: "#/bst-flow", label: "Binary Search Tree" },
                 { href: "#/avl-flow", label: "AVL Tree" },
                 { href: "#/heap-flow", label: "Heap / Priority Queue" },
+                { divider: true, label: "Applied Examples" },
+                { href: "#/er-triage", label: "ER Triage (Priority Queue)" },
             ],
         },
         {
@@ -512,12 +541,14 @@
             items: [
                 { href: "#/graph-flow", label: "Graph" },
                 { href: "#/hash-flow", label: "Hash Table" },
+                { divider: true, label: "Applied Examples" },
+                { href: "#/phone-book", label: "Phone Book (Hash Table)" },
             ],
         },
     ];
 
     const PAGE_ORDER = NAV_CATEGORIES.flatMap((category) =>
-        category.items.map((item) => item.href),
+        category.items.filter((item) => item.href).map((item) => item.href),
     );
 
     function onKeydown(e) {
@@ -586,14 +617,18 @@
                     </button>
                     {#if openNavCategory === category.id}
                         <div class="nav-category-menu">
-                            {#each category.items as item (item.href)}
-                                <button
-                                    class="nav-category-item"
-                                    class:active={page === item.href}
-                                    onclick={() => navigateFromCategory(item.href)}
-                                >
-                                    {item.label}
-                                </button>
+                            {#each category.items as item (item.href ?? item.label)}
+                                {#if item.divider}
+                                    <div class="nav-category-sep">{item.label}</div>
+                                {:else}
+                                    <button
+                                        class="nav-category-item"
+                                        class:active={page === item.href}
+                                        onclick={() => navigateFromCategory(item.href)}
+                                    >
+                                        {item.label}
+                                    </button>
+                                {/if}
                             {/each}
                         </div>
                     {/if}
@@ -722,6 +757,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/todo-list"}
+        <ToolbarTodoList
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/stack" || page === "#/stack-flow"}
         <ToolbarStack
             {zoom}
@@ -745,6 +787,20 @@
         />
     {:else if page === "#/print-spooler"}
         <ToolbarPrintSpooler
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
+    {:else if page === "#/er-triage"}
+        <ToolbarErTriage
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
+    {:else if page === "#/phone-book"}
+        <ToolbarPhoneBook
             {zoom}
             {zoomIn}
             {zoomOut}
@@ -824,6 +880,8 @@
                 <CanvasDoublyCircularListFlow bind:zoom />
             {:else if page === "#/play-queue"}
                 <CanvasPlayQueue bind:zoom />
+            {:else if page === "#/todo-list"}
+                <CanvasTodoList bind:zoom />
             {:else if page === "#/stack-flow"}
                 <CanvasStackFlow bind:zoom />
             {:else if page === "#/linked-stack-flow"}
@@ -832,6 +890,10 @@
                 <CanvasBrowserHistory bind:zoom />
             {:else if page === "#/print-spooler"}
                 <CanvasPrintSpooler bind:zoom />
+            {:else if page === "#/er-triage"}
+                <CanvasErTriage bind:zoom />
+            {:else if page === "#/phone-book"}
+                <CanvasPhoneBook bind:zoom />
             {:else if page === "#/queue-flow"}
                 <CanvasQueueFlow bind:zoom />
             {:else if page === "#/linked-queue"}
@@ -878,6 +940,8 @@
                             ? dclLog
                             : page === "#/play-queue"
                             ? playQueueLog
+                            : page === "#/todo-list"
+                            ? todoListLog
                             : page === "#/stack" || page === "#/stack-flow"
                             ? stackLog
                             : page === "#/linked-stack" ||
@@ -887,6 +951,10 @@
                                 ? browserHistoryLog
                                 : page === "#/print-spooler"
                                 ? printSpoolerLog
+                                : page === "#/er-triage"
+                                ? erTriageLog
+                                : page === "#/phone-book"
+                                ? phoneBookLog
                                 : page === "#/queue" || page === "#/queue-flow"
                                 ? queueLog
                                 : page === "#/linked-queue" || page === "#/linked-queue-flow"
@@ -1009,6 +1077,18 @@
     }
     .nav-category-item.active {
         color: var(--accent);
+    }
+
+    .nav-category-sep {
+        margin: 6px 9px 3px;
+        padding-top: 7px;
+        border-top: 1px solid var(--border);
+        color: var(--text-muted);
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
     }
 
     .nav-spacer {
