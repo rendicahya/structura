@@ -22,6 +22,7 @@
   import { clearLogCircularList } from '../../stores/shared/circularListLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { downloadStructure, pickStructureFile, requestLoad } from '../../utils/saveLoad.js';
+  import { circularToSll } from '../../utils/listConvert.js';
   import { onMount } from 'svelte';
   import { isTypingTarget } from '../../utils/keyboard.js';
 
@@ -120,6 +121,13 @@
     initHistory();
     showConfirmNew = false;
     toast.success('List cleared');
+  }
+
+  // Circular → linear: break the ring at the tail and reopen as a plain
+  // singly linked list. Reuses the load pipeline to navigate.
+  function handleToLinear() {
+    if ($circularListIsEmpty) { toast.error('List is empty'); return; }
+    requestLoad(circularToSll(getSnapshotCircularList()), 'Converted to singly linked list');
   }
 
   function handleSave() {
@@ -225,6 +233,13 @@
       <button class="btn btn-secondary" onclick={handleTraverse} disabled={$circularListIsEmpty}>
         <Icon name="walk" />
         Traverse
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Convert to a singly linked list (breaks the ring)">
+      <button class="btn btn-secondary" onclick={handleToLinear} disabled={$circularListIsEmpty}>
+        <Icon name="swap" />
+        To Linear
       </button>
     </Tooltip>
 

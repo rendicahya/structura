@@ -23,6 +23,7 @@
   import { clearLogDCL } from '../../stores/shared/dclLog.js';
   import { toast } from '../../stores/shared/toast.js';
   import { downloadStructure, pickStructureFile, requestLoad } from '../../utils/saveLoad.js';
+  import { circularToDll } from '../../utils/listConvert.js';
   import { onMount } from 'svelte';
   import { isTypingTarget } from '../../utils/keyboard.js';
 
@@ -112,6 +113,13 @@
     pushHistory();
     garbageCollectDCL();
     pushHistory();
+  }
+
+  // Circular → linear: break both rings (tail.next / head.prev) and reopen
+  // as a plain doubly linked list. Reuses the load pipeline to navigate.
+  function handleToLinear() {
+    if ($dclIsEmpty) { toast.error('List is empty'); return; }
+    requestLoad(circularToDll(getSnapshotDCL()), 'Converted to doubly linked list');
   }
 
   function handleNew() {
@@ -240,6 +248,13 @@
       <button class="btn btn-secondary" onclick={handleTraverseBackward} disabled={$dclIsEmpty}>
         <Icon name="walk" />
         Traverse ←
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Convert to a doubly linked list (breaks the ring)">
+      <button class="btn btn-secondary" onclick={handleToLinear} disabled={$dclIsEmpty}>
+        <Icon name="swap" />
+        To Linear
       </button>
     </Tooltip>
 

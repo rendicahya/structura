@@ -45,6 +45,7 @@
         pickStructureFile,
         requestLoad,
     } from "../../utils/saveLoad.js";
+    import { sllToCircular, dllToCircular } from "../../utils/listConvert.js";
 
     const {
         mode = "sll",
@@ -177,6 +178,23 @@
         }
     }
 
+    // Linear → circular: SLL becomes a singly circular list, DLL a doubly
+    // circular one. Closes the ring (tail.next → head, and head.prev → tail
+    // for the doubly case) and reuses the load pipeline to navigate.
+    function handleToCircular() {
+        if (isSLL) {
+            requestLoad(
+                sllToCircular(getSnapshot()),
+                "Converted to circular linked list",
+            );
+        } else {
+            requestLoad(
+                dllToCircular(getSnapshotDLL()),
+                "Converted to doubly circular linked list",
+            );
+        }
+    }
+
     /** @param {KeyboardEvent} e */
     function onKeydown(e) {
         if (isTypingTarget(e) || e.repeat) return;
@@ -240,6 +258,17 @@
             <button class="btn btn-secondary" onclick={handleConvert}>
                 <Icon name="swap" />
                 {isSLL ? "To Doubly" : "To Singly"}
+            </button>
+        </Tooltip>
+
+        <Tooltip
+            text={isSLL
+                ? "Convert to a singly circular linked list (closes the ring)"
+                : "Convert to a doubly circular linked list (closes the ring)"}
+        >
+            <button class="btn btn-secondary" onclick={handleToCircular}>
+                <Icon name="swap" />
+                To Circular
             </button>
         </Tooltip>
 
