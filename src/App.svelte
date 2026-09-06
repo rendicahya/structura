@@ -24,6 +24,14 @@
     import CanvasTodoList from "./lib/components/canvas/CanvasTodoList.svelte";
     import { todoListLog } from "./lib/stores/shared/todoListLog.js";
     import { initTodoList } from "./lib/stores/list/todoList.js";
+    import ToolbarTurnRotation from "./lib/components/toolbar/ToolbarTurnRotation.svelte";
+    import CanvasTurnRotation from "./lib/components/canvas/CanvasTurnRotation.svelte";
+    import { turnRotationLog } from "./lib/stores/shared/turnRotationLog.js";
+    import { initTurnRotation } from "./lib/stores/list/turnRotation.js";
+    import ToolbarImageCarousel from "./lib/components/toolbar/ToolbarImageCarousel.svelte";
+    import CanvasImageCarousel from "./lib/components/canvas/CanvasImageCarousel.svelte";
+    import { imageCarouselLog } from "./lib/stores/shared/imageCarouselLog.js";
+    import { initImageCarousel } from "./lib/stores/list/imageCarousel.js";
     import ToolbarQueue from "./lib/components/toolbar/ToolbarQueue.svelte";
     import CodePanel from "./lib/components/code/CodePanel.svelte";
     import ToastContainer from "./lib/components/ui/ToastContainer.svelte";
@@ -141,6 +149,8 @@
     import { applySnapshotER } from "./lib/stores/heap/erTriage.js";
     import { applySnapshotPB } from "./lib/stores/hash/phoneBook.js";
     import { applySnapshotTD } from "./lib/stores/list/todoList.js";
+    import { applySnapshotTR } from "./lib/stores/list/turnRotation.js";
+    import { applySnapshotIC } from "./lib/stores/list/imageCarousel.js";
     import { applySnapshotQueue } from "./lib/stores/queue/graphQueue.js";
     import { applySnapshotLinkedQueue } from "./lib/stores/queue/graphLinkedQueue.js";
     import { applySnapshotTree } from "./lib/stores/tree/graphTree.js";
@@ -157,6 +167,8 @@
         "doubly-circular-list": applySnapshotDCL,
         "play-queue": applySnapshotPQ,
         "todo-list": applySnapshotTD,
+        "turn-rotation": applySnapshotTR,
+        "image-carousel": applySnapshotIC,
         stack: applySnapshotStack,
         "linked-stack": applySnapshotLinkedStack,
         "browser-history": applySnapshotBH,
@@ -402,6 +414,10 @@
             if (get(playQueueLog).length === 0) initPlayQueue();
         } else if (page === "#/todo-list") {
             if (get(todoListLog).length === 0) initTodoList();
+        } else if (page === "#/turn-rotation") {
+            if (get(turnRotationLog).length === 0) initTurnRotation();
+        } else if (page === "#/image-carousel") {
+            if (get(imageCarouselLog).length === 0) initImageCarousel();
         } else if (
             page === "#/linked-stack" ||
             page === "#/linked-stack-flow"
@@ -495,8 +511,16 @@
                     label: "Doubly Circular Linked List",
                 },
                 { divider: true, label: "Applied Examples" },
-                { href: "#/play-queue", label: "Play Queue (Doubly LL)" },
                 { href: "#/todo-list", label: "To-Do List (Singly LL)" },
+                { href: "#/play-queue", label: "Play Queue (Doubly LL)" },
+                {
+                    href: "#/turn-rotation",
+                    label: "Turn Rotation (Singly Circular)",
+                },
+                {
+                    href: "#/image-carousel",
+                    label: "Image Carousel (Doubly Circular)",
+                },
             ],
         },
         {
@@ -764,6 +788,20 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/turn-rotation"}
+        <ToolbarTurnRotation
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
+    {:else if page === "#/image-carousel"}
+        <ToolbarImageCarousel
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/stack" || page === "#/stack-flow"}
         <ToolbarStack
             {zoom}
@@ -882,6 +920,10 @@
                 <CanvasPlayQueue bind:zoom />
             {:else if page === "#/todo-list"}
                 <CanvasTodoList bind:zoom />
+            {:else if page === "#/turn-rotation"}
+                <CanvasTurnRotation bind:zoom />
+            {:else if page === "#/image-carousel"}
+                <CanvasImageCarousel bind:zoom />
             {:else if page === "#/stack-flow"}
                 <CanvasStackFlow bind:zoom />
             {:else if page === "#/linked-stack-flow"}
@@ -942,6 +984,10 @@
                             ? playQueueLog
                             : page === "#/todo-list"
                             ? todoListLog
+                            : page === "#/turn-rotation"
+                            ? turnRotationLog
+                            : page === "#/image-carousel"
+                            ? imageCarouselLog
                             : page === "#/stack" || page === "#/stack-flow"
                             ? stackLog
                             : page === "#/linked-stack" ||
