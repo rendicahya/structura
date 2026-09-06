@@ -1,6 +1,7 @@
 <script>
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
+    import { onMount } from "svelte";
     import { flip } from "svelte/animate";
     import { fly } from "svelte/transition";
     import GraphFlowNode from "../node/GraphFlowNode.svelte";
@@ -243,9 +244,9 @@
         contextMenu = null;
     }
 
-    // "N" shortcut has no cursor position to anchor to (unlike the
-    // right-click "Add a node" menu), so it drops the new node at the
-    // center of the current viewport instead.
+    // The "N" shortcut and the toolbar's "Add Node" button have no cursor
+    // position to anchor to (unlike the right-click "Add a node" menu), so
+    // they drop the new node at the center of the current viewport instead.
     function handleAddNodeShortcut() {
         if (!wrapperEl) return;
         const rect = wrapperEl.getBoundingClientRect();
@@ -254,6 +255,14 @@
         addGraphNode(pt);
         pushHistory();
     }
+
+    // The reused graph toolbar can't see the canvas viewport, so its
+    // "Add Node" button just asks the canvas to place one at center.
+    onMount(() => {
+        const onAddNode = () => handleAddNodeShortcut();
+        window.addEventListener("graph:add-node", onAddNode);
+        return () => window.removeEventListener("graph:add-node", onAddNode);
+    });
 
     /** @param {KeyboardEvent} e */
     function onKeydown(e) {

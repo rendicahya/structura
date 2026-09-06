@@ -61,6 +61,12 @@
         stopTraversal();
     });
 
+    // Node placement needs the canvas viewport, which lives in
+    // CanvasGraphFlow — ask it to drop a node at center.
+    function handleAddNode() {
+        window.dispatchEvent(new CustomEvent("graph:add-node"));
+    }
+
     function handleNew() {
         if ($graphNodes.length > 0) {
             showConfirmNew = true;
@@ -143,6 +149,18 @@
     </div>
 
     <div class="actions">
+        <Tooltip text="Add a node at the center of the canvas" shortcut="N">
+            <button class="btn btn-secondary" onclick={handleAddNode}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M7 4.2v5.6M4.2 7h5.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+                Add Node
+            </button>
+        </Tooltip>
+
+        <div class="separator"></div>
+
         <Tooltip text={startNodeName ? `Start: ${startNodeName}` : "Click a node to pick a start"}>
             <span class="start-indicator" class:unset={!startNodeName}>
                 {startNodeName ? `Start: ${startNodeName}` : "Pick a start node"}
