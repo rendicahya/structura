@@ -1,6 +1,8 @@
 <script>
     import { SvelteFlow, Background, Controls } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
+    import { flip } from "svelte/animate";
+    import { fly } from "svelte/transition";
     import GraphFlowNode from "../node/GraphFlowNode.svelte";
     import EdgeComponent from "../node/EdgeComponent.svelte";
     import CanvasDefs from "./CanvasDefs.svelte";
@@ -125,6 +127,29 @@
     let traversalVisitedIds = $derived(
         new Set($traversalState.order.slice(0, Math.max(0, $traversalState.index))),
     );
+
+    // --- BFS queue / DFS stack illustration -------------------------------
+    // The structure to draw at playback position `index` is the frontier
+    // snapshot `frontiers[index + 1]` (see graphTraversal.js). It lists ids
+    // from the removal end to the insertion end: queue front → back, stack
+    // bottom → top.
+    let dsActive = $derived($traversalState.order.length > 0);
+    let dsIsQueue = $derived($traversalState.type === "bfs");
+    let dsFrontier = $derived(
+        $traversalState.frontiers?.[$traversalState.index + 1] ?? [],
+    );
+    // The node removed to reach the current step — the one being visited now.
+    let dsCurrent = $derived(
+        $traversalState.index >= 0
+            ? ($traversalState.order[$traversalState.index] ?? null)
+            : null,
+    );
+
+    /** @param {string} id */
+    function dsLabel(id) {
+        const n = $graphNodes.find((x) => x.id === id);
+        return n ? n.data || n.varName : id;
+    }
 
     let flowNodes = $derived(
         $graphNodes.map((node) => ({
@@ -338,6 +363,47 @@
         </g>
     </svg>
 
+    {#if dsActive}
+        <div class="ds-panel" class:is-stack={!dsIsQueue}>
+            <div class="ds-head">
+                <span class="ds-title">{dsIsQueue ? "Queue" : "Stack"}</span>
+                <span class="ds-tag">{dsIsQueue ? "BFS · FIFO" : "DFS · LIFO"}</span>
+                {#if dsCurrent}
+                    <span class="ds-visit">
+                        {dsIsQueue ? "dequeued" : "popped"}
+                        <b>{dsLabel(dsCurrent)}</b>
+                    </span>
+                {/if}
+            </div>
+            <div class="ds-track">
+                <span class="ds-cap">{dsIsQueue ? "front · dequeue" : "bottom"}</span>
+                <div class="ds-cells">
+                    {#if dsFrontier.length === 0}
+                        <span class="ds-empty"
+                            >{dsIsQueue ? "queue" : "stack"} empty — traversal complete</span
+                        >
+                    {:else}
+                        {#each dsFrontier as id, i (id)}
+                            <div
+                                class="ds-cell"
+                                class:hot={(dsIsQueue && i === 0) ||
+                                    (!dsIsQueue && i === dsFrontier.length - 1)}
+                                animate:flip={{ duration: 220 }}
+                                in:fly={{ y: 10, duration: 160 }}
+                                out:fly={{ y: -10, duration: 160 }}
+                            >
+                                {dsLabel(id)}
+                            </div>
+                        {/each}
+                    {/if}
+                </div>
+                <span class="ds-cap">
+                    {dsIsQueue ? "enqueue · back" : "top · push / pop"}
+                </span>
+            </div>
+        </div>
+    {/if}
+
     {#if $graphNodes.length === 0}
         <div class="empty-hint">
             <div class="empty-title">Canvas is empty</div>
@@ -450,6 +516,110 @@
         padding: 3px 8px;
         color: var(--text-dim);
     }
+    /* BFS queue / DFS stack illustration */
+    .ds-panel {
+        position: absolute;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        z-index: 6;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px 14px;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        border: 1px solid var(--border-bright);
+        border-radius: 12px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(4px);
+        max-width: min(720px, calc(100% - 40px));
+    }
+    .ds-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+    .ds-title {
+        font-family: var(--font-ui);
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text);
+    }
+    .ds-tag {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        padding: 1px 5px;
+    }
+    .ds-visit {
+        margin-left: auto;
+        font-family: var(--font-ui);
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    .ds-visit b {
+        font-family: var(--font-mono);
+        color: var(--text-dim);
+    }
+    .ds-track {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .ds-cap {
+        flex-shrink: 0;
+        font-family: var(--font-mono);
+        font-size: 8.5px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        width: 62px;
+    }
+    .ds-track .ds-cap:last-child {
+        text-align: right;
+    }
+    .ds-cells {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 4px 8px;
+        border: 1px dashed var(--border-bright);
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+    .ds-cell {
+        flex-shrink: 0;
+        min-width: 30px;
+        padding: 5px 9px;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-dim);
+        background: var(--surface2);
+        border: 1px solid var(--border-bright);
+        border-radius: 6px;
+    }
+    .ds-cell.hot {
+        color: #fff;
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+    .ds-empty {
+        font-family: var(--font-ui);
+        font-size: 11px;
+        color: var(--text-muted);
+        padding: 0 4px;
+    }
+
     .ctx-menu {
         position: fixed;
         z-index: 1000;
