@@ -122,29 +122,26 @@
         pendingFrom = null;
     }
 
-    let traversalCurrentId = $derived(
-        $traversalState.index >= 0 ? ($traversalState.order[$traversalState.index] ?? null) : null,
+    // --- Granular traversal playback + BFS queue / DFS stack illustration --
+    // Every playback position is one micro-step (seed / dequeue / visit /
+    // enqueue / skip / done) and carries the whole frame it needs to draw:
+    // the queue-or-stack contents, the node in hand, and the nodes already
+    // finished. `index` clamps to 0 so the seeded structure shows before the
+    // first step is taken. See graphTraversal.js.
+    let dsStep = $derived(
+        $traversalState.steps?.[Math.max(0, $traversalState.index)] ?? null,
     );
-    let traversalVisitedIds = $derived(
-        new Set($traversalState.order.slice(0, Math.max(0, $traversalState.index))),
-    );
-
-    // --- BFS queue / DFS stack illustration -------------------------------
-    // The structure to draw at playback position `index` is the frontier
-    // snapshot `frontiers[index + 1]` (see graphTraversal.js). It lists ids
-    // from the removal end to the insertion end: queue front → back, stack
-    // bottom → top.
-    let dsActive = $derived($traversalState.order.length > 0);
+    let dsActive = $derived(($traversalState.steps?.length ?? 0) > 0);
     let dsIsQueue = $derived($traversalState.type === "bfs");
-    let dsFrontier = $derived(
-        $traversalState.frontiers?.[$traversalState.index + 1] ?? [],
-    );
-    // The node removed to reach the current step — the one being visited now.
-    let dsCurrent = $derived(
-        $traversalState.index >= 0
-            ? ($traversalState.order[$traversalState.index] ?? null)
-            : null,
-    );
+    let dsFrontier = $derived(dsStep?.frontier ?? []);
+    let dsCurrent = $derived(dsStep?.currentId ?? null);
+    let dsCaption = $derived(dsStep?.caption ?? "");
+    let dsPhase = $derived(dsStep?.phase ?? "");
+    let dsStepNum = $derived(Math.max(0, $traversalState.index) + 1);
+    let dsStepTotal = $derived($traversalState.steps?.length ?? 0);
+
+    let traversalCurrentId = $derived(dsCurrent);
+    let traversalVisitedIds = $derived(new Set(dsStep?.visitedIds ?? []));
 
     /** @param {string} id */
     function dsLabel(id) {
@@ -377,26 +374,31 @@
             <div class="ds-head">
                 <span class="ds-title">{dsIsQueue ? "Queue" : "Stack"}</span>
                 <span class="ds-tag">{dsIsQueue ? "BFS · FIFO" : "DFS · LIFO"}</span>
-                {#if dsCurrent}
-                    <span class="ds-visit">
-                        {dsIsQueue ? "dequeued" : "popped"}
-                        <b>{dsLabel(dsCurrent)}</b>
-                    </span>
-                {/if}
+                <span class="ds-count">step {dsStepNum} / {dsStepTotal}</span>
             </div>
+
+            {#key dsCaption}
+                <div class="ds-action ph-{dsPhase}" in:fly={{ y: 6, duration: 140 }}>
+                    <span class="ds-action-dot"></span>
+                    <span class="ds-action-text">{dsCaption}</span>
+                </div>
+            {/key}
+
             <div class="ds-track">
                 <span class="ds-cap">{dsIsQueue ? "front · dequeue" : "bottom"}</span>
                 <div class="ds-cells">
                     {#if dsFrontier.length === 0}
-                        <span class="ds-empty"
-                            >{dsIsQueue ? "queue" : "stack"} empty — traversal complete</span
-                        >
+                        <span class="ds-empty">
+                            {dsIsQueue ? "queue" : "stack"} empty
+                        </span>
                     {:else}
                         {#each dsFrontier as id, i (id)}
                             <div
                                 class="ds-cell"
                                 class:hot={(dsIsQueue && i === 0) ||
                                     (!dsIsQueue && i === dsFrontier.length - 1)}
+                                class:adding={dsPhase === "add" &&
+                                    i === dsFrontier.length - 1}
                                 animate:flip={{ duration: 220 }}
                                 in:fly={{ y: 10, duration: 160 }}
                                 out:fly={{ y: -10, duration: 160 }}
@@ -566,15 +568,62 @@
         border-radius: 4px;
         padding: 1px 5px;
     }
-    .ds-visit {
+    .ds-count {
         margin-left: auto;
-        font-family: var(--font-ui);
-        font-size: 11px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
         color: var(--text-muted);
     }
-    .ds-visit b {
-        font-family: var(--font-mono);
+    .ds-action {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 7px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--text-muted);
+        font-family: var(--font-ui);
+        font-size: 12px;
+        font-weight: 600;
         color: var(--text-dim);
+    }
+    .ds-action-dot {
+        flex-shrink: 0;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-muted);
+    }
+    .ds-action-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .ds-action.ph-take {
+        border-left-color: var(--warning);
+    }
+    .ds-action.ph-take .ds-action-dot {
+        background: var(--warning);
+    }
+    .ds-action.ph-visit,
+    .ds-action.ph-done {
+        border-left-color: var(--accent);
+    }
+    .ds-action.ph-visit .ds-action-dot,
+    .ds-action.ph-done .ds-action-dot {
+        background: var(--accent);
+    }
+    .ds-action.ph-add {
+        border-left-color: var(--success);
+    }
+    .ds-action.ph-add .ds-action-dot {
+        background: var(--success);
+    }
+    .ds-action.ph-skip {
+        opacity: 0.7;
     }
     .ds-track {
         display: flex;
@@ -621,6 +670,18 @@
         color: #fff;
         background: var(--accent);
         border-color: var(--accent);
+    }
+    .ds-cell.adding {
+        animation: dsAdding 0.44s ease;
+    }
+    @keyframes dsAdding {
+        0% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent);
+            border-color: var(--success);
+        }
+        100% {
+            box-shadow: 0 0 0 7px color-mix(in srgb, var(--success) 0%, transparent);
+        }
     }
     .ds-empty {
         font-family: var(--font-ui);

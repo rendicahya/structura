@@ -5,24 +5,32 @@ import { pushHistory } from '../shared/history.js';
 
 /**
  * @typedef {'bfs'|'dfs'} TraversalType
- * @typedef {{ type: TraversalType, order: string[], frontiers: string[][], index: number, playing: boolean, speed: number, startNodeId: string|null }} TraversalState
+ * @typedef {'seed'|'take'|'visit'|'add'|'skip'|'done'} StepPhase
+ * @typedef {{ phase: StepPhase, caption: string, frontier: string[], currentId: string|null, visitedIds: string[] }} MicroStep
+ * @typedef {{ type: TraversalType, order: string[], steps: MicroStep[], index: number, playing: boolean, speed: number, startNodeId: string|null }} TraversalState
  */
 
 /**
- * `frontiers` is the companion illustration data for the BFS queue / DFS
- * stack overlay. It has `order.length + 1` entries: `frontiers[0]` is the
- * structure right after the start node is seeded, and `frontiers[k + 1]` is
- * its state right after `order[k]` has been removed and that node's unseen
- * neighbours added. So at playback position `index`, the structure to draw
- * is `frontiers[index + 1]`. Each entry lists node ids from the removal end
- * to the insertion end — for the queue that is front → back, for the stack
- * bottom → top.
+ * A traversal is precomputed into `steps`: one entry per *granular* action —
+ * seeding the start node, dequeuing/popping a node, visiting it, and each
+ * individual enqueue/push (or skip) of its neighbours. `index` points at the
+ * step currently on screen; stepping forward/back is just moving `index`
+ * because every step carries the full state needed to draw the frame:
+ *
+ *  - `frontier`   — the queue / stack contents after this step, listed from
+ *                   the removal end to the insertion end (queue front → back,
+ *                   stack bottom → top).
+ *  - `currentId`  — the node "in hand" (just removed, being processed), or null.
+ *  - `visitedIds` — nodes whose visit is fully finished *before* this step, so
+ *                   `currentId` and `visitedIds` never overlap.
+ *  - `caption`    — the human description shown above the queue / stack.
+ *
  * @type {import('svelte/store').Writable<TraversalState>}
  */
 export const traversalState = writable({
     type: 'bfs',
     order: [],
-    frontiers: [],
+    steps: [],
     index: -1,
     playing: false,
     speed: 700,
@@ -84,55 +92,94 @@ function dedupeStackFromTop(stack) {
 }
 
 /**
- * Run BFS or DFS and return both the visit `order` and the per-step
- * `frontiers` snapshots that drive the queue / stack overlay.
+ * Run BFS or DFS and return both the visit `order` and the granular
+ * `steps` timeline that drives playback and the queue / stack overlay.
  * @param {TraversalType} type
  * @param {import('./graphGraph.js').GraphNode[]} nodes
  * @param {import('./graphGraph.js').GraphEdge[]} edges
  * @param {string|null} startId
- * @returns {{ order: string[], frontiers: string[][] }}
+ * @returns {{ order: string[], steps: MicroStep[] }}
  */
 export function computeTraversal(type, nodes, edges, startId) {
-    if (!startId || !nodes.some(n => n.id === startId)) return { order: [], frontiers: [] };
+    if (!startId || !nodes.some(n => n.id === startId)) return { order: [], steps: [] };
 
     const adjacency = buildAdjacency(nodes, edges);
+    const nameOf = new Map(nodes.map(n => [n.id, n.data || n.varName || n.id]));
+    const label = (id) => nameOf.get(id) ?? id;
+
     /** @type {string[]} */
     const order = [];
-    /** @type {string[][]} */
-    const frontiers = [[startId]];
+    /** @type {MicroStep[]} */
+    const steps = [];
+    /** node ids whose visit (incl. neighbour scan) is fully finished */
+    const processed = [];
 
-    if (type === 'bfs') {
-        const visited = new Set([startId]);
+    const isQueue = type === 'bfs';
+    const verbTake = isQueue ? 'Dequeue' : 'Pop';
+    const verbAdd = isQueue ? 'Enqueue' : 'Push';
+    const structName = isQueue ? 'queue' : 'stack';
+
+    /** @param {StepPhase} phase @param {string} caption @param {string[]} frontier @param {string|null} currentId */
+    const emit = (phase, caption, frontier, currentId) => {
+        steps.push({ phase, caption, frontier, currentId: currentId ?? null, visitedIds: [...processed] });
+    };
+
+    if (isQueue) {
+        const discovered = new Set([startId]);
         const queue = [startId];
+        emit('seed', `${verbAdd} ${label(startId)} — start node`, [...queue], null);
+
         while (queue.length > 0) {
             const id = queue.shift();
             order.push(id);
-            for (const neighborId of adjacency.get(id) ?? []) {
-                if (!visited.has(neighborId)) {
-                    visited.add(neighborId);
-                    queue.push(neighborId);
+            emit('take', `${verbTake} ${label(id)} from the front`, [...queue], id);
+            emit('visit', `Visit ${label(id)}`, [...queue], id);
+
+            for (const nb of adjacency.get(id) ?? []) {
+                if (discovered.has(nb)) {
+                    emit('skip', `Skip ${label(nb)} — already in ${structName} or visited`, [...queue], id);
+                } else {
+                    discovered.add(nb);
+                    queue.push(nb);
+                    emit('add', `${verbAdd} ${label(nb)} — unseen neighbour of ${label(id)}`, [...queue], id);
                 }
             }
-            frontiers.push([...queue]);
+            processed.push(id);
         }
+        emit('done', 'Queue is empty — traversal complete', [], null);
     } else {
         const visited = new Set();
         const stack = [startId];
+        emit('seed', `${verbAdd} ${label(startId)} — start node`, dedupeStackFromTop([...stack]), null);
+
         while (stack.length > 0) {
             const id = stack.pop();
-            if (visited.has(id)) continue;
+            if (visited.has(id)) {
+                emit('skip', `Pop ${label(id)} — already visited, discard it`, dedupeStackFromTop([...stack]), null);
+                continue;
+            }
             visited.add(id);
             order.push(id);
+            emit('take', `${verbTake} ${label(id)} from the top`, dedupeStackFromTop([...stack]), id);
+            emit('visit', `Visit ${label(id)}`, dedupeStackFromTop([...stack]), id);
 
             const neighbors = adjacency.get(id) ?? [];
+            // Push in reverse so the first neighbour ends up on top / visited first.
             for (let i = neighbors.length - 1; i >= 0; i--) {
-                if (!visited.has(neighbors[i])) stack.push(neighbors[i]);
+                const nb = neighbors[i];
+                if (visited.has(nb)) {
+                    emit('skip', `Skip ${label(nb)} — already visited`, dedupeStackFromTop([...stack]), id);
+                } else {
+                    stack.push(nb);
+                    emit('add', `${verbAdd} ${label(nb)} — unseen neighbour of ${label(id)}`, dedupeStackFromTop([...stack]), id);
+                }
             }
-            frontiers.push(dedupeStackFromTop(stack));
+            processed.push(id);
         }
+        emit('done', 'Stack is empty — traversal complete', [], null);
     }
 
-    return { order, frontiers };
+    return { order, steps };
 }
 
 /**
@@ -194,7 +241,7 @@ export function startTraversal(type) {
 
     const nodes = get(graphNodes);
     const edges = get(graphEdges);
-    const { order, frontiers } = computeTraversal(type, nodes, edges, startNodeId);
+    const { order, steps } = computeTraversal(type, nodes, edges, startNodeId);
     const method = METHODS[type];
 
     logOpGraph(method.java, method.python, method.cpp);
@@ -202,7 +249,7 @@ export function startTraversal(type) {
     traversalState.set({
         type,
         order,
-        frontiers,
+        steps,
         index: -1,
         playing: false,
         speed: get(traversalState).speed,
@@ -212,24 +259,18 @@ export function startTraversal(type) {
 
 export function stepForward() {
     const state = get(traversalState);
-    if (state.index >= state.order.length - 1) {
+    if (state.index >= state.steps.length - 1) {
         closeSession();
         traversalState.update(s => ({ ...s, playing: false }));
         return;
     }
 
     const nextIndex = state.index + 1;
-    const nodeId = state.order[nextIndex];
-    const node = get(graphNodes).find(n => n.id === nodeId);
-    const isLastStep = nextIndex >= state.order.length - 1;
+    const step = state.steps[nextIndex];
+    const isLastStep = nextIndex >= state.steps.length - 1;
 
-    if (node) {
-        const val = node.data || 'null';
-        logOpGraph(
-            `// visit: ${node.varName} (data=${val})`,
-            `# visit: ${node.varName} (data=${val})`,
-            `// visit: ${node.varName} (data=${val})`
-        );
+    if (step) {
+        logOpGraph(`// ${step.caption}`, `# ${step.caption}`, `// ${step.caption}`);
     }
 
     traversalState.update(s => ({ ...s, index: nextIndex }));
@@ -253,7 +294,7 @@ export function playPause() {
         return;
     }
 
-    if (state.index >= state.order.length - 1) return;
+    if (state.index >= state.steps.length - 1) return;
 
     traversalState.update(s => ({ ...s, playing: true }));
     intervalId = setInterval(stepForward, state.speed);
@@ -261,14 +302,14 @@ export function playPause() {
 
 export function stopTraversal() {
     closeSession();
-    traversalState.update(s => ({ ...s, order: [], frontiers: [], index: -1, playing: false }));
+    traversalState.update(s => ({ ...s, order: [], steps: [], index: -1, playing: false }));
 }
 
 /** Fully clears playback state, including the start node — use when the graph itself is replaced (New/Load). */
 export function resetTraversal() {
     stopInterval();
     sessionActive = false;
-    traversalState.update(s => ({ ...s, order: [], frontiers: [], index: -1, playing: false, startNodeId: null }));
+    traversalState.update(s => ({ ...s, order: [], steps: [], index: -1, playing: false, startNodeId: null }));
 }
 
 /**

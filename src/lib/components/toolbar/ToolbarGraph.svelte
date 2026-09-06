@@ -124,18 +124,39 @@
         });
     }
 
+    let atEnd = $derived(
+        $traversalState.steps.length > 0 &&
+            $traversalState.index >= $traversalState.steps.length - 1,
+    );
+
     /** @param {KeyboardEvent} e */
     function onKeydown(e) {
         if (isTypingTarget(e) || e.repeat) return;
-        if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
 
-        const key = e.key.toLowerCase();
-        if (key === "s") {
+        if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+            const key = e.key.toLowerCase();
+            if (key === "s") {
+                e.preventDefault();
+                if (!$graphIsEmpty) handleSave();
+            } else if (key === "o") {
+                e.preventDefault();
+                handleLoad();
+            }
+            return;
+        }
+
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        // Granular traversal stepping — "." / "→" forward, "," / "←" back.
+        if (e.key === "." || e.key === "ArrowRight") {
+            if ($graphIsEmpty || !$traversalState.startNodeId) return;
+            if ($traversalState.playing || atEnd) return;
             e.preventDefault();
-            if (!$graphIsEmpty) handleSave();
-        } else if (key === "o") {
+            handleStepForward();
+        } else if (e.key === "," || e.key === "ArrowLeft") {
+            if ($traversalState.playing || $traversalState.index <= -1) return;
             e.preventDefault();
-            handleLoad();
+            stepBack();
         }
     }
 </script>
@@ -184,10 +205,7 @@
                 class="btn btn-icon"
                 aria-label={$traversalState.playing ? "Pause" : "Play traversal"}
                 onclick={handlePlayPause}
-                disabled={$graphIsEmpty ||
-                    !$traversalState.startNodeId ||
-                    ($traversalState.order.length > 0 &&
-                        $traversalState.index >= $traversalState.order.length - 1)}
+                disabled={$graphIsEmpty || !$traversalState.startNodeId || atEnd}
             >
                 {#if $traversalState.playing}
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -202,7 +220,7 @@
             </button>
         </Tooltip>
 
-        <Tooltip text="Step back">
+        <Tooltip text="Step back" shortcut=",">
             <button
                 class="btn btn-icon"
                 aria-label="Step back"
@@ -216,7 +234,7 @@
             </button>
         </Tooltip>
 
-        <Tooltip text="Step forward">
+        <Tooltip text="Step forward" shortcut=".">
             <button
                 class="btn btn-icon"
                 aria-label="Step forward"
@@ -224,8 +242,7 @@
                 disabled={$graphIsEmpty ||
                     !$traversalState.startNodeId ||
                     $traversalState.playing ||
-                    ($traversalState.order.length > 0 &&
-                        $traversalState.index >= $traversalState.order.length - 1)}
+                    atEnd}
             >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M3 2.7v8.6c0 .6.6.9 1.1.6l5.4-4.3c.4-.3.4-1 0-1.3L4.1 2c-.5-.3-1.1 0-1.1.7z" fill="currentColor" />
@@ -250,7 +267,7 @@
         <Tooltip text="Playback speed">
             <select
                 class="traversal-select traversal-speed"
-                value={$traversalState.speed}
+                value={String($traversalState.speed)}
                 onchange={handleSpeedChange}
                 disabled={$graphIsEmpty}
             >
