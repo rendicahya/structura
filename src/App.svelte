@@ -137,6 +137,11 @@
     // converter reuses the same "structura:load" event.
     import { toast } from "./lib/stores/shared/toast.js";
     import { STRUCTURE_ROUTES } from "./lib/utils/saveLoad.js";
+    import {
+        setActiveType as setAutosaveType,
+        loadProject,
+        clearProject,
+    } from "./lib/utils/autosave.js";
     import { applySnapshot as applySnapshotSLL } from "./lib/stores/sll/graph.js";
     import { applySnapshotDLL } from "./lib/stores/dll/graphDLL.js";
     import { applySnapshotCircularList } from "./lib/stores/list/graphCircularList.js";
@@ -185,6 +190,39 @@
         graph: applySnapshotGraph,
     };
 
+    // Route hash → structure `_type`, so page navigation can tell the
+    // autosave layer which structure is live. Built from STRUCTURE_ROUTES,
+    // plus the legacy non-"-flow" aliases that share the same stores.
+    const TYPE_BY_HASH = {
+        ...Object.fromEntries(
+            Object.entries(STRUCTURE_ROUTES).map(([type, hash]) => [hash, type]),
+        ),
+        "#/linked-list": "sll",
+        "#/doubly-linked-list": "dll",
+        "#/stack": "stack",
+        "#/linked-stack": "linked-stack",
+        "#/queue": "queue",
+        "#/linked-queue": "linked-queue",
+        "#/tree": "tree",
+        "#/graph": "graph",
+    };
+
+    // Rehydrate every structure that has a saved project so its stores hold
+    // the user's work the moment its page is opened. Runs once, before the
+    // first initHistory(). A snapshot that fails to apply (corrupt / stale
+    // shape) is dropped rather than left to break the page.
+    function restoreSavedProjects() {
+        for (const [type, apply] of Object.entries(APPLY_SNAPSHOT_BY_TYPE)) {
+            const saved = loadProject(type);
+            if (!saved) continue;
+            try {
+                apply(saved);
+            } catch {
+                clearProject(type);
+            }
+        }
+    }
+
     /** @param {CustomEvent<{ snapshot: any, message?: string }>} e */
     function onStructuraLoad(e) {
         const { snapshot, message } = e.detail ?? {};
@@ -208,6 +246,7 @@
     }
 
     onMount(() => {
+        restoreSavedProjects();
         initHistory();
 
         if (!location.hash || location.hash === "#") {
@@ -384,6 +423,12 @@
             document.documentElement.setAttribute("data-theme", effectiveTheme);
         }
         localStorage.setItem("structura-theme", themePref);
+    });
+
+    // Point the autosave layer at whichever structure the current page
+    // shows, so pushHistory()/undo/redo persist to that structure's key.
+    $effect(() => {
+        setAutosaveType(TYPE_BY_HASH[page] ?? null);
     });
 
     // GA4's automatic history-based page_view tracking doesn't catch this

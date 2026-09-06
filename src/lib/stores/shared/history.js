@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { persistProject } from '../../utils/autosave.js';
 
 /** @type {import('svelte/store').Writable<any[]>} */
 const past = writable([]);
@@ -34,6 +35,7 @@ export function pushHistory() {
     const snap = _getSnapshot();
     past.update(p => [...p, snap]);
     future.set([]);
+    persistProject(snap);
 }
 
 export function undo() {
@@ -43,6 +45,7 @@ export function undo() {
     future.update(f => [current, ...f]);
     past.update(p => p.slice(0, -1));
     _applySnapshot(prev);
+    persistProject(prev);
 }
 
 export function redo() {
@@ -51,6 +54,7 @@ export function redo() {
     past.update(p => [...p, next]);
     future.update(f => f.slice(1));
     _applySnapshot(next);
+    persistProject(next);
 }
 
 export const canUndo = { subscribe: (fn) => past.subscribe(p => fn(p.length >= 2)) };
@@ -60,4 +64,8 @@ export function initHistory() {
     const snap = _getSnapshot();
     past.set([snap]);
     future.set([]);
+    // Persist here too so "New" (clear + initHistory) and a fresh file load
+    // are written through; guarded by an active type + a meaningful snapshot,
+    // so the bare initHistory() at app startup is a no-op.
+    persistProject(snap);
 }
