@@ -32,15 +32,16 @@ function inferHeadId(nodes, headId) {
 }
 
 /**
- * SLL → singly circular list. Closes the `next` ring and drops canvas
- * coordinates (the circular canvas lays nodes out on a ring by index).
+ * SLL → singly circular list. Closes the `next` ring, keeping each node's
+ * canvas position (the circular canvas is a free-form draggable layout,
+ * same as the regular linked list).
  */
 export function sllToCircular(snap) {
     const headId = inferHeadId(snap.nodes, snap.headId);
     const chain = walkChain(snap.nodes, headId);
     const tailId = snap.tailId ?? chain[chain.length - 1]?.id ?? null;
 
-    const nodes = snap.nodes.map(({ x, y, ...n }) => ({
+    const nodes = snap.nodes.map((n) => ({
         ...n,
         nextId: n.id === tailId ? headId : n.nextId,
     }));
@@ -97,15 +98,15 @@ export function circularToSll(snap) {
 }
 
 /**
- * DLL → doubly circular list. Closes both the `next` and `prev` rings and
- * drops canvas coordinates.
+ * DLL → doubly circular list. Closes both the `next` and `prev` rings,
+ * keeping each node's canvas position.
  */
 export function dllToCircular(snap) {
     const headId = inferHeadId(snap.nodes, snap.headId);
     const chain = walkChain(snap.nodes, headId);
     const tailId = snap.tailId ?? chain[chain.length - 1]?.id ?? null;
 
-    const nodes = snap.nodes.map(({ x, y, ...n }) => ({
+    const nodes = snap.nodes.map((n) => ({
         ...n,
         nextId: n.id === tailId ? headId : n.nextId,
         prevId: n.id === headId ? tailId : n.prevId,

@@ -1,12 +1,18 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpDCL, dclLog, clearLogDCL } from '../shared/dclLog.js';
-import { formatLiteral, formatPythonLiteral } from '../../utils/formatters.js';
+import { formatLiteral, formatPythonLiteral, formatValue, formatPythonValue, formatCppValue } from '../../utils/formatters.js';
 import { walkRing, walkRingReverse, reachableRingIds } from '../../utils/linkedList.js';
 import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
- * @typedef {{ id: string, varName: string, data: string, nextId: string|null, prevId: string|null }} DCLNode
+ * @typedef {{ id: string, varName: string, data: string, x: number, y: number, nextId: string|null, prevId: string|null }} DCLNode
  */
+
+// Matches the node footprint used by DLLFlowNode/DoublyCircularListFlowNode
+// (min-width) plus the gap CanvasDLLFlow uses between auto-placed nodes, so
+// new/arranged nodes line up the same way a regular doubly linked list's do.
+const NODE_W = 130;
+const NODE_GAP = 60;
 
 /** @type {import('svelte/store').Writable<DCLNode[]>} */
 export const dclNodes = writable([]);
@@ -59,9 +65,13 @@ export function insertHeadDCL(value) {
   const varName = `node${nodeCounter}`;
   const hId = get(dclHeadId);
   const tId = get(dclTailId);
+  const nodesBefore = get(dclNodes);
+  const currentHead = nodesBefore.find(n => n.id === hId);
+  const x = currentHead ? currentHead.x - (NODE_W + NODE_GAP) : 200;
+  const y = currentHead ? currentHead.y : 200;
 
   /** @type {DCLNode} */
-  const newNode = { id, varName, data: value, nextId: hId || id, prevId: tId || id };
+  const newNode = { id, varName, data: value, x, y, nextId: hId || id, prevId: tId || id };
   dclNodes.update(ns => [...ns, newNode]);
 
   const javaOps = [`Node ${varName} = new Node(${formatLiteral(value)});`];
@@ -120,9 +130,13 @@ export function insertTailDCL(value) {
   const varName = `node${nodeCounter}`;
   const hId = get(dclHeadId);
   const tId = get(dclTailId);
+  const nodesBefore = get(dclNodes);
+  const currentTail = nodesBefore.find(n => n.id === tId);
+  const x = currentTail ? currentTail.x + (NODE_W + NODE_GAP) : 200;
+  const y = currentTail ? currentTail.y : 200;
 
   /** @type {DCLNode} */
-  const newNode = { id, varName, data: value, nextId: hId || id, prevId: tId || id };
+  const newNode = { id, varName, data: value, x, y, nextId: hId || id, prevId: tId || id };
   dclNodes.update(ns => [...ns, newNode]);
 
   const javaOps = [`Node ${varName} = new Node(${formatLiteral(value)});`];
@@ -338,6 +352,57 @@ export function traverseBackwardDCL() {
   return walkRingReverse(get(dclNodes), tId).map(n => n.id);
 }
 
+/**
+ * Persists a node's dragged position. Silent — dragging isn't a code-level
+ * operation, so it doesn't belong in the generated-code log.
+ * @param {string} id
+ * @param {number} x
+ * @param {number} y
+ */
+export function moveNodeDCL(id, x, y) {
+  dclNodes.update(ns => ns.map(n => n.id === id ? { ...n, x, y } : n));
+}
+
+/**
+ * Edits a node's value in place (double-click on the canvas), mirroring the
+ * regular doubly linked list's node editing.
+ * @param {string} id
+ * @param {string} value
+ */
+export function setNodeValueDCL(id, value) {
+  const ns = get(dclNodes);
+  const old = ns.find(n => n.id === id);
+  if (!old || value === old.data) return;
+
+  dclNodes.update(ns => ns.map(n => n.id === id ? { ...n, data: value } : n));
+
+  logOpDCL(
+    `${old.varName}.data = ${formatValue(value)};`,
+    `${old.varName}.data = ${formatPythonValue(value)}`,
+    `${old.varName}->data = ${formatCppValue(value)};`
+  );
+}
+
+/**
+ * Lines every node back up in a tidy row, in ring order starting from head —
+ * the doubly circular list's counterpart of the regular linked list's
+ * "Arrange".
+ */
+export function arrangeDCL() {
+  const ns = get(dclNodes);
+  if (ns.length === 0) return;
+
+  const ring = walkRing(ns, get(dclHeadId));
+  const orderedIds = ring.length > 0 ? ring.map(n => n.id) : ns.map(n => n.id);
+  const baseY = ns[0].y;
+  const positionById = new Map(orderedIds.map((id, index) => [id, index]));
+
+  dclNodes.update(ns => ns.map(node => {
+    const index = positionById.get(node.id) ?? 0;
+    return { ...node, x: 200 + index * (NODE_W + NODE_GAP), y: baseY };
+  }));
+}
+
 export function garbageCollectDCL() {
   const nodes = get(dclNodes);
   const hId = get(dclHeadId);
@@ -386,7 +451,14 @@ export function getSnapshotDCL() {
  */
 export function applySnapshotDCL(snapshot) {
   nodeCounter = snapshot.counter ?? 0;
-  dclNodes.set(snapshot.nodes ?? []);
+  // Snapshots saved before nodes carried a position (or converted from a
+  // linear DLL via "To Circular") fall back to a plain row layout.
+  const nodesIn = snapshot.nodes ?? [];
+  dclNodes.set(nodesIn.map((n, index) => ({
+    ...n,
+    x: n.x ?? 200 + index * (NODE_W + NODE_GAP),
+    y: n.y ?? 200,
+  })));
   dclHeadId.set(snapshot.headId ?? null);
   dclTailId.set(snapshot.tailId ?? null);
   dclLog.set(snapshot.codeLog ?? []);

@@ -15,6 +15,7 @@
     clearCircularList,
     getSnapshotCircularList,
     applySnapshotCircularList,
+    arrangeCircularList,
   } from '../../stores/list/graphCircularList.js';
 
   // Register history handlers
@@ -94,6 +95,12 @@
     deleteTailCircular();
     pushHistory();
     toast.success('Deleted tail node');
+  }
+
+  function handleArrange() {
+    pushHistory();
+    arrangeCircularList();
+    pushHistory();
   }
 
   function handleTraverse() {
@@ -188,6 +195,9 @@
     } else if (key === 't') {
       e.preventDefault();
       handleTraverse();
+    } else if (key === 'a') {
+      e.preventDefault();
+      if ($circularListNodes.length > 0) handleArrange();
     }
   }
 </script>
@@ -233,6 +243,13 @@
       <button class="btn btn-secondary" onclick={handleTraverse} disabled={$circularListIsEmpty}>
         <Icon name="walk" />
         Traverse
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Auto-arrange all nodes in a row" shortcut="A">
+      <button class="btn btn-secondary" onclick={handleArrange} disabled={$circularListNodes.length === 0}>
+        <Icon name="arrange" />
+        Arrange
       </button>
     </Tooltip>
 

@@ -16,6 +16,7 @@
     clearDCL,
     getSnapshotDCL,
     applySnapshotDCL,
+    arrangeDCL,
   } from '../../stores/list/graphDoublyCircularList.js';
 
   // Register history handlers
@@ -109,6 +110,12 @@
     window.dispatchEvent(new CustomEvent('dcl:traverse-play', { detail: order }));
   }
 
+  function handleArrange() {
+    pushHistory();
+    arrangeDCL();
+    pushHistory();
+  }
+
   function handleGC() {
     pushHistory();
     garbageCollectDCL();
@@ -196,6 +203,9 @@
       e.preventDefault();
       if (e.shiftKey) handleTraverseBackward();
       else handleTraverse();
+    } else if (key === 'a') {
+      e.preventDefault();
+      if ($dclNodes.length > 0) handleArrange();
     }
   }
 </script>
@@ -248,6 +258,13 @@
       <button class="btn btn-secondary" onclick={handleTraverseBackward} disabled={$dclIsEmpty}>
         <Icon name="walk" />
         Traverse ←
+      </button>
+    </Tooltip>
+
+    <Tooltip text="Auto-arrange all nodes in a row" shortcut="A">
+      <button class="btn btn-secondary" onclick={handleArrange} disabled={$dclNodes.length === 0}>
+        <Icon name="arrange" />
+        Arrange
       </button>
     </Tooltip>
 

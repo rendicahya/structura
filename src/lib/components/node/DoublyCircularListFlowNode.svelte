@@ -2,8 +2,40 @@
     import { Handle, Position } from "@xyflow/svelte";
 
     const { data } = $props();
+
+    let editing = $state(false);
+    let editValue = $state("");
+    let inputEl = $state();
+
+    function startEdit(e) {
+        e.stopPropagation();
+        editValue = data.value ?? "";
+        editing = true;
+        setTimeout(() => {
+            inputEl?.focus();
+            inputEl?.select();
+        }, 10);
+    }
+
+    function commitEdit() {
+        if (!editing) return;
+        editing = false;
+        data.onEdit?.(editValue);
+    }
+
+    function onKeydown(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            commitEdit();
+        }
+        if (e.key === "Escape") {
+            e.preventDefault();
+            editing = false;
+        }
+    }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="dcl-node"
     class:is-head={data.isHead}
@@ -12,11 +44,13 @@
     class:is-visiting={data.isVisiting}
     class:is-unreachable={data.isUnreachable}
     class:anim-in={data.isAnimIn}
+    ondblclick={startEdit}
 >
     <!-- Non-interactive anchors for the Svelte Flow bezier edges. `next`
          links ride the upper handles, `prev` links the lower ones; the ring
          closers use the bottom (next) / top (prev) pair so they arc clear
-         of the row. -->
+         of the row. Circular-list links are managed by the toolbar, not
+         drawn by hand. -->
     <Handle type="target" position={Position.Left} id="next-in" isConnectable={false} style="top: 34%;" />
     <Handle type="source" position={Position.Right} id="next-out" isConnectable={false} style="top: 34%;" />
     <Handle type="source" position={Position.Left} id="prev-out" isConnectable={false} style="top: 66%;" />
@@ -33,42 +67,51 @@
         </div>
     {/if}
 
-    <span class="value" class:muted={!data.value}>{data.value || "null"}</span>
+    {#if editing}
+        <input
+            class="nodrag value-input"
+            bind:this={inputEl}
+            bind:value={editValue}
+            onkeydown={onKeydown}
+            onblur={commitEdit}
+            spellcheck="false"
+        />
+    {:else}
+        <div class="value">{data.value || "null"}</div>
+    {/if}
 </div>
 
 <style>
     .dcl-node {
         position: relative;
-        width: 130px;
-        height: 64px;
+        min-width: 110px;
+        height: 43px;
+        padding: 0 12px;
         box-sizing: border-box;
         border-radius: 10px;
         background: var(--node-bg);
-        border: 1px solid var(--node-border);
+        border: 1.5px solid var(--node-border);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        font-family: var(--font-mono);
+        text-align: center;
+        font-family: var(--font-ui);
         transition:
             border-color 0.2s,
             box-shadow 0.2s;
     }
     .dcl-node.is-tail {
         border-color: #c084fc;
-        border-width: 1.8px;
     }
     .dcl-node.is-head {
         border-color: var(--success);
-        border-width: 1.8px;
     }
     .dcl-node.is-only {
         border-color: var(--accent);
     }
     .dcl-node.is-visiting {
         border-color: var(--warning);
-        border-width: 1.8px;
         box-shadow: 0 0 14px var(--accent-glow);
     }
     .dcl-node.is-unreachable {
@@ -100,7 +143,7 @@
     }
     .badges {
         position: absolute;
-        top: -20px;
+        top: -22px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -124,13 +167,26 @@
         color: #c084fc;
     }
     .value {
+        font-family: var(--font-mono);
         font-size: 13px;
         color: var(--text);
         font-weight: 500;
     }
-    .value.muted,
-    .dcl-node.is-unreachable .value {
+    .is-unreachable .value {
         color: var(--text-muted);
         font-weight: 400;
+    }
+    .value-input {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        text-align: center;
+        background: var(--surface2);
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        color: var(--text);
+        padding: 2px 4px;
+        outline: none;
     }
 </style>

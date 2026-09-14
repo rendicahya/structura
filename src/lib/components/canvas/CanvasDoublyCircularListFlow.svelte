@@ -11,14 +11,14 @@
         dclHeadNode,
         dclTailNode,
         garbageCollectDCL,
+        moveNodeDCL,
+        setNodeValueDCL,
     } from "../../stores/list/graphDoublyCircularList.js";
     import { pushHistory } from "../../stores/shared/history.js";
     import { ZOOM_MIN, ZOOM_MAX, LIST_EDGE } from "../../utils/canvasConstants.js";
     import { createFlowViewportSync } from "../../utils/flowViewportSync.svelte.js";
 
-    const NODE_W = 130;
-    const NODE_H = 64;
-    const NODE_GAP = 60;
+    const NODE_H = 43;
 
     let { zoom = $bindable(1) } = $props();
 
@@ -73,30 +73,20 @@
         }
     });
 
-    // Node positions are index-in-array-derived — GC re-indexes the array,
-    // so we suppress the position transition during GC to avoid a jarring
-    // reflow (same treatment as CanvasCircularListFlow).
-    let prevNodeCount = 0;
-    let isGCing = $state(false);
-    $effect.pre(() => {
-        const currentCount = $dclNodes.length;
-        isGCing = currentCount < prevNodeCount && currentCount > 0;
-        prevNodeCount = currentCount;
-    });
-
-    let nodeTransition = $derived(
-        `transition: ${isGCing ? "none" : "transform 0.4s ease-in-out"};`,
-    );
+    function handleEdit(nodeId, value) {
+        pushHistory();
+        setNodeValueDCL(nodeId, value);
+        pushHistory();
+    }
 
     let flowNodes = $derived(
-        $dclNodes.map((node, idx) => ({
+        $dclNodes.map((node) => ({
             id: node.id,
             type: "doublycircularlist",
-            position: { x: idx * (NODE_W + NODE_GAP), y: 0 },
-            draggable: false,
+            position: { x: node.x, y: node.y },
+            draggable: true,
             selectable: false,
             connectable: false,
-            style: nodeTransition,
             data: {
                 varName: node.varName,
                 value: node.data,
@@ -105,6 +95,7 @@
                 isUnreachable: $unreachableDCLNodes.some((n) => n.id === node.id),
                 isVisiting: visitingId === node.id,
                 isAnimIn: animatingInId === node.id,
+                onEdit: (value) => handleEdit(node.id, value),
             },
         })),
     );
@@ -142,6 +133,13 @@
         }
         return edges;
     });
+
+    function onNodeDragStop({ targetNode }) {
+        if (!targetNode) return;
+        pushHistory();
+        moveNodeDCL(targetNode.id, targetNode.position.x, targetNode.position.y);
+        pushHistory();
+    }
 
     function onPaneContextMenu({ event }) {
         event.preventDefault();
@@ -233,6 +231,7 @@
             initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
+            onnodedragstop={onNodeDragStop}
             onnodecontextmenu={onNodeContextMenu}
             onpanecontextmenu={onPaneContextMenu}
             onpaneclick={closeContextMenu}

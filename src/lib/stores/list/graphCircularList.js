@@ -1,12 +1,18 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpCircularList, circularListLog, clearLogCircularList } from '../shared/circularListLog.js';
-import { formatLiteral, formatPythonLiteral } from '../../utils/formatters.js';
+import { formatLiteral, formatPythonLiteral, formatValue, formatPythonValue, formatCppValue } from '../../utils/formatters.js';
 import { walkRing, reachableRingIds } from '../../utils/linkedList.js';
 import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
- * @typedef {{ id: string, varName: string, data: string, nextId: string|null }} CircularListNode
+ * @typedef {{ id: string, varName: string, data: string, x: number, y: number, nextId: string|null }} CircularListNode
  */
+
+// Matches the node footprint used by SLLFlowNode/CircularListFlowNode
+// (min-width) plus the gap CanvasSLLFlow uses between auto-placed nodes, so
+// new/arranged nodes line up the same way a regular linked list's do.
+const NODE_W = 130;
+const NODE_GAP = 60;
 
 /** @type {import('svelte/store').Writable<CircularListNode[]>} */
 export const circularListNodes = writable([]);
@@ -59,9 +65,13 @@ export function insertHeadCircular(value) {
   const varName = `node${nodeCounter}`;
   const hId = get(headId);
   const tId = get(tailId);
+  const nodesBefore = get(circularListNodes);
+  const currentHead = nodesBefore.find(n => n.id === hId);
+  const x = currentHead ? currentHead.x - (NODE_W + NODE_GAP) : 200;
+  const y = currentHead ? currentHead.y : 200;
 
   /** @type {CircularListNode} */
-  const newNode = { id, varName, data: value, nextId: hId || id };
+  const newNode = { id, varName, data: value, x, y, nextId: hId || id };
   circularListNodes.update(ns => [...ns, newNode]);
 
   const javaOps = [`Node ${varName} = new Node(${formatLiteral(value)});`];
@@ -97,9 +107,13 @@ export function insertTailCircular(value) {
   const varName = `node${nodeCounter}`;
   const hId = get(headId);
   const tId = get(tailId);
+  const nodesBefore = get(circularListNodes);
+  const currentTail = nodesBefore.find(n => n.id === tId);
+  const x = currentTail ? currentTail.x + (NODE_W + NODE_GAP) : 200;
+  const y = currentTail ? currentTail.y : 200;
 
   /** @type {CircularListNode} */
-  const newNode = { id, varName, data: value, nextId: hId || id };
+  const newNode = { id, varName, data: value, x, y, nextId: hId || id };
   circularListNodes.update(ns => [...ns, newNode]);
 
   const javaOps = [`Node ${varName} = new Node(${formatLiteral(value)});`];
@@ -262,6 +276,56 @@ export function traverseCircular() {
   return walkRing(get(circularListNodes), hId).map(n => n.id);
 }
 
+/**
+ * Persists a node's dragged position. Silent — dragging isn't a code-level
+ * operation, so it doesn't belong in the generated-code log.
+ * @param {string} id
+ * @param {number} x
+ * @param {number} y
+ */
+export function moveNodeCircular(id, x, y) {
+  circularListNodes.update(ns => ns.map(n => n.id === id ? { ...n, x, y } : n));
+}
+
+/**
+ * Edits a node's value in place (double-click on the canvas), mirroring the
+ * regular singly linked list's node editing.
+ * @param {string} id
+ * @param {string} value
+ */
+export function setNodeValueCircular(id, value) {
+  const ns = get(circularListNodes);
+  const old = ns.find(n => n.id === id);
+  if (!old || value === old.data) return;
+
+  circularListNodes.update(ns => ns.map(n => n.id === id ? { ...n, data: value } : n));
+
+  logOpCircularList(
+    `${old.varName}.data = ${formatValue(value)};`,
+    `${old.varName}.data = ${formatPythonValue(value)}`,
+    `${old.varName}->data = ${formatCppValue(value)};`
+  );
+}
+
+/**
+ * Lines every node back up in a tidy row, in ring order starting from head —
+ * the circular-list counterpart of the regular linked list's "Arrange".
+ */
+export function arrangeCircularList() {
+  const ns = get(circularListNodes);
+  if (ns.length === 0) return;
+
+  const ring = walkRing(ns, get(headId));
+  const orderedIds = ring.length > 0 ? ring.map(n => n.id) : ns.map(n => n.id);
+  const baseY = ns[0].y;
+  const positionById = new Map(orderedIds.map((id, index) => [id, index]));
+
+  circularListNodes.update(ns => ns.map(node => {
+    const index = positionById.get(node.id) ?? 0;
+    return { ...node, x: 200 + index * (NODE_W + NODE_GAP), y: baseY };
+  }));
+}
+
 export function garbageCollectCircularList() {
   const nodes = get(circularListNodes);
   const hId = get(headId);
@@ -310,7 +374,14 @@ export function getSnapshotCircularList() {
  */
 export function applySnapshotCircularList(snapshot) {
   nodeCounter = snapshot.counter ?? 0;
-  circularListNodes.set(snapshot.nodes ?? []);
+  // Snapshots saved before nodes carried a position (or converted from a
+  // linear SLL/DLL via "To Circular") fall back to a plain row layout.
+  const nodesIn = snapshot.nodes ?? [];
+  circularListNodes.set(nodesIn.map((n, index) => ({
+    ...n,
+    x: n.x ?? 200 + index * (NODE_W + NODE_GAP),
+    y: n.y ?? 200,
+  })));
   headId.set(snapshot.headId ?? null);
   tailId.set(snapshot.tailId ?? null);
   circularListLog.set(snapshot.codeLog ?? []);
