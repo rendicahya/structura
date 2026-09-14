@@ -1,7 +1,7 @@
 import { writable, get, derived } from 'svelte/store';
 import { logOpDCL, dclLog, clearLogDCL } from '../shared/dclLog.js';
 import { formatLiteral, formatPythonLiteral, formatValue, formatPythonValue, formatCppValue } from '../../utils/formatters.js';
-import { walkRing, walkRingReverse, reachableRingIds } from '../../utils/linkedList.js';
+import { walkRing, reachableRingIds } from '../../utils/linkedList.js';
 import { cloneStoreValue } from '../../utils/storeSnapshot.js';
 
 /**
@@ -279,78 +279,6 @@ export function deleteTailDCL() {
   return true;
 }
 
-/**
- * Generates the classic do-while ring-traversal code and returns the
- * forward visiting order (node ids) for the canvas to animate through.
- * @returns {string[]}
- */
-export function traverseDCL() {
-  const hId = get(dclHeadId);
-  if (!hId) return [];
-
-  const javaOps = [
-    `Node curr = head;`,
-    `do {`,
-    `    System.out.print(curr.data + " ");`,
-    `    curr = curr.next;`,
-    `} while (curr != head);`,
-  ];
-  const pyOps = [
-    `curr = head`,
-    `while True:`,
-    `    print(curr.data, end=' ')`,
-    `    curr = curr.next`,
-    `    if curr == head:`,
-    `        break`,
-  ];
-  const cppOps = [
-    `Node* curr = head;`,
-    `do {`,
-    `    std::cout << curr->data << " ";`,
-    `    curr = curr->next;`,
-    `} while (curr != head);`,
-  ];
-
-  logOpDCL(javaOps, pyOps, cppOps);
-  return walkRing(get(dclNodes), hId).map(n => n.id);
-}
-
-/**
- * Backwards counterpart of {@link traverseDCL}: walks from the tail along
- * `prev` all the way around the ring — only possible because every node
- * carries a back-pointer.
- * @returns {string[]}
- */
-export function traverseBackwardDCL() {
-  const tId = get(dclTailId);
-  if (!tId) return [];
-
-  const javaOps = [
-    `Node curr = tail;`,
-    `do {`,
-    `    System.out.print(curr.data + " ");`,
-    `    curr = curr.prev;`,
-    `} while (curr != tail);`,
-  ];
-  const pyOps = [
-    `curr = tail`,
-    `while True:`,
-    `    print(curr.data, end=' ')`,
-    `    curr = curr.prev`,
-    `    if curr == tail:`,
-    `        break`,
-  ];
-  const cppOps = [
-    `Node* curr = tail;`,
-    `do {`,
-    `    std::cout << curr->data << " ";`,
-    `    curr = curr->prev;`,
-    `} while (curr != tail);`,
-  ];
-
-  logOpDCL(javaOps, pyOps, cppOps);
-  return walkRingReverse(get(dclNodes), tId).map(n => n.id);
-}
 
 /**
  * Persists a node's dragged position. Silent — dragging isn't a code-level

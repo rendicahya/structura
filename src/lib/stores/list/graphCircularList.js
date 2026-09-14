@@ -241,42 +241,6 @@ export function deleteTailCircular() {
 }
 
 /**
- * Generates the classic do-while ring-traversal code and returns the
- * visiting order (node ids) for the canvas to animate through.
- * @returns {string[]}
- */
-export function traverseCircular() {
-  const hId = get(headId);
-  if (!hId) return [];
-
-  const javaOps = [
-    `Node curr = head;`,
-    `do {`,
-    `    System.out.print(curr.data + " ");`,
-    `    curr = curr.next;`,
-    `} while (curr != head);`,
-  ];
-  const pyOps = [
-    `curr = head`,
-    `while True:`,
-    `    print(curr.data, end=' ')`,
-    `    curr = curr.next`,
-    `    if curr == head:`,
-    `        break`,
-  ];
-  const cppOps = [
-    `Node* curr = head;`,
-    `do {`,
-    `    std::cout << curr->data << " ";`,
-    `    curr = curr->next;`,
-    `} while (curr != head);`,
-  ];
-
-  logOpCircularList(javaOps, pyOps, cppOps);
-  return walkRing(get(circularListNodes), hId).map(n => n.id);
-}
-
-/**
  * Persists a node's dragged position. Silent — dragging isn't a code-level
  * operation, so it doesn't belong in the generated-code log.
  * @param {string} id

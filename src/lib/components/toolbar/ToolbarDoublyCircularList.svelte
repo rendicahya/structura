@@ -10,8 +10,6 @@
     insertTailDCL,
     deleteHeadDCL,
     deleteTailDCL,
-    traverseDCL,
-    traverseBackwardDCL,
     garbageCollectDCL,
     clearDCL,
     getSnapshotDCL,
@@ -96,18 +94,6 @@
     deleteTailDCL();
     pushHistory();
     toast.success('Deleted tail node');
-  }
-
-  function handleTraverse() {
-    if ($dclIsEmpty) { toast.error('List is empty'); return; }
-    const order = traverseDCL();
-    window.dispatchEvent(new CustomEvent('dcl:traverse-play', { detail: order }));
-  }
-
-  function handleTraverseBackward() {
-    if ($dclIsEmpty) { toast.error('List is empty'); return; }
-    const order = traverseBackwardDCL();
-    window.dispatchEvent(new CustomEvent('dcl:traverse-play', { detail: order }));
   }
 
   function handleArrange() {
@@ -199,10 +185,6 @@
       e.preventDefault();
       if (e.shiftKey) handleDeleteTail();
       else handleDeleteHead();
-    } else if (key === 't') {
-      e.preventDefault();
-      if (e.shiftKey) handleTraverseBackward();
-      else handleTraverse();
     } else if (key === 'a') {
       e.preventDefault();
       if ($dclNodes.length > 0) handleArrange();
@@ -244,20 +226,6 @@
       <button class="btn btn-primary" onclick={handleDeleteTail} disabled={$dclIsEmpty}>
         <Icon name="dequeue" />
         Delete Tail
-      </button>
-    </Tooltip>
-
-    <Tooltip text={$dclIsEmpty ? 'List is empty' : 'Play a forward ring traversal from head'} shortcut="T">
-      <button class="btn btn-secondary" onclick={handleTraverse} disabled={$dclIsEmpty}>
-        <Icon name="walk" />
-        Traverse →
-      </button>
-    </Tooltip>
-
-    <Tooltip text={$dclIsEmpty ? 'List is empty' : 'Play a backward ring traversal from tail'} shortcut="Shift+T">
-      <button class="btn btn-secondary" onclick={handleTraverseBackward} disabled={$dclIsEmpty}>
-        <Icon name="walk" />
-        Traverse ←
       </button>
     </Tooltip>
 

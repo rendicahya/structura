@@ -1,5 +1,4 @@
 <script>
-    import { onMount } from "svelte";
     import { SvelteFlow, Background, Controls, MarkerType } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import DoublyCircularListFlowNode from "../node/DoublyCircularListFlowNode.svelte";
@@ -41,9 +40,6 @@
 
     let animatingInId = $state(null);
     let prevRingLength = $dclRing.length;
-
-    let visitingId = $state(null);
-    let traverseTimer = null;
 
     $effect(() => {
         const ring = $dclRing;
@@ -93,7 +89,6 @@
                 isHead: node.id === $dclHeadNode?.id,
                 isTail: node.id === $dclTailNode?.id,
                 isUnreachable: $unreachableDCLNodes.some((n) => n.id === node.id),
-                isVisiting: visitingId === node.id,
                 isAnimIn: animatingInId === node.id,
                 onEdit: (value) => handleEdit(node.id, value),
             },
@@ -181,30 +176,6 @@
         garbageCollectDCL();
         pushHistory();
     }
-
-    onMount(() => {
-        const onTraverse = (e) => {
-            const order = e.detail ?? [];
-            if (traverseTimer) clearInterval(traverseTimer);
-            let i = 0;
-            visitingId = order[0] ?? null;
-            traverseTimer = setInterval(() => {
-                i++;
-                if (i >= order.length) {
-                    clearInterval(traverseTimer);
-                    traverseTimer = null;
-                    setTimeout(() => (visitingId = null), 300);
-                    return;
-                }
-                visitingId = order[i];
-            }, 550);
-        };
-        window.addEventListener("dcl:traverse-play", onTraverse);
-        return () => {
-            window.removeEventListener("dcl:traverse-play", onTraverse);
-            if (traverseTimer) clearInterval(traverseTimer);
-        };
-    });
 </script>
 
 <div class="canvas-wrapper" bind:this={wrapperEl}>

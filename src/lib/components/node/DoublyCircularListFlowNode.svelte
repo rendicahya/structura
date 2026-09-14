@@ -41,7 +41,6 @@
     class:is-head={data.isHead}
     class:is-tail={data.isTail}
     class:is-only={data.isHead && data.isTail}
-    class:is-visiting={data.isVisiting}
     class:is-unreachable={data.isUnreachable}
     class:anim-in={data.isAnimIn}
     ondblclick={startEdit}
@@ -109,10 +108,6 @@
     }
     .dcl-node.is-only {
         border-color: var(--accent);
-    }
-    .dcl-node.is-visiting {
-        border-color: var(--warning);
-        box-shadow: 0 0 14px var(--accent-glow);
     }
     .dcl-node.is-unreachable {
         opacity: 0.5;

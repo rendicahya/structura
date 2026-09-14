@@ -10,7 +10,6 @@
     insertTailCircular,
     deleteHeadCircular,
     deleteTailCircular,
-    traverseCircular,
     garbageCollectCircularList,
     clearCircularList,
     getSnapshotCircularList,
@@ -103,12 +102,6 @@
     pushHistory();
   }
 
-  function handleTraverse() {
-    if ($circularListIsEmpty) { toast.error('List is empty'); return; }
-    const order = traverseCircular();
-    window.dispatchEvent(new CustomEvent('circularlist:traverse-play', { detail: order }));
-  }
-
   function handleGC() {
     pushHistory();
     garbageCollectCircularList();
@@ -192,9 +185,6 @@
       e.preventDefault();
       if (e.shiftKey) handleDeleteTail();
       else handleDeleteHead();
-    } else if (key === 't') {
-      e.preventDefault();
-      handleTraverse();
     } else if (key === 'a') {
       e.preventDefault();
       if ($circularListNodes.length > 0) handleArrange();
@@ -236,13 +226,6 @@
       <button class="btn btn-primary" onclick={handleDeleteTail} disabled={$circularListIsEmpty}>
         <Icon name="dequeue" />
         Delete Tail
-      </button>
-    </Tooltip>
-
-    <Tooltip text={$circularListIsEmpty ? 'List is empty' : 'Play a full ring traversal'} shortcut="T">
-      <button class="btn btn-secondary" onclick={handleTraverse} disabled={$circularListIsEmpty}>
-        <Icon name="walk" />
-        Traverse
       </button>
     </Tooltip>
 
