@@ -2,6 +2,7 @@
     import { SvelteFlow, Background, Controls, MarkerType } from "@xyflow/svelte";
     import "@xyflow/svelte/dist/style.css";
     import CircularListFlowNode from "../node/CircularListFlowNode.svelte";
+    import RingCloseEdge from "../edge/RingCloseEdge.svelte";
     import {
         circularListNodes,
         circularListIsEmpty,
@@ -22,6 +23,7 @@
     let { zoom = $bindable(1) } = $props();
 
     const nodeTypes = { circularlist: CircularListFlowNode };
+    const edgeTypes = { ringclose: RingCloseEdge };
 
     /** @type {HTMLDivElement} */
     let wrapperEl = $state();
@@ -110,6 +112,7 @@
                 target: to.id,
                 sourceHandle: isCloser ? "ring-out" : "out",
                 targetHandle: isCloser ? "ring-in" : "in",
+                type: isCloser ? "ringclose" : undefined,
                 markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.NEXT_COLOR },
                 style: `stroke: ${LIST_EDGE.NEXT_COLOR};`,
             };
@@ -185,6 +188,7 @@
             nodes={flowNodes}
             edges={flowEdges}
             {nodeTypes}
+            {edgeTypes}
             bind:viewport={flow.viewport}
             initialViewport={flow.viewport}
             minZoom={ZOOM_MIN}
