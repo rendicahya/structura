@@ -21,6 +21,7 @@ export const STRUCTURE_ROUTES = {
     stack: '#/stack-flow',
     'linked-stack': '#/linked-stack-flow',
     'browser-history': '#/browser-history',
+    'undo-redo': '#/undo-redo',
     'print-spooler': '#/print-spooler',
     'er-triage': '#/er-triage',
     'phone-book': '#/phone-book',

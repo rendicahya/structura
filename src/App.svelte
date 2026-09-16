@@ -8,6 +8,10 @@
     import CanvasBrowserHistory from "./lib/components/canvas/CanvasBrowserHistory.svelte";
     import { browserHistoryLog } from "./lib/stores/shared/browserHistoryLog.js";
     import { initBrowserHistory } from "./lib/stores/stack/browserHistory.js";
+    import ToolbarUndoRedo from "./lib/components/toolbar/ToolbarUndoRedo.svelte";
+    import CanvasUndoRedo from "./lib/components/canvas/CanvasUndoRedo.svelte";
+    import { undoRedoLog } from "./lib/stores/shared/undoRedoLog.js";
+    import { initUndoRedo } from "./lib/stores/stack/undoRedoEditor.js";
     import ToolbarPrintSpooler from "./lib/components/toolbar/ToolbarPrintSpooler.svelte";
     import CanvasPrintSpooler from "./lib/components/canvas/CanvasPrintSpooler.svelte";
     import { printSpoolerLog } from "./lib/stores/shared/printSpoolerLog.js";
@@ -150,6 +154,7 @@
     import { applySnapshotStack } from "./lib/stores/stack/graphStack.js";
     import { applySnapshotLinkedStack } from "./lib/stores/stack/graphLinkedStack.js";
     import { applySnapshotBH } from "./lib/stores/stack/browserHistory.js";
+    import { applySnapshotUR } from "./lib/stores/stack/undoRedoEditor.js";
     import { applySnapshotPS } from "./lib/stores/queue/printSpooler.js";
     import { applySnapshotER } from "./lib/stores/heap/erTriage.js";
     import { applySnapshotPB } from "./lib/stores/hash/phoneBook.js";
@@ -177,6 +182,7 @@
         stack: applySnapshotStack,
         "linked-stack": applySnapshotLinkedStack,
         "browser-history": applySnapshotBH,
+        "undo-redo": applySnapshotUR,
         "print-spooler": applySnapshotPS,
         "er-triage": applySnapshotER,
         "phone-book": applySnapshotPB,
@@ -470,6 +476,8 @@
             if (get(linkedStackLog).length === 0) initNodeClassLinkedStack();
         } else if (page === "#/browser-history") {
             if (get(browserHistoryLog).length === 0) initBrowserHistory();
+        } else if (page === "#/undo-redo") {
+            if (get(undoRedoLog).length === 0) initUndoRedo();
         } else if (page === "#/print-spooler") {
             if (get(printSpoolerLog).length === 0) initPrintSpooler();
         } else if (page === "#/er-triage") {
@@ -589,6 +597,10 @@
                 {
                     href: "#/browser-history",
                     label: "Browser History (2 Stacks)",
+                },
+                {
+                    href: "#/undo-redo",
+                    label: "Undo-Redo (2 Stacks)",
                 },
             ],
         },
@@ -868,6 +880,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/undo-redo"}
+        <ToolbarUndoRedo
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/print-spooler"}
         <ToolbarPrintSpooler
             {zoom}
@@ -975,6 +994,8 @@
                 <CanvasLinkedStackFlow bind:zoom />
             {:else if page === "#/browser-history"}
                 <CanvasBrowserHistory bind:zoom />
+            {:else if page === "#/undo-redo"}
+                <CanvasUndoRedo bind:zoom />
             {:else if page === "#/print-spooler"}
                 <CanvasPrintSpooler bind:zoom />
             {:else if page === "#/er-triage"}
@@ -1040,6 +1061,8 @@
                               ? linkedStackLog
                               : page === "#/browser-history"
                                 ? browserHistoryLog
+                                : page === "#/undo-redo"
+                                ? undoRedoLog
                                 : page === "#/print-spooler"
                                 ? printSpoolerLog
                                 : page === "#/er-triage"
