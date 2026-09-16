@@ -22,6 +22,7 @@ export const STRUCTURE_ROUTES = {
     'linked-stack': '#/linked-stack-flow',
     'browser-history': '#/browser-history',
     'undo-redo': '#/undo-redo',
+    'function-call': '#/function-call',
     'print-spooler': '#/print-spooler',
     'er-triage': '#/er-triage',
     'phone-book': '#/phone-book',
