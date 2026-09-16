@@ -46,18 +46,20 @@
     ondblclick={startEdit}
 >
     <!-- Non-interactive anchors for the Svelte Flow bezier edges. `next`
-         links ride the upper handles, `prev` links the lower ones; the ring
-         closers use the bottom (next) / top (prev) pair so they arc clear
-         of the row. Circular-list links are managed by the toolbar, not
-         drawn by hand. -->
+         links ride the upper handles, `prev` links the lower ones. Both ring
+         closers (next and prev) are routed through the bottom side so they
+         both arc below the row; they're staggered and dip by different
+         amounts (see RingCloseEdge) so the two curves stay visually
+         separated instead of overlapping. Circular-list links are managed
+         by the toolbar, not drawn by hand. -->
     <Handle type="target" position={Position.Left} id="next-in" isConnectable={false} style="top: 34%;" />
     <Handle type="source" position={Position.Right} id="next-out" isConnectable={false} style="top: 34%;" />
     <Handle type="source" position={Position.Left} id="prev-out" isConnectable={false} style="top: 66%;" />
     <Handle type="target" position={Position.Right} id="prev-in" isConnectable={false} style="top: 66%;" />
-    <Handle type="source" position={Position.Bottom} id="nring-out" isConnectable={false} style="left: 35%;" />
-    <Handle type="target" position={Position.Bottom} id="nring-in" isConnectable={false} style="left: 65%;" />
-    <Handle type="source" position={Position.Top} id="pring-out" isConnectable={false} style="left: 35%;" />
-    <Handle type="target" position={Position.Top} id="pring-in" isConnectable={false} style="left: 65%;" />
+    <Handle type="source" position={Position.Bottom} id="nring-out" isConnectable={false} style="left: 25%;" />
+    <Handle type="target" position={Position.Bottom} id="pring-in" isConnectable={false} style="left: 40%;" />
+    <Handle type="source" position={Position.Bottom} id="pring-out" isConnectable={false} style="left: 60%;" />
+    <Handle type="target" position={Position.Bottom} id="nring-in" isConnectable={false} style="left: 75%;" />
 
     {#if data.isHead || data.isTail}
         <div class="badges">

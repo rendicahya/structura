@@ -99,8 +99,9 @@
 
     // For every ring hop we draw two bezier edges: a `next` (blue) from the
     // node to its successor and a `prev` (purple) from the successor back.
-    // The final hop's edges are the ring closers — routed through the
-    // bottom (next) / top (prev) handle pairs so they arc clear of the row.
+    // The final hop's edges are the ring closers — both routed through the
+    // bottom handle pairs so they arc below the row; the prev closer gets a
+    // deeper dip (see RingCloseEdge) so the two arcs don't overlap.
     let flowEdges = $derived.by(() => {
         const ring = $dclRing;
         if (ring.length === 0) return [];
@@ -126,6 +127,7 @@
                 sourceHandle: isCloser ? "pring-out" : "prev-out",
                 targetHandle: isCloser ? "pring-in" : "prev-in",
                 type: isCloser ? "ringclose" : undefined,
+                data: isCloser ? { dipScale: 1.7 } : undefined,
                 markerEnd: { type: MarkerType.ArrowClosed, color: LIST_EDGE.PREV_COLOR },
                 style: `stroke: ${LIST_EDGE.PREV_COLOR};`,
             });

@@ -8,11 +8,17 @@
     // collapses into a straight line. This edge instead draws an explicit
     // quadratic arc that bows away from the row, with the bow direction
     // taken from which side the handles sit on (Bottom -> dip down,
-    // Top -> dip up) so it keeps clear of the nodes in between.
-    let { id, sourceX, sourceY, targetX, targetY, sourcePosition, markerEnd, style } = $props();
+    // Top -> dip up) so it keeps clear of the nodes in between. When two
+    // closers share the same side (e.g. the doubly list's next/prev ring
+    // edges both routed through the bottom), pass a `data.dipScale` to push
+    // one arc deeper than the other so they don't sit on top of each other.
+    let { id, sourceX, sourceY, targetX, targetY, sourcePosition, markerEnd, style, data } = $props();
 
     const sign = $derived(sourcePosition === "top" ? -1 : 1);
-    const dip = $derived(Math.min(160, Math.max(55, Math.abs(targetX - sourceX) * 0.22 + 30)));
+    const dipScale = $derived(data?.dipScale ?? 1);
+    const dip = $derived(
+        Math.min(160, Math.max(55, Math.abs(targetX - sourceX) * 0.22 + 30)) * dipScale,
+    );
     const midX = $derived((sourceX + targetX) / 2);
     const baseY = $derived(sign === 1 ? Math.max(sourceY, targetY) : Math.min(sourceY, targetY));
     const midY = $derived(baseY + sign * dip);
