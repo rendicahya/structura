@@ -16,6 +16,10 @@
     import CanvasFunctionCall from "./lib/components/canvas/CanvasFunctionCall.svelte";
     import { functionCallLog } from "./lib/stores/shared/functionCallLog.js";
     import { initFunctionCall } from "./lib/stores/stack/functionCallStack.js";
+    import ToolbarBracketMatching from "./lib/components/toolbar/ToolbarBracketMatching.svelte";
+    import CanvasBracketMatching from "./lib/components/canvas/CanvasBracketMatching.svelte";
+    import { bracketMatchingLog } from "./lib/stores/shared/bracketMatchingLog.js";
+    import { initBracketMatching } from "./lib/stores/stack/bracketMatching.js";
     import ToolbarPrintSpooler from "./lib/components/toolbar/ToolbarPrintSpooler.svelte";
     import CanvasPrintSpooler from "./lib/components/canvas/CanvasPrintSpooler.svelte";
     import { printSpoolerLog } from "./lib/stores/shared/printSpoolerLog.js";
@@ -160,6 +164,7 @@
     import { applySnapshotBH } from "./lib/stores/stack/browserHistory.js";
     import { applySnapshotUR } from "./lib/stores/stack/undoRedoEditor.js";
     import { applySnapshotFC } from "./lib/stores/stack/functionCallStack.js";
+    import { applySnapshotBM } from "./lib/stores/stack/bracketMatching.js";
     import { applySnapshotPS } from "./lib/stores/queue/printSpooler.js";
     import { applySnapshotER } from "./lib/stores/heap/erTriage.js";
     import { applySnapshotPB } from "./lib/stores/hash/phoneBook.js";
@@ -189,6 +194,7 @@
         "browser-history": applySnapshotBH,
         "undo-redo": applySnapshotUR,
         "function-call": applySnapshotFC,
+        "bracket-matching": applySnapshotBM,
         "print-spooler": applySnapshotPS,
         "er-triage": applySnapshotER,
         "phone-book": applySnapshotPB,
@@ -486,6 +492,8 @@
             if (get(undoRedoLog).length === 0) initUndoRedo();
         } else if (page === "#/function-call") {
             if (get(functionCallLog).length === 0) initFunctionCall();
+        } else if (page === "#/bracket-matching") {
+            if (get(bracketMatchingLog).length === 0) initBracketMatching();
         } else if (page === "#/print-spooler") {
             if (get(printSpoolerLog).length === 0) initPrintSpooler();
         } else if (page === "#/er-triage") {
@@ -613,6 +621,10 @@
                 {
                     href: "#/function-call",
                     label: "Function Call Stack",
+                },
+                {
+                    href: "#/bracket-matching",
+                    label: "Bracket Matching",
                 },
             ],
         },
@@ -906,6 +918,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/bracket-matching"}
+        <ToolbarBracketMatching
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/print-spooler"}
         <ToolbarPrintSpooler
             {zoom}
@@ -1017,6 +1036,8 @@
                 <CanvasUndoRedo bind:zoom />
             {:else if page === "#/function-call"}
                 <CanvasFunctionCall bind:zoom />
+            {:else if page === "#/bracket-matching"}
+                <CanvasBracketMatching bind:zoom />
             {:else if page === "#/print-spooler"}
                 <CanvasPrintSpooler bind:zoom />
             {:else if page === "#/er-triage"}
@@ -1086,6 +1107,8 @@
                                 ? undoRedoLog
                                 : page === "#/function-call"
                                 ? functionCallLog
+                                : page === "#/bracket-matching"
+                                ? bracketMatchingLog
                                 : page === "#/print-spooler"
                                 ? printSpoolerLog
                                 : page === "#/er-triage"

@@ -23,6 +23,7 @@ export const STRUCTURE_ROUTES = {
     'browser-history': '#/browser-history',
     'undo-redo': '#/undo-redo',
     'function-call': '#/function-call',
+    'bracket-matching': '#/bracket-matching',
     'print-spooler': '#/print-spooler',
     'er-triage': '#/er-triage',
     'phone-book': '#/phone-book',
