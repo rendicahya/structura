@@ -21,6 +21,17 @@
   // bracket would be checked against.
   let stackView = $derived([...$bracketState.stack].reverse());
 
+  // Whitespace characters don't get a step (see computeSteps), so a
+  // character's position in the input no longer lines up with its position
+  // in `steps` — map each stepped character back to its step index instead.
+  let stepIndexByChar = $derived.by(() => {
+    const map = new Map();
+    $bracketState.steps.forEach((step, i) => {
+      if (step.index !== undefined) map.set(step.index, i);
+    });
+    return map;
+  });
+
   function handleCheck() {
     runCheck(inputValue);
   }
@@ -32,8 +43,9 @@
   /** @param {number} idx */
   function charStatus(idx) {
     const { steps, stepIndex } = $bracketState;
-    if (idx > stepIndex || idx >= steps.length) return 'pending';
-    const step = steps[idx];
+    const sIdx = stepIndexByChar.get(idx);
+    if (sIdx === undefined || sIdx > stepIndex) return 'pending';
+    const step = steps[sIdx];
     if (!step) return 'pending';
     if (step.kind === 'push') return 'open';
     if (step.kind === 'pop') return 'close';
@@ -41,7 +53,7 @@
     return 'skip';
   }
 
-  const isCurrent = (idx) => idx === $bracketState.stepIndex;
+  const isCurrent = (idx) => stepIndexByChar.get(idx) === $bracketState.stepIndex;
 
   // The auto-play interval lives in the store and would otherwise keep
   // ticking in the background after navigating away from this page.

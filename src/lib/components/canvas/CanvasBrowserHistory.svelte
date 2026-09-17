@@ -37,6 +37,17 @@
   const goBack = () => window.dispatchEvent(new CustomEvent('browser:back'));
   const goForward = () => window.dispatchEvent(new CustomEvent('browser:forward'));
 
+  // Clicking a nav item in the fake page ("Home", "About", …) visits a
+  // sub-page on the same site, the same way following a real link would —
+  // it's just another Visit as far as the two stacks are concerned.
+  function visitNavItem(item) {
+    if (!site) return;
+    const path = item.toLowerCase() === 'home' ? '' : `/${item.toLowerCase()}`;
+    window.dispatchEvent(
+      new CustomEvent('browser:visit', { detail: `https://${site.host}${path}` }),
+    );
+  }
+
   // Top of each stack first, so the row nearest the browser is the one a
   // Back / Forward press would act on.
   let backView = $derived([...$backStack].reverse());
@@ -101,7 +112,13 @@
                   {site.title}
                 </div>
                 <nav class="site-nav">
-                  {#each site.navItems as item}<span>{item}</span>{/each}
+                  {#each site.navItems as item}
+                    <button
+                      class="site-nav-link"
+                      type="button"
+                      onclick={() => visitNavItem(item)}
+                    >{item}</button>
+                  {/each}
                 </nav>
               </div>
               <div class="site-body">
@@ -343,11 +360,20 @@
     display: flex;
     gap: 14px;
   }
-  .site-nav span {
+  .site-nav-link {
+    background: none;
+    border: none;
+    padding: 0;
     font-family: var(--font-ui);
     font-size: 12px;
     font-weight: 600;
     color: #555;
+    cursor: pointer;
+    transition: color 0.12s ease;
+  }
+  .site-nav-link:hover {
+    color: hsl(var(--siteHue) 55% 42%);
+    text-decoration: underline;
   }
   .site-body {
     padding: 20px 22px;

@@ -617,16 +617,6 @@
                 { divider: true, label: "Applied Examples" },
                 { subheader: true, label: "Stack" },
                 {
-                    href: "#/browser-history",
-                    label: "Browser History",
-                    nested: true,
-                },
-                {
-                    href: "#/undo-redo",
-                    label: "Undo-Redo",
-                    nested: true,
-                },
-                {
                     href: "#/function-call",
                     label: "Function Call Stack",
                     nested: true,
@@ -634,6 +624,16 @@
                 {
                     href: "#/bracket-matching",
                     label: "Bracket Matching",
+                    nested: true,
+                },
+                {
+                    href: "#/browser-history",
+                    label: "Browser History (2 Stacks)",
+                    nested: true,
+                },
+                {
+                    href: "#/undo-redo",
+                    label: "Undo-Redo (2 Stacks)",
                     nested: true,
                 },
                 { subheader: true, label: "Queue" },

@@ -97,6 +97,11 @@ function computeSteps(input) {
                 });
                 return { steps, result: 'unbalanced' };
             }
+        } else if (/\s/.test(char)) {
+            // Whitespace carries no algorithmic weight, so it doesn't get a
+            // step — otherwise every space would cost a playback tick and
+            // padded expressions would crawl.
+            continue;
         } else {
             steps.push({ kind: 'skip', char, index });
         }
