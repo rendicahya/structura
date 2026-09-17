@@ -24,6 +24,10 @@
     import CanvasPrintSpooler from "./lib/components/canvas/CanvasPrintSpooler.svelte";
     import { printSpoolerLog } from "./lib/stores/shared/printSpoolerLog.js";
     import { initPrintSpooler } from "./lib/stores/queue/printSpooler.js";
+    import ToolbarRequestQueue from "./lib/components/toolbar/ToolbarRequestQueue.svelte";
+    import CanvasRequestQueue from "./lib/components/canvas/CanvasRequestQueue.svelte";
+    import { requestQueueLog } from "./lib/stores/shared/requestQueueLog.js";
+    import { initRequestQueue } from "./lib/stores/queue/requestQueue.js";
     import ToolbarErTriage from "./lib/components/toolbar/ToolbarErTriage.svelte";
     import CanvasErTriage from "./lib/components/canvas/CanvasErTriage.svelte";
     import { erTriageLog } from "./lib/stores/shared/erTriageLog.js";
@@ -166,6 +170,7 @@
     import { applySnapshotFC } from "./lib/stores/stack/functionCallStack.js";
     import { applySnapshotBM } from "./lib/stores/stack/bracketMatching.js";
     import { applySnapshotPS } from "./lib/stores/queue/printSpooler.js";
+    import { applySnapshotRQ } from "./lib/stores/queue/requestQueue.js";
     import { applySnapshotER } from "./lib/stores/heap/erTriage.js";
     import { applySnapshotPB } from "./lib/stores/hash/phoneBook.js";
     import { applySnapshotTD } from "./lib/stores/list/todoList.js";
@@ -196,6 +201,7 @@
         "function-call": applySnapshotFC,
         "bracket-matching": applySnapshotBM,
         "print-spooler": applySnapshotPS,
+        "request-queue": applySnapshotRQ,
         "er-triage": applySnapshotER,
         "phone-book": applySnapshotPB,
         queue: applySnapshotQueue,
@@ -496,6 +502,8 @@
             if (get(bracketMatchingLog).length === 0) initBracketMatching();
         } else if (page === "#/print-spooler") {
             if (get(printSpoolerLog).length === 0) initPrintSpooler();
+        } else if (page === "#/request-queue") {
+            if (get(requestQueueLog).length === 0) initRequestQueue();
         } else if (page === "#/er-triage") {
             if (get(erTriageLog).length === 0) initErTriage();
         } else if (page === "#/phone-book") {
@@ -640,6 +648,11 @@
                 {
                     href: "#/print-spooler",
                     label: "Print Spooler",
+                    nested: true,
+                },
+                {
+                    href: "#/request-queue",
+                    label: "Request Queue (Web Server)",
                     nested: true,
                 },
             ],
@@ -953,6 +966,13 @@
             {zoomOut}
             {zoomReset}
         />
+    {:else if page === "#/request-queue"}
+        <ToolbarRequestQueue
+            {zoom}
+            {zoomIn}
+            {zoomOut}
+            {zoomReset}
+        />
     {:else if page === "#/er-triage"}
         <ToolbarErTriage
             {zoom}
@@ -1061,6 +1081,8 @@
                 <CanvasBracketMatching bind:zoom />
             {:else if page === "#/print-spooler"}
                 <CanvasPrintSpooler bind:zoom />
+            {:else if page === "#/request-queue"}
+                <CanvasRequestQueue bind:zoom />
             {:else if page === "#/er-triage"}
                 <CanvasErTriage bind:zoom />
             {:else if page === "#/phone-book"}
@@ -1132,6 +1154,8 @@
                                 ? bracketMatchingLog
                                 : page === "#/print-spooler"
                                 ? printSpoolerLog
+                                : page === "#/request-queue"
+                                ? requestQueueLog
                                 : page === "#/er-triage"
                                 ? erTriageLog
                                 : page === "#/phone-book"

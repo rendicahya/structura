@@ -25,6 +25,7 @@ export const STRUCTURE_ROUTES = {
     'function-call': '#/function-call',
     'bracket-matching': '#/bracket-matching',
     'print-spooler': '#/print-spooler',
+    'request-queue': '#/request-queue',
     'er-triage': '#/er-triage',
     'phone-book': '#/phone-book',
     queue: '#/queue-flow',
