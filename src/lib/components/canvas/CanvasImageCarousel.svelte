@@ -10,8 +10,6 @@
     currentSlideIndex,
   } from '../../stores/list/imageCarousel.js';
 
-  // Zoom is bindable on every canvas; this demo renders a fixed carousel
-  // mock-up and ignores it.
   let { zoom = $bindable(1) } = $props();
 
   const SUGGESTIONS = ['Sunrise', 'Harbour', 'Old Town', 'Desert Road', 'Night Market', 'Rice Terrace', 'Snow Peak', 'Tide Pool'];
@@ -37,7 +35,7 @@
 </script>
 
 <div class="wrap">
-  <div class="stage">
+  <div class="stage" style="transform: scale({zoom})">
     <div class="head">
       <span class="title">Image Carousel</span>
       <span class="meta">
@@ -128,6 +126,8 @@
     justify-content: center;
   }
   .stage {
+    transform-origin: top center;
+    transition: transform 0.12s ease;
     display: flex;
     flex-direction: column;
     gap: 14px;

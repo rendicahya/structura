@@ -29,9 +29,10 @@
   import { isTypingTarget } from '../../utils/keyboard.js';
   import { downloadStructure, pickStructureFile, requestLoad } from '../../utils/saveLoad.js';
 
-  // Zoom props are handed to every toolbar; this demo renders a fixed-size
-  // contacts mock-up, so they're accepted but intentionally unused.
+  // zoomIn/zoomOut/zoomReset drive the toolbar's zoom buttons; the canvas
+  // scales its `.stage` via the bound `zoom` value.
   const { zoom = 1, zoomIn, zoomOut, zoomReset } = $props();
+  let zoomPct = $derived(Math.round(zoom * 100) + '%');
 
   let showConfirmNew = $state(false);
 
@@ -117,6 +118,22 @@
   </div>
 
   <div class="actions">
+    <Tooltip text="Zoom out" shortcut="Scroll ↓">
+      <button class="btn btn-icon" aria-label="Zoom out" onclick={zoomOut}>
+        <Icon name="zoomOut" />
+      </button>
+    </Tooltip>
+    <Tooltip text="Reset zoom">
+      <button class="zoom-label" aria-label="Reset zoom" onclick={zoomReset}>{zoomPct}</button>
+    </Tooltip>
+    <Tooltip text="Zoom in" shortcut="Scroll ↑">
+      <button class="btn btn-icon" aria-label="Zoom in" onclick={zoomIn}>
+        <Icon name="zoomIn" />
+      </button>
+    </Tooltip>
+
+    <div class="separator"></div>
+
     <Tooltip text="Undo" shortcut="Ctrl+Z">
       <button class="btn btn-icon" aria-label="Undo" onclick={undo} disabled={!$canUndo}>
         <Icon name="undo" />
@@ -188,6 +205,8 @@
   .btn-secondary:hover:not(:disabled) { background: var(--border); color: var(--text); }
   .btn-icon { background: var(--surface2); color: var(--text-dim); border-color: var(--border); padding: 6px 8px; }
   .btn-icon:hover:not(:disabled) { background: var(--border); color: var(--text); }
+  .zoom-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 4px 7px; cursor: pointer; min-width: 42px; text-align: center; transition: all 0.15s; }
+  .zoom-label:hover { background: var(--border); color: var(--text); }
   .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
   .modal { background: var(--surface); border: 1px solid var(--border-bright); border-radius: 14px; width: 320px; box-shadow: 0 24px 64px rgba(0,0,0,0.6); overflow: hidden; }
   .modal-sm { width: 280px; }

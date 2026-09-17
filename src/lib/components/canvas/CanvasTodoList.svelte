@@ -8,8 +8,6 @@
     tdRemaining,
   } from '../../stores/list/todoList.js';
 
-  // Zoom is bindable on every canvas; this demo renders a fixed checklist
-  // mock-up and ignores it.
   let { zoom = $bindable(1) } = $props();
 
   const SUGGESTIONS = [
@@ -48,7 +46,7 @@
 </script>
 
 <div class="wrap">
-  <div class="stage">
+  <div class="stage" style="transform: scale({zoom})">
     <div class="app">
       <div class="app-head">
         <span class="app-title">Tasks</span>
@@ -139,6 +137,8 @@
     justify-content: center;
   }
   .stage {
+    transform-origin: top center;
+    transition: transform 0.12s ease;
     display: flex;
     flex-direction: column;
     gap: 16px;

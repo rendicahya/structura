@@ -13,8 +13,6 @@
     printFront,
   } from '../../stores/queue/printSpooler.js';
 
-  // Zoom is bindable on every canvas; this demo renders a fixed printer
-  // mock-up and ignores it.
   let { zoom = $bindable(1) } = $props();
 
   const SUGGESTIONS = [
@@ -121,7 +119,7 @@
 </script>
 
 <div class="wrap">
-  <div class="stage">
+  <div class="stage" style="transform: scale({zoom})">
     <!-- Printer -->
     <div class="printer-card">
       <div class="device">
@@ -273,6 +271,8 @@
     padding: 32px 24px 48px;
     width: 100%;
     max-width: 560px;
+    transform-origin: top center;
+    transition: transform 0.12s ease;
   }
 
   /* --- Printer --- */

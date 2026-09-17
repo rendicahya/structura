@@ -13,8 +13,6 @@
     ACUITY,
   } from '../../stores/heap/erTriage.js';
 
-  // Zoom is bindable on every canvas; this demo renders a fixed triage board
-  // and ignores it.
   let { zoom = $bindable(1) } = $props();
 
   const NAME_SUGGESTIONS = [
@@ -124,7 +122,7 @@
 </script>
 
 <div class="wrap">
-  <div class="stage">
+  <div class="stage" style="transform: scale({zoom})">
     <!-- Now serving -->
     <div class="serving-card">
       <span class="serving-label">Now serving</span>
@@ -280,6 +278,8 @@
     justify-content: center;
   }
   .stage {
+    transform-origin: top center;
+    transition: transform 0.12s ease;
     display: flex;
     flex-direction: column;
     gap: 16px;

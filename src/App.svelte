@@ -580,15 +580,21 @@
                     label: "Doubly Circular Linked List",
                 },
                 { divider: true, label: "Applied Examples" },
-                { href: "#/todo-list", label: "To-Do List (Singly LL)" },
-                { href: "#/play-queue", label: "Play Queue (Doubly LL)" },
+                { subheader: true, label: "Singly Linked List" },
+                { href: "#/todo-list", label: "To-Do List", nested: true },
+                { subheader: true, label: "Doubly Linked List" },
+                { href: "#/play-queue", label: "Play Queue", nested: true },
+                { subheader: true, label: "Singly Circular Linked List" },
                 {
                     href: "#/turn-rotation",
-                    label: "Turn Rotation (Singly Circular)",
+                    label: "Turn Rotation",
+                    nested: true,
                 },
+                { subheader: true, label: "Doubly Circular Linked List" },
                 {
                     href: "#/image-carousel",
-                    label: "Image Carousel (Doubly Circular)",
+                    label: "Image Carousel",
+                    nested: true,
                 },
             ],
         },
@@ -609,22 +615,32 @@
                     : []),
                 { href: "#/linked-queue-flow", label: "Linked-List Queue" },
                 { divider: true, label: "Applied Examples" },
-                { href: "#/print-spooler", label: "Print Spooler (Queue)" },
+                { subheader: true, label: "Stack" },
                 {
                     href: "#/browser-history",
-                    label: "Browser History (2 Stacks)",
+                    label: "Browser History",
+                    nested: true,
                 },
                 {
                     href: "#/undo-redo",
-                    label: "Undo-Redo (2 Stacks)",
+                    label: "Undo-Redo",
+                    nested: true,
                 },
                 {
                     href: "#/function-call",
                     label: "Function Call Stack",
+                    nested: true,
                 },
                 {
                     href: "#/bracket-matching",
                     label: "Bracket Matching",
+                    nested: true,
+                },
+                { subheader: true, label: "Queue" },
+                {
+                    href: "#/print-spooler",
+                    label: "Print Spooler",
+                    nested: true,
                 },
             ],
         },
@@ -637,7 +653,8 @@
                 { href: "#/avl-flow", label: "AVL Tree" },
                 { href: "#/heap-flow", label: "Heap / Priority Queue" },
                 { divider: true, label: "Applied Examples" },
-                { href: "#/er-triage", label: "ER Triage (Priority Queue)" },
+                { subheader: true, label: "Heap / Priority Queue" },
+                { href: "#/er-triage", label: "ER Triage", nested: true },
             ],
         },
         {
@@ -647,7 +664,8 @@
                 { href: "#/graph-flow", label: "Graph" },
                 { href: "#/hash-flow", label: "Hash Table" },
                 { divider: true, label: "Applied Examples" },
-                { href: "#/phone-book", label: "Phone Book (Hash Table)" },
+                { subheader: true, label: "Hash Table" },
+                { href: "#/phone-book", label: "Phone Book", nested: true },
             ],
         },
     ];
@@ -725,9 +743,12 @@
                             {#each category.items as item (item.href ?? item.label)}
                                 {#if item.divider}
                                     <div class="nav-category-sep">{item.label}</div>
+                                {:else if item.subheader}
+                                    <div class="nav-category-subheader">{item.label}</div>
                                 {:else}
                                     <button
                                         class="nav-category-item"
+                                        class:nested={item.nested}
                                         class:active={page === item.href}
                                         onclick={() => navigateFromCategory(item.href)}
                                     >
@@ -1249,6 +1270,21 @@
         font-weight: 700;
         letter-spacing: 0.6px;
         text-transform: uppercase;
+    }
+
+    .nav-category-subheader {
+        margin: 5px 9px 1px 13px;
+        color: var(--text-muted);
+        font-family: var(--font-ui);
+        font-size: 10.5px;
+        font-weight: 700;
+    }
+    .nav-category-subheader:first-of-type {
+        margin-top: 2px;
+    }
+
+    .nav-category-item.nested {
+        padding-left: 19px;
     }
 
     .nav-spacer {

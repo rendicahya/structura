@@ -9,8 +9,6 @@
     canRedoEdit,
   } from '../../stores/stack/undoRedoEditor.js';
 
-  // Zoom is bindable on every canvas; this demo renders a fixed editor
-  // mock-up and ignores it.
   let { zoom = $bindable(1) } = $props();
 
   let typed = $state('');
@@ -44,7 +42,7 @@
 </script>
 
 <div class="wrap">
-  <div class="stage">
+  <div class="stage" style="transform: scale({zoom})">
     <!-- Editor -->
     <div class="editor">
       <div class="chrome">
@@ -146,6 +144,8 @@
     justify-content: center;
   }
   .stage {
+    transform-origin: top center;
+    transition: transform 0.12s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
